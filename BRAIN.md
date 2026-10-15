@@ -111,3 +111,18 @@ At the end of each significant task, update status, commit/PR links, tested plat
 - No neural/offline engine has been run on a real chapter in this continuation. Do not claim the benchmark passed on CI until GitHub Actions results are inspected. The existing deterministic engine is not a full translator and global substitutions cannot safely resolve ambiguous words; candidates remain unapproved.
 
 - Follow-up implementation: glossary mode `contextual` is now accepted by `TermRule` and passed through the offline preview API. Approved contextual terms are protected from global substitutions and produce a review warning with occurrence count; they are not silently replaced. Tests were added in `tests/test_narrative_rules.py`. This is a safety improvement, not full per-occurrence semantic disambiguation.
+
+
+## Continuation — Windows package CI verified and PR #6 merged (2026-10-15)
+
+This section supersedes earlier statements above that PR #6 is open or that its Windows workflow is still pending.
+
+- PR [#6](https://github.com/jonhararagi/traslate/pull/6) was squash-merged into `main`. Merge commit: `e3681e1b304f9440103577deec4d439e50f1d8da`.
+- The branch had no divergence from `main` at comparison time: 24 commits ahead, 0 behind.
+- On tested PR head `e9792510e7cdb61e7d78d3b3e3883d991d8db9ad`, GitHub Actions run [Windows Portable Build #11](https://github.com/jonhararagi/traslate/actions/runs/38758564092) completed successfully. Steps passed: install dependencies, pytest, PyInstaller portable build, artifact upload.
+- GitHub Actions run [Tests #286](https://github.com/jonhararagi/traslate/actions/runs/38758563984) passed on both `windows-latest` and `ubuntu-latest`; Windows PowerShell maintenance-script validation passed on Windows.
+- Artifact: `NovelTrad-Windows-x64`, 40,696,963 bytes, SHA-256 `f6d3b7578ab1766feac9dfb21350a79cd2c810f4b810e16a26271d26a7b2bca0`. Download it from [the Actions run](https://github.com/jonhararagi/traslate/actions/runs/38758564092). It expires on 2026-10-29; it is a temporary Actions artifact, not a permanent GitHub Release.
+- This proves the CI-built portable folder was produced; it does **not** prove clean-machine manual startup/import/backup/restore/export or usability on the user's PC. Manual smoke test remains outstanding.
+- The product is not a full automatic translator yet. Local mode is deterministic glossary/phrase processing, not neural sentence translation. Premium local inference is an optional preview path, not a validated full-book translation pipeline. Chunking, context carryover, side-by-side chapter review, OCR, and real-chapter benchmark remain incomplete.
+- First-novel pilot: 18 unapproved candidate terms and synthetic diagnostics are present. Do not claim actual novel chapter translation or semantic disambiguation until an authorized excerpt/EPUB/PDF is imported and evaluated.
+- Next priority: run a clean Windows smoke test using the artifact and record results; then implement chunked preview + side-by-side review with explicit carryover, retry controls, and no auto-save. Add malformed Ollama response tests and evidence-based glossary extraction afterward.
