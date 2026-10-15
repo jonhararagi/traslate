@@ -965,3 +965,65 @@ def test_backup_prune_and_restore_operations_are_serialized_together(client, tmp
         assert noveltrad_main.validate_database_file(tmp_path / "noveltrad-data" / "backups" / backup_name) is None
     assert len(client.get("/api/books").json()) == 1
     assert not list((tmp_path / "noveltrad-data").glob("restore-*.sqlite3"))
+
+
+
+def test_backup_file_lock_is_released_after_abrupt_process_exit(tmp_path, monkeypatch):
+    import os
+    import subprocess
+    import sys
+
+    data_home = tmp_path / "noveltrad-abrupt-exit"
+    monkeypatch.setenv("NOVELTRAD_HOME", str(data_home))
+    holder_script = (
+        'import os; from noveltrad.main import _cross_process_backup_lock; '
+        'lock = _cross_process_backup_lock(); lock.__enter__(); '
+        'print("LOCK_HELD", flush=True); os._exit(23)'
+    )
+    holder = subprocess.Popen(
+        [sys.executable, "-c", holder_script],
+        env=os.environ.copy(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        assert holder.stdout is not None
+        seen_lock = False
+        while True:
+            line = holder.stdout.readline()
+            if not line:
+                break
+            if line.strip() == "LOCK_HELD":
+                seen_lock = True
+                break
+        assert seen_lock, holder.stderr.read() if holder.stderr else "holder exited before acquiring lock"
+        assert holder.wait(timeout=5) == 23
+
+        contender_script = (
+            'from noveltrad.main import _cross_process_backup_lock; '
+            'with _cross_process_backup_lock(): print("LOCK_REACQUIRED", flush=True)'
+        )
+        contender = subprocess.Popen(
+            [sys.executable, "-c", contender_script],
+            env=os.environ.copy(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            stdout, stderr = contender.communicate(timeout=5)
+            assert contender.returncode == 0, stderr
+            assert "LOCK_REACQUIRED" in stdout
+        finally:
+            if contender.poll() is None:
+                contender.kill()
+                contender.wait(timeout=5)
+    finally:
+        if holder.poll() is None:
+            holder.kill()
+            holder.wait(timeout=5)
+        if holder.stdout:
+            holder.stdout.close()
+        if holder.stderr:
+            holder.stderr.close()
