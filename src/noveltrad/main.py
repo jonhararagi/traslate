@@ -7,6 +7,7 @@ import sqlite3
 import threading
 import zipfile
 from contextlib import asynccontextmanager, closing, contextmanager
+from functools import wraps
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from html import escape as html_escape
@@ -33,6 +34,18 @@ MIN_BACKUP_INTERVAL_HOURS = 1
 MAX_BACKUP_INTERVAL_HOURS = 720
 MIN_BACKUP_RETENTION_COUNT = 1
 MAX_BACKUP_RETENTION_COUNT = 100
+BACKUP_RETRY_BASE_SECONDS = 300
+BACKUP_RETRY_MAX_SECONDS = 21600
+BACKUP_OPERATION_LOCK = threading.RLock()
+
+
+def serialized_backup_operation(function):
+    \"\"\"Serialize backup, pruning, and restore operations within this process.\"\"\"
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        with BACKUP_OPERATION_LOCK:
+            return function(*args, **kwargs)
+    return wrapped
 REQUIRED_BACKUP_TABLES = {"books", "chapters", "glossary_entries", "translation_versions", "corrections"}
 ALLOWED_SUFFIXES = {".epub", ".pdf"}
 
@@ -72,6 +85,8 @@ def _default_backup_settings() -> dict[str, object]:
         "last_success_at": None,
         "schedule_started_at": datetime.now(timezone.utc).isoformat(),
         "last_error": None,
+        "failure_count": 0,
+        "retry_after_at": None,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -102,6 +117,8 @@ def load_backup_settings() -> dict[str, object]:
             "last_success_at": value.get("last_success_at"),
             "schedule_started_at": value.get("schedule_started_at") or value.get("updated_at"),
             "last_error": value.get("last_error"),
+            "failure_count": max(0, int(value.get("failure_count", 0))),
+            "retry_after_at": value.get("retry_after_at"),
             "updated_at": value.get("updated_at"),
         }
     except (OSError, json.JSONDecodeError, ValueError, TypeError):
@@ -120,6 +137,7 @@ def save_backup_settings(settings: dict[str, object]) -> None:
         temporary.unlink(missing_ok=True)
 
 
+@serialized_backup_operation
 def prune_backups(retention_count: int | None = None) -> list[str]:
     settings = load_backup_settings()
     keep = retention_count if retention_count is not None else int(settings["retention_count"])
@@ -138,6 +156,7 @@ def prune_backups(retention_count: int | None = None) -> list[str]:
     return removed
 
 
+@serialized_backup_operation
 def run_scheduled_backup_if_due(now: datetime | None = None) -> dict[str, object]:
     settings = load_backup_settings()
     if not settings["enabled"]:
@@ -150,19 +169,33 @@ def run_scheduled_backup_if_due(now: datetime | None = None) -> dict[str, object
             due_at = datetime.fromisoformat(str(baseline)) + timedelta(hours=int(settings["interval_hours"]))
             if current < due_at:
                 return {"status": "not_due", "created": None, "next_due_at": due_at.isoformat()}
-        except ValueError:
+        except (ValueError, TypeError):
+            pass
+    retry_after = settings.get("retry_after_at")
+    if retry_after:
+        try:
+            retry_at = datetime.fromisoformat(str(retry_after))
+            if current < retry_at:
+                return {"status": "retry_wait", "created": None, "retry_after_at": retry_at.isoformat(), "error": settings.get("last_error")}
+        except (ValueError, TypeError):
             pass
     try:
         path = create_database_backup()
         removed = prune_backups(int(settings["retention_count"]))
         settings["last_success_at"] = current.isoformat()
         settings["last_error"] = None
+        settings["failure_count"] = 0
+        settings["retry_after_at"] = None
         save_backup_settings(settings)
         return {"status": "created", "created": path.name, "removed": removed, "next_due_at": (current + timedelta(hours=int(settings["interval_hours"]))).isoformat()}
     except Exception as exc:
+        failures = int(settings.get("failure_count", 0)) + 1
+        delay = min(BACKUP_RETRY_BASE_SECONDS * (2 ** min(failures - 1, 16)), BACKUP_RETRY_MAX_SECONDS)
+        settings["failure_count"] = failures
+        settings["retry_after_at"] = (current + timedelta(seconds=delay)).isoformat()
         settings["last_error"] = f"{type(exc).__name__}: {exc}"[:1000]
         save_backup_settings(settings)
-        return {"status": "error", "created": None, "error": settings["last_error"]}
+        return {"status": "error", "created": None, "error": settings["last_error"], "retry_after_at": settings["retry_after_at"], "retry_delay_seconds": delay}
 
 
 def snapshot_imports_for_backup(backup_path: Path) -> Path:
@@ -178,6 +211,7 @@ def snapshot_imports_for_backup(backup_path: Path) -> Path:
     return target_dir
 
 
+@serialized_backup_operation
 def create_database_backup() -> Path:
     """Create a consistent SQLite snapshot and preserve the imported source files."""
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -436,6 +470,7 @@ app = FastAPI(title=APP_NAME, version="0.1.0", docs_url="/api/docs", lifespan=li
 
 
 @app.post("/api/backups")
+@serialized_backup_operation
 def create_backup() -> dict[str, object]:
     init_db()
     path = create_database_backup()
@@ -450,6 +485,7 @@ def get_backup_settings() -> dict[str, object]:
 
 
 @app.put("/api/backups/settings")
+@serialized_backup_operation
 def update_backup_settings(payload: BackupSettingsInput) -> dict[str, object]:
     current = load_backup_settings()
     updated = {
@@ -466,6 +502,7 @@ def update_backup_settings(payload: BackupSettingsInput) -> dict[str, object]:
 
 
 @app.post("/api/backups/prune")
+@serialized_backup_operation
 def prune_backup_endpoint() -> dict[str, object]:
     settings = load_backup_settings()
     removed = prune_backups(int(settings["retention_count"]))
@@ -483,6 +520,7 @@ def list_backups() -> list[dict[str, object]]:
 
 
 @app.post("/api/backups/{backup_name}/restore")
+@serialized_backup_operation
 def restore_backup(backup_name: str) -> dict[str, object]:
     if not re.fullmatch(r"noveltrad-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}\.sqlite3", backup_name):
         raise HTTPException(status_code=400, detail="Nombre de copia no válido.")
