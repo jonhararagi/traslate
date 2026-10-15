@@ -256,3 +256,52 @@ def test_epub_sections_follow_spine_reading_order(client, tmp_path):
     assert response.status_code == 200, response.text
     chapters = client.get(f"/api/books/{response.json()['id']}/chapters").json()
     assert [chapter["title"] for chapter in chapters] == ["Second", "First"]
+
+
+
+def test_glossary_trims_fields_and_rejects_duplicate_source_terms(client):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", pdf_bytes(), "application/pdf")},
+    ).json()
+    endpoint = f"/api/books/{imported['id']}/glossary"
+    first = client.post(
+        endpoint,
+        json={
+            "source_term": "  Oknodie  ",
+            "preferred_term": " Oknodie ",
+            "rule": "protect",
+            "notes": "  Nombre propio  ",
+        },
+    )
+    assert first.status_code == 200, first.text
+    assert first.json()["source_term"] == "Oknodie"
+    assert first.json()["preferred_term"] == "Oknodie"
+    assert first.json()["notes"] == "Nombre propio"
+
+    duplicate = client.post(
+        endpoint,
+        json={
+            "source_term": "okNODIE",
+            "preferred_term": "Ok no muere",
+            "rule": "translate",
+        },
+    )
+    assert duplicate.status_code == 409
+    assert "ya existe" in duplicate.json()["detail"]
+
+
+def test_glossary_rejects_whitespace_only_terms(client):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", pdf_bytes(), "application/pdf")},
+    ).json()
+    response = client.post(
+        f"/api/books/{imported['id']}/glossary",
+        json={
+            "source_term": "   ",
+            "preferred_term": "Oknodie",
+            "rule": "protect",
+        },
+    )
+    assert response.status_code == 422
