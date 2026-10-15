@@ -192,10 +192,30 @@ def prune_backups(retention_count: int | None = None) -> list[str]:
         reverse=True,
     )
     removed: list[str] = []
+    root = backup_dir()
     for path in backups[keep:]:
         path.unlink(missing_ok=True)
-        shutil.rmtree(backup_dir() / f"{path.stem}-imports", ignore_errors=True)
+        shutil.rmtree(root / f"{path.stem}-imports", ignore_errors=True)
         removed.append(path.name)
+
+    # Murphy rule: interrupted operations can leave companion folders without
+    # their database snapshot. Remove only our own well-formed orphan names.
+    live_names = {path.stem for path in root.glob("noveltrad-*.sqlite3")
+                  if path.is_file() and not path.is_symlink()}
+    orphan_pattern = re.compile(r"noveltrad-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}-imports")
+    for candidate in root.iterdir():
+        if (candidate.is_dir() and not candidate.is_symlink()
+                and orphan_pattern.fullmatch(candidate.name)
+                and candidate.name.removesuffix("-imports") not in live_names):
+            shutil.rmtree(candidate, ignore_errors=True)
+
+    # Clean staging remnants left by an abrupt process exit; these names are
+    # never presented as completed backups.
+    for candidate in root.glob(".pending-noveltrad-*"):
+        if candidate.is_file() and not candidate.is_symlink():
+            candidate.unlink(missing_ok=True)
+        elif candidate.is_dir() and not candidate.is_symlink():
+            shutil.rmtree(candidate, ignore_errors=True)
     return removed
 
 
@@ -256,22 +276,31 @@ def snapshot_imports_for_backup(backup_path: Path) -> Path:
 
 @serialized_backup_operation
 def create_database_backup() -> Path:
-    """Create a consistent SQLite snapshot and preserve the imported source files."""
+    """Publish a backup only after both the SQLite snapshot and originals exist."""
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     target = backup_dir() / f"noveltrad-{stamp}-{uuid4().hex[:8]}.sqlite3"
+    staging_db = backup_dir() / f".pending-{target.name}"
+    staging_imports = backup_dir() / f"{staging_db.stem}-imports"
+    final_imports = backup_dir() / f"{target.stem}-imports"
     try:
-        with closing(sqlite3.connect(database_path())) as source, closing(sqlite3.connect(target)) as destination:
+        with closing(sqlite3.connect(database_path())) as source, closing(sqlite3.connect(staging_db)) as destination:
             source.backup(destination)
-        snapshot_imports_for_backup(target)
+        snapshot_imports_for_backup(staging_db)
+        # Publish the companion first and the SQLite file last. Backup listings
+        # only match target's public name, so a crash cannot expose a half-backup.
+        os.replace(staging_imports, final_imports)
+        os.replace(staging_db, target)
     except Exception:
-        target.unlink(missing_ok=True)
-        shutil.rmtree(backup_dir() / f"{target.stem}-imports", ignore_errors=True)
+        staging_db.unlink(missing_ok=True)
+        shutil.rmtree(staging_imports, ignore_errors=True)
+        # Do not remove a previously published backup if a collision ever occurs.
+        if not target.exists():
+            shutil.rmtree(final_imports, ignore_errors=True)
         raise
     return target
 
-
 def create_pre_restore_snapshot() -> Path | None:
-    """Preserve the current database even if it is too damaged for SQLite's backup API."""
+    """Preserve the current database, even if it is too damaged for SQLite backup."""
     active = database_path()
     if not active.exists():
         return None
@@ -281,10 +310,21 @@ def create_pre_restore_snapshot() -> Path | None:
     except ValueError:
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         target = backup_dir() / f"noveltrad-{stamp}-{uuid4().hex[:8]}.sqlite3"
-        shutil.copy2(active, target)
-        snapshot_imports_for_backup(target)
+        staging_db = backup_dir() / f".pending-{target.name}"
+        staging_imports = backup_dir() / f"{staging_db.stem}-imports"
+        final_imports = backup_dir() / f"{target.stem}-imports"
+        try:
+            shutil.copy2(active, staging_db)
+            snapshot_imports_for_backup(staging_db)
+            os.replace(staging_imports, final_imports)
+            os.replace(staging_db, target)
+        except Exception:
+            staging_db.unlink(missing_ok=True)
+            shutil.rmtree(staging_imports, ignore_errors=True)
+            if not target.exists():
+                shutil.rmtree(final_imports, ignore_errors=True)
+            raise
         return target
-
 
 def validate_database_file(path: Path) -> None:
     try:
@@ -588,7 +628,7 @@ def _write_restore_transaction(transaction: dict[str, object]) -> None:
 
 
 def recover_interrupted_restore() -> bool:
-    """Roll back an interrupted restore before the app opens its live database."""
+    """Recover an interrupted restore without letting a corrupt safety copy block startup."""
     journal = _restore_transaction_path()
     if not journal.exists():
         return False
@@ -610,6 +650,8 @@ def recover_interrupted_restore() -> bool:
             raise ValueError("El diario de restauración está incompleto.")
         previous_imports = data_dir() / previous_name
         imports_dir = data_dir() / "imports"
+        restore_already_committed = False
+
         if safety_name is not None:
             if (not isinstance(safety_name, str)
                     or not re.fullmatch(r"noveltrad-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}\.sqlite3", safety_name)):
@@ -617,25 +659,38 @@ def recover_interrupted_restore() -> bool:
             safety_path = backup_dir() / safety_name
             if not safety_path.is_file():
                 raise ValueError("No se encuentra la copia previa necesaria para recuperar la restauración.")
-            validate_database_file(safety_path)
-            recovered_db = data_dir() / f"restore-recovery-{uuid4().hex}.sqlite3"
             try:
-                with closing(sqlite3.connect(f"file:{safety_path.as_posix()}?mode=ro", uri=True)) as source, closing(sqlite3.connect(recovered_db)) as destination:
-                    source.backup(destination)
-                validate_database_file(recovered_db)
-                os.replace(recovered_db, database_path())
-            finally:
-                recovered_db.unlink(missing_ok=True)
+                validate_database_file(safety_path)
+            except ValueError:
+                # If the pre-restore database was already corrupt, its safety
+                # copy is not a rollback candidate. A crash may have happened
+                # after the valid target DB was atomically installed; preserve
+                # that valid DB and its matching imported originals instead.
+                validate_database_file(database_path())
+                restore_already_committed = True
+
+            if not restore_already_committed:
+                recovered_db = data_dir() / f"restore-recovery-{uuid4().hex}.sqlite3"
+                try:
+                    with closing(sqlite3.connect(f"file:{safety_path.as_posix()}?mode=ro", uri=True)) as source, closing(sqlite3.connect(recovered_db)) as destination:
+                        source.backup(destination)
+                    validate_database_file(recovered_db)
+                    os.replace(recovered_db, database_path())
+                finally:
+                    recovered_db.unlink(missing_ok=True)
         elif not database_existed:
             database_path().unlink(missing_ok=True)
 
         if imports_snapshot_present:
-            if previous_imports.exists():
+            if restore_already_committed:
+                # The target's imports were swapped before its database. Keep
+                # them together and discard the old directory left by the crash.
+                shutil.rmtree(previous_imports, ignore_errors=True)
+            elif previous_imports.exists():
                 if imports_dir.exists():
                     shutil.rmtree(imports_dir)
                 os.replace(previous_imports, imports_dir)
             elif not imports_directory_existed and imports_dir.exists():
-                # There was no prior originals directory to move aside.
                 shutil.rmtree(imports_dir)
         journal.unlink()
         if os.name != "nt":
@@ -653,7 +708,6 @@ def recover_interrupted_restore() -> bool:
         raise RuntimeError(
             "No se pudo recuperar una restauración interrumpida; se conserva el diario para reintentar sin abrir la biblioteca."
         ) from exc
-
 
 @app.post("/api/backups/{backup_name}/restore")
 @serialized_backup_operation
