@@ -315,11 +315,12 @@ def restore_backup(backup_name: str) -> dict[str, object]:
             source.backup(destination)
         validate_database_file(staging)
         if imports_snapshot.exists():
-            if not imports_snapshot.is_dir() or imports_snapshot.resolve().parent != root:
+            if (not imports_snapshot.is_dir() or imports_snapshot.is_symlink()
+                    or imports_snapshot.resolve().parent != root):
                 raise ValueError("La copia de archivos originales tiene una estructura no válida.")
-            shutil.copytree(imports_snapshot, staged_imports)
-            if any(path.is_symlink() or not path.is_file() for path in staged_imports.rglob("*")):
+            if any(path.is_symlink() or not path.is_file() for path in imports_snapshot.rglob("*")):
                 raise ValueError("La copia contiene archivos originales no válidos.")
+            shutil.copytree(imports_snapshot, staged_imports)
         # Preserve the current database and originals before replacing either.
         safety_copy = create_pre_restore_snapshot()
         imports_dir = data_dir() / "imports"
