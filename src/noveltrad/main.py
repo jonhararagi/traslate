@@ -583,7 +583,7 @@ def init_db() -> None:
             )
 
 
-def recover_interrupted_translation_jobs() -> None
+def recover_interrupted_translation_jobs() -> None:
     """Make jobs safely resumable after the process exits mid-inference."""
     init_db()
     now = datetime.now(timezone.utc).isoformat()
