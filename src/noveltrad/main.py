@@ -4,9 +4,10 @@ import json
 import os
 import re
 import sqlite3
+import threading
 import zipfile
 from contextlib import asynccontextmanager, closing, contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from html import escape as html_escape
 from pathlib import Path
@@ -26,6 +27,12 @@ MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 MAX_EPUB_ENTRIES = 5000
 MAX_EPUB_UNCOMPRESSED_BYTES = 500 * 1024 * 1024
 MAX_EPUB_COMPRESSION_RATIO = 200
+DEFAULT_BACKUP_INTERVAL_HOURS = 24
+DEFAULT_BACKUP_RETENTION_COUNT = 14
+MIN_BACKUP_INTERVAL_HOURS = 1
+MAX_BACKUP_INTERVAL_HOURS = 720
+MIN_BACKUP_RETENTION_COUNT = 1
+MAX_BACKUP_RETENTION_COUNT = 100
 REQUIRED_BACKUP_TABLES = {"books", "chapters", "glossary_entries", "translation_versions", "corrections"}
 ALLOWED_SUFFIXES = {".epub", ".pdf"}
 
@@ -51,6 +58,108 @@ def backup_dir() -> Path:
     path = data_dir() / "backups"
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def backup_settings_path() -> Path:
+    return data_dir() / "backup-settings.json"
+
+
+def _default_backup_settings() -> dict[str, object]:
+    return {
+        "enabled": True,
+        "interval_hours": DEFAULT_BACKUP_INTERVAL_HOURS,
+        "retention_count": DEFAULT_BACKUP_RETENTION_COUNT,
+        "last_success_at": None,
+        "last_error": None,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def load_backup_settings() -> dict[str, object]:
+    path = backup_settings_path()
+    if not path.exists():
+        settings = _default_backup_settings()
+        save_backup_settings(settings)
+        return settings
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(value, dict):
+            raise ValueError("invalid settings")
+        enabled = value.get("enabled", True)
+        interval = value.get("interval_hours", DEFAULT_BACKUP_INTERVAL_HOURS)
+        retention = value.get("retention_count", DEFAULT_BACKUP_RETENTION_COUNT)
+        if not isinstance(enabled, bool):
+            raise ValueError("invalid enabled")
+        if type(interval) is not int or not MIN_BACKUP_INTERVAL_HOURS <= interval <= MAX_BACKUP_INTERVAL_HOURS:
+            raise ValueError("invalid interval")
+        if type(retention) is not int or not MIN_BACKUP_RETENTION_COUNT <= retention <= MAX_BACKUP_RETENTION_COUNT:
+            raise ValueError("invalid retention")
+        return {
+            "enabled": enabled,
+            "interval_hours": interval,
+            "retention_count": retention,
+            "last_success_at": value.get("last_success_at"),
+            "last_error": value.get("last_error"),
+            "updated_at": value.get("updated_at"),
+        }
+    except (OSError, json.JSONDecodeError, ValueError, TypeError):
+        # Fail closed on malformed preferences: disable automation, preserve manual backups.
+        return {**_default_backup_settings(), "enabled": False, "last_error": "La configuración de copias está dañada; revisa o restablece backup-settings.json."}
+
+
+def save_backup_settings(settings: dict[str, object]) -> None:
+    path = backup_settings_path()
+    temporary = path.with_name(f"{path.name}.{uuid4().hex}.tmp")
+    payload = {**settings, "updated_at": datetime.now(timezone.utc).isoformat()}
+    try:
+        temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def prune_backups(retention_count: int | None = None) -> list[str]:
+    settings = load_backup_settings()
+    keep = retention_count if retention_count is not None else int(settings["retention_count"])
+    if not MIN_BACKUP_RETENTION_COUNT <= keep <= MAX_BACKUP_RETENTION_COUNT:
+        raise ValueError("La retención debe estar entre 1 y 100 copias.")
+    backups = sorted(
+        (path for path in backup_dir().glob("noveltrad-*.sqlite3") if path.is_file() and not path.is_symlink()),
+        key=lambda item: item.stat().st_mtime,
+        reverse=True,
+    )
+    removed: list[str] = []
+    for path in backups[keep:]:
+        path.unlink(missing_ok=True)
+        shutil.rmtree(backup_dir() / f"{path.stem}-imports", ignore_errors=True)
+        removed.append(path.name)
+    return removed
+
+
+def run_scheduled_backup_if_due(now: datetime | None = None) -> dict[str, object]:
+    settings = load_backup_settings()
+    if not settings["enabled"]:
+        return {"status": "disabled", "created": None}
+    current = now or datetime.now(timezone.utc)
+    last_success = settings.get("last_success_at")
+    if last_success:
+        try:
+            due_at = datetime.fromisoformat(str(last_success)) + timedelta(hours=int(settings["interval_hours"]))
+            if current < due_at:
+                return {"status": "not_due", "created": None, "next_due_at": due_at.isoformat()}
+        except ValueError:
+            pass
+    try:
+        path = create_database_backup()
+        removed = prune_backups(int(settings["retention_count"]))
+        settings["last_success_at"] = current.isoformat()
+        settings["last_error"] = None
+        save_backup_settings(settings)
+        return {"status": "created", "created": path.name, "removed": removed, "next_due_at": (current + timedelta(hours=int(settings["interval_hours"]))).isoformat()}
+    except Exception as exc:
+        settings["last_error"] = f"{type(exc).__name__}: {exc}"[:1000]
+        save_backup_settings(settings)
+        return {"status": "error", "created": None, "error": settings["last_error"]}
 
 
 def snapshot_imports_for_backup(backup_path: Path) -> Path:
@@ -247,6 +356,12 @@ def extract_epub(path: Path) -> list[tuple[str, str]]:
     return chapters
 
 
+class BackupSettingsInput(BaseModel):
+    enabled: bool = True
+    interval_hours: int = Field(default=DEFAULT_BACKUP_INTERVAL_HOURS, ge=MIN_BACKUP_INTERVAL_HOURS, le=MAX_BACKUP_INTERVAL_HOURS)
+    retention_count: int = Field(default=DEFAULT_BACKUP_RETENTION_COUNT, ge=MIN_BACKUP_RETENTION_COUNT, le=MAX_BACKUP_RETENTION_COUNT)
+
+
 class ProgressInput(BaseModel):
     chapter_index: int = Field(ge=0)
     scroll_top: float = Field(default=0, ge=0, le=100000000)
@@ -269,10 +384,49 @@ class GlossaryInput(BaseModel):
         return value.strip() if isinstance(value, str) else value
 
 
+class BackupScheduler:
+    """Single daemon worker; settings are re-read every tick and shutdown is cooperative."""
+
+    def __init__(self, tick_seconds: float = 30.0):
+        self.tick_seconds = tick_seconds
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        if self._thread and self._thread.is_alive():
+            return
+        self._stop.clear()
+        self._thread = threading.Thread(target=self._run, name="noveltrad-backups", daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._stop.set()
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=5)
+
+    def _run(self) -> None:
+        while not self._stop.is_set():
+            try:
+                run_scheduled_backup_if_due()
+            except Exception:
+                # A failed scheduled backup must not terminate the service worker.
+                pass
+            if self._stop.wait(self.tick_seconds):
+                break
+
+
+backup_scheduler = BackupScheduler()
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
-    yield
+    load_backup_settings()
+    backup_scheduler.start()
+    try:
+        yield
+    finally:
+        backup_scheduler.stop()
 
 
 app = FastAPI(title=APP_NAME, version="0.1.0", docs_url="/api/docs", lifespan=lifespan)
@@ -282,7 +436,36 @@ app = FastAPI(title=APP_NAME, version="0.1.0", docs_url="/api/docs", lifespan=li
 def create_backup() -> dict[str, object]:
     init_db()
     path = create_database_backup()
-    return {"name": path.name, "size_bytes": path.stat().st_size, "created": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()}
+    settings = load_backup_settings()
+    removed = prune_backups(int(settings["retention_count"]))
+    return {"name": path.name, "size_bytes": path.stat().st_size, "created": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(), "removed_backups": removed}
+
+
+@app.get("/api/backups/settings")
+def get_backup_settings() -> dict[str, object]:
+    return load_backup_settings()
+
+
+@app.put("/api/backups/settings")
+def update_backup_settings(payload: BackupSettingsInput) -> dict[str, object]:
+    current = load_backup_settings()
+    updated = {
+        **current,
+        "enabled": payload.enabled,
+        "interval_hours": payload.interval_hours,
+        "retention_count": payload.retention_count,
+        "last_error": None,
+    }
+    save_backup_settings(updated)
+    removed = prune_backups(payload.retention_count)
+    return {**load_backup_settings(), "removed_backups": removed}
+
+
+@app.post("/api/backups/prune")
+def prune_backup_endpoint() -> dict[str, object]:
+    settings = load_backup_settings()
+    removed = prune_backups(int(settings["retention_count"]))
+    return {"removed": removed, "retained_count": len(list(backup_dir().glob("noveltrad-*.sqlite3")))}
 
 
 @app.get("/api/backups")
