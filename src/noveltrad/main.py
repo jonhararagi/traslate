@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from io import BytesIO
 from html import escape as html_escape
 from pathlib import Path
+import shutil
 from typing import Iterator
 from uuid import uuid4
 
@@ -60,6 +61,21 @@ def create_database_backup() -> Path:
     with closing(sqlite3.connect(database_path())) as source, closing(sqlite3.connect(target)) as destination:
         source.backup(destination)
     return target
+
+
+def create_pre_restore_snapshot() -> Path | None:
+    """Preserve the current database even if it is too damaged for SQLite's backup API."""
+    active = database_path()
+    if not active.exists():
+        return None
+    try:
+        validate_database_file(active)
+        return create_database_backup()
+    except ValueError:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        target = backup_dir() / f"noveltrad-{stamp}-{uuid4().hex[:8]}.sqlite3"
+        shutil.copy2(active, target)
+        return target
 
 
 def validate_database_file(path: Path) -> None:
@@ -251,7 +267,6 @@ def create_backup() -> dict[str, object]:
 
 @app.get("/api/backups")
 def list_backups() -> list[dict[str, object]]:
-    init_db()
     backups = []
     for path in sorted(backup_dir().glob("noveltrad-*.sqlite3"), key=lambda item: item.stat().st_mtime, reverse=True):
         if not path.is_file():
@@ -262,7 +277,6 @@ def list_backups() -> list[dict[str, object]]:
 
 @app.post("/api/backups/{backup_name}/restore")
 def restore_backup(backup_name: str) -> dict[str, object]:
-    init_db()
     if not re.fullmatch(r"noveltrad-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}\.sqlite3", backup_name):
         raise HTTPException(status_code=400, detail="Nombre de copia no válido.")
     root = backup_dir().resolve()
@@ -277,9 +291,9 @@ def restore_backup(backup_name: str) -> dict[str, object]:
             source.backup(destination)
         validate_database_file(staging)
         # Preserve the current state before replacing the live database.
-        safety_copy = create_database_backup()
+        safety_copy = create_pre_restore_snapshot()
         os.replace(staging, database_path())
-        return {"restored": True, "backup_name": backup_name, "safety_backup": safety_copy.name}
+        return {"restored": True, "backup_name": backup_name, "safety_backup": safety_copy.name if safety_copy else None}
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except (sqlite3.DatabaseError, OSError) as exc:
