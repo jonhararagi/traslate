@@ -129,13 +129,13 @@ def test_failed_chunk_is_recorded_and_can_be_retried_without_losing_completed_ch
 ):
     monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path))
     main.init_db()
-    source = ("First sentence. " * 80).strip()
+    source = ("First sentence. " * 160).strip()
     book_id, _ = add_book([("Chapter 1", source)])
     calls = {"count": 0}
 
     def sometimes_fails(text, glossary, continuity_context=""):
         calls["count"] += 1
-        if calls["count"] == 1:
+        if calls["count"] == 2:
             raise HTTPException(status_code=502, detail="Ollama temporalmente no disponible.")
         return "ES: " + text
 
@@ -147,23 +147,33 @@ def test_failed_chunk_is_recorded_and_can_be_retried_without_losing_completed_ch
         )
         assert created.status_code == 200, created.text
         job_id = created.json()["id"]
+        first = client.post(f"/api/translation-jobs/{job_id}/run-next")
+        assert first.status_code == 200, first.text
+        assert first.json()["completed_chunks"] == 1
         failed = client.post(f"/api/translation-jobs/{job_id}/run-next")
         assert failed.status_code == 502
         state = client.get(f"/api/translation-jobs/{job_id}").json()
         assert state["status"] == "failed"
         assert state["failed_chunks"] == 1
-        assert state["chunks"][0]["status"] == "failed"
+        assert state["completed_chunks"] == 1
+        assert state["chunks"][0]["status"] == "completed"
+        assert state["chunks"][1]["status"] == "failed"
         assert "Ollama temporalmente" in state["last_error"]
 
         retried = client.post(f"/api/translation-jobs/{job_id}/retry-failed")
         assert retried.status_code == 200
         assert retried.json()["failed_chunks"] == 0
-        assert retried.json()["chunks"][0]["status"] == "pending"
+        assert retried.json()["completed_chunks"] == 1
+        assert retried.json()["chunks"][1]["status"] == "pending"
 
         resumed = client.post(f"/api/translation-jobs/{job_id}/run-next")
         assert resumed.status_code == 200, resumed.text
-        assert resumed.json()["status"] == "completed"
-        assert resumed.json()["completed_chunks"] == 1
+        assert resumed.json()["completed_chunks"] == 2
+        assert resumed.json()["status"] == "queued"
+        completed = client.post(f"/api/translation-jobs/{job_id}/run-next")
+        assert completed.status_code == 200, completed.text
+        assert completed.json()["status"] == "completed"
+        assert completed.json()["completed_chunks"] == completed.json()["total_chunks"]
 
         with main.connection() as conn:
             row = conn.execute(
