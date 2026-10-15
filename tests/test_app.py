@@ -957,6 +957,11 @@ def test_backup_prune_and_restore_operations_are_serialized_together(client, tmp
     remaining = {item["name"] for item in client.get("/api/backups").json()}
     assert target_name in remaining
     assert new_backup.name in remaining
-    assert len(remaining) == 2
+    assert restored["safety_backup"] in remaining
+    assert stale.json()["name"] not in remaining
+    # Restore deliberately keeps a safety snapshot, in addition to the target and new backup.
+    assert len(remaining) == 3
+    for backup_name in remaining:
+        assert noveltrad_main.validate_database_file(tmp_path / "noveltrad-data" / "backups" / backup_name) is None
     assert len(client.get("/api/books").json()) == 1
     assert not list((tmp_path / "noveltrad-data").glob("restore-*.sqlite3"))
