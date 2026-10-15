@@ -834,11 +834,21 @@ def _translate_with_local_model(
     model = os.environ.get("NOVELTRAD_PREMIUM_MODEL", PREMIUM_MODEL_DEFAULT).strip()
     if not model or len(model) > 120:
         raise HTTPException(status_code=500, detail="NOVELTRAD_PREMIUM_MODEL no es válido.")
-    glossary_lines = [
-        f"- {item['source_term']} => {item['preferred_term']}"
-        for item in glossary
-        if item.get("source_term") and item.get("preferred_term")
-    ]
+    glossary_lines = []
+    rule_hints = {
+        "protect": "MUST preserve this proper name/form exactly",
+        "preserve": "MUST preserve this term exactly",
+        "translate": "MUST use this exact target term",
+        "contextual": "choose the term based on context; do not force it in every usage",
+    }
+    for item in glossary:
+        if not item.get("source_term") or not item.get("preferred_term"):
+            continue
+        line = f"- {item['source_term']} => {item['preferred_term']}"
+        rule = item.get("rule")
+        if rule in rule_hints:
+            line += f" [{rule_hints[rule]}]"
+        glossary_lines.append(line)
     glossary_block = "\n".join(glossary_lines) or "(No hay términos aprobados.)"
     prompt = (
         "Translate the source passage into natural Spanish. Preserve meaning, paragraph breaks, "
@@ -910,7 +920,7 @@ def preview_premium_translation(chapter_id: str) -> dict[str, object]:
                 detail=f"Este capítulo tiene {len(source_text)} caracteres. El modo premium acepta hasta {PREMIUM_PREVIEW_MAX_CHARS} por vista previa para limitar RAM/contexto; dividilo en fragmentos más pequeños."
             )
         rows = conn.execute(
-            "SELECT source_term, preferred_term FROM glossary_entries "
+            "SELECT source_term, preferred_term, rule FROM glossary_entries "
             "WHERE approved = 1 AND (book_id = ? OR book_id IS NULL) "
             "ORDER BY length(source_term) DESC LIMIT 200",
             (chapter["book_id"],),
@@ -1038,13 +1048,30 @@ def preview_chunked_premium_translation(
 
 
 
-def _translation_quality_warnings(original_text: str, translated_text: str) -> list[str]:
+def _translation_quality_warnings(
+    original_text: str,
+    translated_text: str,
+    glossary: list[dict[str, object]] | None = None,
+) -> list[str]:
     """Return conservative review prompts; these heuristics never certify correctness."""
     source = original_text.strip()
     target = translated_text.strip()
     warnings: list[str] = []
     if not target:
         return ["La traducción está vacía."]
+    for item in glossary or []:
+        rule = item.get("rule")
+        if rule not in {"preserve", "protect", "translate"}:
+            continue
+        source_term = str(item.get("source_term") or "").strip()
+        preferred_term = str(item.get("preferred_term") or "").strip()
+        if not source_term or not preferred_term:
+            continue
+        if _candidate_literal_pattern(source_term).search(source) and not _candidate_literal_pattern(preferred_term).search(target):
+            warnings.append(
+                f"El glosario aprobado exige «{preferred_term}» para «{source_term}» (regla {rule}), "
+                "pero la forma preferida no aparece en la salida; revisa si el término se cambió u omitió."
+            )
     source_normalized = re.sub(r"\s+", " ", source).casefold()
     target_normalized = re.sub(r"\s+", " ", target).casefold()
     if len(source_normalized) >= 25 and source_normalized == target_normalized:
@@ -1114,6 +1141,12 @@ def _translation_job_snapshot(
     job = conn.execute("SELECT * FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
     if not job:
         raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
+    try:
+        glossary_snapshot = json.loads(job["glossary_json"])
+    except (json.JSONDecodeError, TypeError):
+        glossary_snapshot = []
+    if not isinstance(glossary_snapshot, list):
+        glossary_snapshot = []
     counts_row = conn.execute(
         "SELECT COUNT(*) AS total, "
         "SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed, "
@@ -1174,7 +1207,7 @@ def _translation_job_snapshot(
                 ).fetchone()
                 if legacy_text:
                     warnings = _translation_quality_warnings(
-                        legacy_text["original_text"], legacy_text["translated_text"]
+                        legacy_text["original_text"], legacy_text["translated_text"], glossary_snapshot
                     )
                     conn.execute(
                         "UPDATE translation_job_chunks SET quality_warnings_json = ? WHERE id = ?",
@@ -1440,7 +1473,7 @@ def run_next_translation_chunk(job_id: str) -> dict[str, object]:
                 detail=f"Falló el fragmento {chunk_index} de la sección {chapter_index + 1}. El avance anterior se conservó y puedes reintentar este fragmento. {detail}",
             ) from exc
         completed_at = datetime.now(timezone.utc).isoformat()
-        quality_warnings = _translation_quality_warnings(source_text, translated.strip())
+        quality_warnings = _translation_quality_warnings(source_text, translated.strip(), glossary)
         with connection() as conn:
             conn.execute(
                 "UPDATE translation_job_chunks SET status = 'completed', translated_text = ?, reviewed = 0, error = '', quality_warnings_json = ?, updated_at = ? WHERE id = ?",
@@ -1485,7 +1518,18 @@ def get_translation_job_chunk(job_id: str, chunk_id: str) -> dict[str, object]:
         item = dict(row)
         warnings = _decode_quality_warnings(item.pop("quality_warnings_json", ""))
         if not warnings and not row["quality_warnings_json"] and row["status"] == "completed":
-            warnings = _translation_quality_warnings(row["original_text"], row["translated_text"])
+            glossary_row = conn.execute(
+                "SELECT glossary_json FROM translation_jobs WHERE id = ?", (job_id,)
+            ).fetchone()
+            try:
+                glossary_snapshot = json.loads(glossary_row["glossary_json"]) if glossary_row else []
+            except (json.JSONDecodeError, TypeError):
+                glossary_snapshot = []
+            if not isinstance(glossary_snapshot, list):
+                glossary_snapshot = []
+            warnings = _translation_quality_warnings(
+                row["original_text"], row["translated_text"], glossary_snapshot
+            )
             conn.execute(
                 "UPDATE translation_job_chunks SET quality_warnings_json = ? WHERE id = ? AND job_id = ?",
                 (json.dumps(warnings, ensure_ascii=False), chunk_id, job_id),
@@ -1502,7 +1546,7 @@ def review_translation_job_chunk(
     init_db()
     now = datetime.now(timezone.utc).isoformat()
     with connection() as conn:
-        job = conn.execute("SELECT status FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
+        job = conn.execute("SELECT status, glossary_json FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
         if not job:
             raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
         if job["status"] in ("running", "applied"):
@@ -1514,7 +1558,15 @@ def review_translation_job_chunk(
             raise HTTPException(status_code=404, detail="No se encontró el fragmento.")
         if row["status"] != "completed":
             raise HTTPException(status_code=409, detail="Solo se pueden revisar fragmentos traducidos correctamente.")
-        quality_warnings = _translation_quality_warnings(row["original_text"], payload.translated_text)
+        try:
+            glossary_snapshot = json.loads(job["glossary_json"])
+        except (json.JSONDecodeError, TypeError):
+            glossary_snapshot = []
+        if not isinstance(glossary_snapshot, list):
+            glossary_snapshot = []
+        quality_warnings = _translation_quality_warnings(
+            row["original_text"], payload.translated_text, glossary_snapshot
+        )
         conn.execute(
             "UPDATE translation_job_chunks SET translated_text = ?, reviewed = 1, quality_warnings_json = ?, updated_at = ? WHERE id = ? AND job_id = ?",
             (payload.translated_text, json.dumps(quality_warnings, ensure_ascii=False), now, chunk_id, job_id),
