@@ -2,6 +2,7 @@ import fitz
 import pytest
 from fastapi.testclient import TestClient
 
+from noveltrad import main as main_module
 from noveltrad.main import app
 
 
@@ -74,9 +75,44 @@ def test_reader_exposes_offline_preview_and_keeps_manual_assistance_options(offl
     assert 'value="light_novel_es"' in page
     assert 'value="faithful_literary_es"' in page
     assert 'value="webnovel_es"' in page
-    assert "No traduce frases desconocidas" in page
+    assert 'id="translation-mode"' in page
+    assert 'value="local"' in page
+    assert 'value="premium"' in page
+    assert "Ollama" in page
+    assert "12.000 caracteres" in page
     assert "Proponer traducción al español" in page
     assert "Analizar contexto, personajes y relaciones" in page
     assert "Revisar continuidad sin inventar canon" in page
     assert "Revisar estilo y claridad" in page
     assert "Extraer términos candidatos para el glosario" in page
+
+
+
+def test_premium_mode_is_local_preview_and_does_not_save(offline_client, monkeypatch):
+    imported = offline_client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", _pdf_with_text("Oknodie entered the academy."), "application/pdf")},
+    ).json()
+    chapter = offline_client.get(f"/api/books/{imported['id']}/chapters").json()[0]
+    calls = []
+
+    def fake_local_model(text, glossary):
+        calls.append((text, glossary))
+        return "Oknodie entró en la academia."
+
+    monkeypatch.setattr(main_module, "_translate_with_local_model", fake_local_model)
+    preview = offline_client.post(f"/api/chapters/{chapter['id']}/premium-translation-preview")
+    assert preview.status_code == 200, preview.text
+    payload = preview.json()
+    assert payload["mode"] == "premium-local-neural"
+    assert payload["preview_only"] is True
+    assert payload["saved"] is False
+    assert payload["text"] == "Oknodie entró en la academia."
+    assert len(calls) == 1
+    reread = offline_client.get(f"/api/books/{imported['id']}/chapters").json()[0]
+    assert reread["translated_text"] == ""
+
+
+def test_premium_mode_missing_chapter_returns_404(offline_client):
+    response = offline_client.post("/api/chapters/missing/premium-translation-preview")
+    assert response.status_code == 404
