@@ -1394,6 +1394,20 @@ def apply_reviewed_translation_job(job_id: str) -> dict[str, object]:
             full_translation = "\n\n".join(parts).strip()
             if not full_translation:
                 raise HTTPException(status_code=409, detail="Hay una sección cuya traducción está vacía. No se aplicó ningún cambio.")
+            # Use the same snapshot semantics as the normal translation editor.
+            # Even the initial empty state is retained as history on first save.
+            current = conn.execute(
+                "SELECT translated_text FROM chapters WHERE id = ?", (chapter_id,)
+            ).fetchone()
+            next_version = conn.execute(
+                "SELECT COALESCE(MAX(version_number), 0) + 1 AS next_version "
+                "FROM translation_versions WHERE chapter_id = ?", (chapter_id,)
+            ).fetchone()["next_version"]
+            conn.execute(
+                "INSERT INTO translation_versions(id, chapter_id, version_number, translated_text, created_at) "
+                "VALUES(?,?,?,?,?)",
+                (str(uuid4()), chapter_id, next_version, current["translated_text"], now),
+            )
             conn.execute(
                 "UPDATE chapters SET translated_text = ?, status = 'translated' WHERE id = ?",
                 (full_translation, chapter_id),
