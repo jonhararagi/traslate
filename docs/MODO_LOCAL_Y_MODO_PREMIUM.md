@@ -20,7 +20,7 @@ Premium es un modo real de inferencia neuronal local, no una suscripción y no u
 
 ### Presupuesto conservador para Ryzen 5 5600G y 16 GB RAM
 
-- Premium no se ejecuta en segundo plano ni automáticamente al importar/abrir un libro.
+- Premium no se ejecuta automáticamente al importar/abrir un libro. La cola del libro completo solo comienza cuando el usuario pulsa «Iniciar / reanudar»; las llamadas de inferencia son secuenciales.
 - La vista previa de capítulo usa fragmentos secuenciales de 3.500 caracteres por defecto, ajustables internamente entre 1.000 y 6.000, hasta 200.000 caracteres de origen por capítulo.
 - Se solicita `num_ctx=4096`, una salida máxima de 4096 tokens, temperatura 0,1 y `keep_alive=0` para pedir a Ollama que descargue el modelo de memoria al terminar. La traducción de capítulos usa peticiones secuenciales, no paralelas.
 - El uso real depende de la cuantización, el runtime, el tamaño del contexto y otras aplicaciones abiertas. Un modelo 3B cuantizado puede consumir varios GB entre pesos y memoria de ejecución; 16 GB no garantizan que no haya presión de RAM. Cerrar aplicaciones pesadas y preferir Local cuando no haga falta traducción neuronal.
@@ -30,11 +30,12 @@ Premium es un modo real de inferencia neuronal local, no una suscripción y no u
 
 ## Límites actuales y tareas pendientes
 
-- Premium traduce capítulos mediante fragmentos secuenciales y muestra cada original junto a una traducción editable, con contexto secuencial y vista previa combinada. No guarda el resultado por sí mismo.
-- La experiencia de capítulo por fragmentos muestra cada original junto a una traducción editable, con contexto secuencial y vista previa combinada. Todavía faltan cola de traducción de libro completo y controles para reintentar/reanudar desde un fragmento fallido.
-- Falta una comprobación de calidad con capítulos reales de la edición que el usuario importe.
-- El modo Local no es traducción automática general; solo aplica reglas aprobadas.
-- Nunca se debe afirmar que el libro completo está traducido sin verificar cada capítulo y sus resultados.
+- La cola de libro completo crea un manifiesto persistente en SQLite con sección, fragmento, estado, intentos y error. Traduce un fragmento por petición; los resultados correctos sobreviven a un fallo posterior y pueden reanudarse tras cerrar la aplicación.
+- Si un fragmento falla, el trabajo se detiene y conserva los fragmentos completados. «Reintentar fallidos» vuelve a poner solamente los fragmentos fallidos en la cola. Al reiniciar, un fragmento que quedó en ejecución se recupera como pendiente y el trabajo queda pausado.
+- La cola captura el glosario aprobado cuando se crea para que las reglas no cambien a mitad del libro. El resultado sigue siendo provisional: cada fragmento debe marcarse revisado antes de «Aplicar traducciones revisadas».
+- Aplicar escribe las traducciones finales solo en secciones que aún no tengan traducción, conservando el original. Si otra operación rellenó una sección mientras la cola estaba activa, la aplicación se bloquea sin sobrescribirla.
+- La ejecución del modelo sigue dependiendo de Ollama local y se inicia manualmente; no hay llamadas a servicios externos ni descarga automática de modelos.
+- Falta una comprobación de calidad con capítulos reales de la edición que el usuario importe. El modo Local no es traducción automática general: solo aplica reglas aprobadas. No se debe afirmar que una novela está bien traducida sin comprobar sus resultados.
 
 ## Primera novela: I Became the Academy Villain's Daughter
 
@@ -43,3 +44,10 @@ El perfil está en `data/novels/i_became_the_academy_villains_daughter.json`. In
 Fuentes de referencia inicial para identificar la obra (no sustituyen el texto de la edición importada):
 - Novelpia Global: https://global.novelpia.com/novel/41?sid=main1
 - Tapas: https://tapas.io/series/i-became-the-villains-daughter-at-the-academy/info
+
+
+## Cola persistente de libro completo
+
+La sección «Traducción de libro completo» de la biblioteca permite preparar la cola, iniciar/reanudar, pausar, reintentar fragmentos fallidos, revisar cada salida y aplicar las traducciones al editor de la biblioteca. Preparar la cola no consume inferencia. La ejecución solo empieza con una acción explícita. El manifiesto y las traducciones provisionales se guardan en la base local; cerrar NovelTrad no borra el avance. El botón de aplicación permanece bloqueado hasta que todos los fragmentos estén traducidos y revisados. El texto original es de solo lectura y no se actualiza desde esta función.
+
+La cola limita cada sección a 200.000 caracteres, usa 3.500 caracteres por fragmento por defecto (configurable por API entre 1.000 y 6.000) y 1.200 caracteres de contexto previo por defecto. El glosario aprobado se guarda como instantánea al crear el trabajo. Una traducción completa no equivale a una traducción de calidad validada: los nombres y términos ambiguos requieren revisión humana.
