@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import sqlite3
+import zipfile
 from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime, timezone
 from io import BytesIO
@@ -21,6 +23,10 @@ from pydantic import BaseModel, Field, field_validator
 
 APP_NAME = "NovelTrad"
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+MAX_EPUB_ENTRIES = 5000
+MAX_EPUB_UNCOMPRESSED_BYTES = 500 * 1024 * 1024
+MAX_EPUB_COMPRESSION_RATIO = 200
+REQUIRED_BACKUP_TABLES = {"books", "chapters", "glossary_entries", "translation_versions", "corrections"}
 ALLOWED_SUFFIXES = {".epub", ".pdf"}
 
 
@@ -42,6 +48,65 @@ def database_path() -> Path:
 
 
 @contextmanager
+def backup_dir() -> Path:
+    path = data_dir() / "backups"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def create_database_backup() -> Path:
+    """Create a transactionally consistent SQLite snapshot using SQLite's backup API."""
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    target = backup_dir() / f"noveltrad-{stamp}-{uuid4().hex[:8]}.sqlite3"
+    with sqlite3.connect(database_path()) as source, sqlite3.connect(target) as destination:
+        source.backup(destination)
+    return target
+
+
+def validate_database_file(path: Path) -> None:
+    try:
+        with sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True) as conn:
+            integrity = conn.execute("PRAGMA integrity_check").fetchone()
+            if not integrity or integrity[0] != "ok":
+                raise ValueError("La copia de seguridad está dañada.")
+            tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            if not REQUIRED_BACKUP_TABLES.issubset(tables):
+                raise ValueError("El archivo no contiene una base de datos NovelTrad completa.")
+    except (sqlite3.DatabaseError, OSError) as exc:
+        raise ValueError("No se pudo validar la base de datos de la copia.") from exc
+
+
+def validate_epub_bytes(raw: bytes) -> None:
+    """Reject mislabeled, malformed, or implausibly large EPUB archives before parsing."""
+    try:
+        with zipfile.ZipFile(BytesIO(raw)) as archive:
+            entries = archive.infolist()
+            if len(entries) > MAX_EPUB_ENTRIES:
+                raise ValueError("El EPUB contiene demasiados archivos internos para importarlo con seguridad.")
+            names = {entry.filename for entry in entries}
+            if "mimetype" not in names or "META-INF/container.xml" not in names:
+                raise ValueError("El archivo ZIP no tiene la estructura obligatoria de un EPUB.")
+            mimetype = archive.read("mimetype")
+            if mimetype != b"application/epub+zip":
+                raise ValueError("El archivo no declara un tipo EPUB válido.")
+            total_size = 0
+            for entry in entries:
+                if entry.flag_bits & 0x1:
+                    raise ValueError("No se admiten EPUB con archivos internos cifrados.")
+                total_size += entry.file_size
+                if entry.file_size and entry.compress_size == 0:
+                    raise ValueError("El EPUB contiene una entrada comprimida inválida.")
+                if entry.compress_size and entry.file_size / entry.compress_size > MAX_EPUB_COMPRESSION_RATIO:
+                    raise ValueError("El EPUB supera el límite de compresión segura.")
+            if total_size > MAX_EPUB_UNCOMPRESSED_BYTES:
+                raise ValueError("El contenido descomprimido del EPUB supera el límite de 500 MB.")
+            bad_entry = archive.testzip()
+            if bad_entry:
+                raise ValueError("El EPUB está dañado y no supera la verificación interna.")
+    except zipfile.BadZipFile as exc:
+        raise ValueError("El archivo no es un EPUB ZIP válido o está dañado.") from exc
+
+
 def connection() -> Iterator[sqlite3.Connection]:
     conn = sqlite3.connect(database_path())
     conn.row_factory = sqlite3.Row
@@ -178,6 +243,52 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title=APP_NAME, version="0.1.0", docs_url="/api/docs", lifespan=lifespan)
 
 
+@app.post("/api/backups")
+def create_backup() -> dict[str, object]:
+    init_db()
+    path = create_database_backup()
+    return {"name": path.name, "size_bytes": path.stat().st_size, "created": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()}
+
+
+@app.get("/api/backups")
+def list_backups() -> list[dict[str, object]]:
+    init_db()
+    backups = []
+    for path in sorted(backup_dir().glob("noveltrad-*.sqlite3"), key=lambda item: item.stat().st_mtime, reverse=True):
+        if not path.is_file():
+            continue
+        backups.append({"name": path.name, "size_bytes": path.stat().st_size, "created": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()})
+    return backups
+
+
+@app.post("/api/backups/{backup_name}/restore")
+def restore_backup(backup_name: str) -> dict[str, object]:
+    init_db()
+    if not re.fullmatch(r"noveltrad-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}\\.sqlite3", backup_name):
+        raise HTTPException(status_code=400, detail="Nombre de copia no válido.")
+    root = backup_dir().resolve()
+    source_path = (root / backup_name).resolve()
+    if source_path.parent != root or not source_path.is_file():
+        raise HTTPException(status_code=404, detail="No se encontró la copia de seguridad.")
+
+    staging = data_dir() / f"restore-{uuid4().hex}.sqlite3"
+    try:
+        validate_database_file(source_path)
+        with sqlite3.connect(f"file:{source_path.as_posix()}?mode=ro", uri=True) as source, sqlite3.connect(staging) as destination:
+            source.backup(destination)
+        validate_database_file(staging)
+        # Preserve the current state before replacing the live database.
+        safety_copy = create_database_backup()
+        os.replace(staging, database_path())
+        return {"restored": True, "backup_name": backup_name, "safety_backup": safety_copy.name}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except (sqlite3.DatabaseError, OSError) as exc:
+        raise HTTPException(status_code=500, detail="No se pudo restaurar la copia. La base activa no se reemplazó si falló antes de la operación atómica.") from exc
+    finally:
+        staging.unlink(missing_ok=True)
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"app": APP_NAME, "status": "ok", "mode": "local-first", "translation_engine": "not-configured"}
@@ -207,6 +318,15 @@ async def import_book(file: UploadFile = File(...)) -> dict[str, object]:
         raise HTTPException(status_code=400, detail="El archivo está vacío.")
     if len(raw) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="El límite de importación es 100 MB por archivo.")
+
+    if suffix == ".pdf":
+        if not raw.startswith(b"%PDF-"):
+            raise HTTPException(status_code=415, detail="La extensión es PDF, pero el contenido no tiene una cabecera PDF válida.")
+    else:
+        try:
+            validate_epub_bytes(raw)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     book_id = str(uuid4())
     safe_name = f"{book_id}{suffix}"
