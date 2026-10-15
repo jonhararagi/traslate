@@ -10,6 +10,7 @@ from ebooklib import epub
 from fastapi.testclient import TestClient
 
 import noveltrad.main as noveltrad_main
+from noveltrad.backup_cli import main as backup_cli_main
 from noveltrad.main import app
 
 
@@ -656,3 +657,117 @@ def test_backup_preferences_survive_restoring_an_older_library_snapshot(client):
     assert settings["interval_hours"] == 8
     assert settings["retention_count"] == 7
     assert [book["id"] for book in client.get("/api/books").json()] == [imported["id"]]
+
+
+
+def test_full_library_restore_recovers_glossary_translation_versions_progress_and_originals(client, tmp_path):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("full-recovery.pdf", pdf_bytes("Oknodie reached level 10."), "application/pdf")},
+    )
+    assert imported.status_code == 200, imported.text
+    book = imported.json()
+    book_id = book["id"]
+    chapter = client.get(f"/api/books/{book_id}/chapters").json()[0]
+    chapter_id = chapter["id"]
+
+    glossary = client.post(
+        f"/api/books/{book_id}/glossary",
+        json={
+            "source_term": "Oknodie",
+            "preferred_term": "Oknodie",
+            "rule": "protect",
+            "notes": "Nombre propio aprobado",
+            "approved": True,
+        },
+    )
+    assert glossary.status_code == 200, glossary.text
+    assert client.put(
+        f"/api/books/{book_id}/progress",
+        json={"chapter_index": 0, "scroll_top": 731.25},
+    ).status_code == 200
+    assert client.put(
+        f"/api/chapters/{chapter_id}/translation",
+        json={"translated_text": "Oknodie alcanzó el nivel 10."},
+    ).status_code == 200
+    assert client.put(
+        f"/api/chapters/{chapter_id}/translation",
+        json={"translated_text": "Oknodie llegó al nivel 10."},
+    ).status_code == 200
+
+    source_dir = tmp_path / "noveltrad-data" / "imports"
+    source_before = {path.name: path.read_bytes() for path in source_dir.iterdir()}
+    backup = client.post("/api/backups")
+    assert backup.status_code == 200, backup.text
+    backup_name = backup.json()["name"]
+
+    # Damage every recoverable category after the snapshot: metadata, glossary,
+    # current translation, translation history, reading position and imported files.
+    assert client.delete(f"/api/books/{book_id}/glossary/{glossary.json()['id']}").status_code in {200, 204}
+    assert client.put(
+        f"/api/chapters/{chapter_id}/translation",
+        json={"translated_text": "Texto posterior que no debe sobrevivir a la restauración."},
+    ).status_code == 200
+    assert client.put(
+        f"/api/books/{book_id}/progress",
+        json={"chapter_index": 0, "scroll_top": 12},
+    ).status_code == 200
+    extra = client.post(
+        "/api/books/import",
+        files={"file": ("extra-after-snapshot.pdf", pdf_bytes("This is newer"), "application/pdf")},
+    )
+    assert extra.status_code == 200
+    for path in source_dir.iterdir():
+        if path.name not in source_before:
+            path.unlink()
+
+    restored = client.post(f"/api/backups/{backup_name}/restore")
+    assert restored.status_code == 200, restored.text
+    assert restored.json()["restored"] is True
+
+    books = client.get("/api/books").json()
+    assert [item["id"] for item in books] == [book_id]
+    assert '"scroll_top":731.25' in books[0]["current_location"]
+    chapters = client.get(f"/api/books/{book_id}/chapters").json()
+    assert len(chapters) == 1
+    assert chapters[0]["original_text"] == "Oknodie reached level 10."
+    assert chapters[0]["translated_text"] == "Oknodie llegó al nivel 10."
+    versions = client.get(f"/api/chapters/{chapter_id}/translation/versions").json()
+    assert [item["translated_text"] for item in versions] == [
+        "Oknodie alcanzó el nivel 10.",
+        "",
+    ]
+    glossary_after = client.get(f"/api/books/{book_id}/glossary").json()
+    assert any(
+        item["source_term"] == "Oknodie"
+        and item["preferred_term"] == "Oknodie"
+        and item["approved"] is True
+        for item in glossary_after
+    )
+    source_after = {path.name: path.read_bytes() for path in source_dir.iterdir()}
+    assert source_after == source_before
+
+
+def test_headless_backup_cli_runs_due_backup_without_starting_web_server(client, tmp_path, monkeypatch):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("cli.pdf", pdf_bytes("CLI backup"), "application/pdf")},
+    )
+    assert imported.status_code == 200
+    data_root = tmp_path / "noveltrad-data"
+    settings_path = data_root / "backup-settings.json"
+    settings = noveltrad_main.load_backup_settings()
+    settings.update({
+        "enabled": True,
+        "interval_hours": 1,
+        "retention_count": 14,
+        "last_success_at": None,
+        "schedule_started_at": "2000-01-01T00:00:00+00:00",
+        "last_error": None,
+    })
+    noveltrad_main.save_backup_settings(settings)
+
+    assert backup_cli_main() == 0
+    backups = list((data_root / "backups").glob("noveltrad-*.sqlite3"))
+    assert backups, "headless CLI should create a due backup"
+    assert any(path.is_dir() for path in (data_root / "backups").glob("noveltrad-*-imports"))
