@@ -872,10 +872,10 @@ def test_restore_imports_swap_failure_preserves_live_library_and_sources(client,
         files={"file": ("stable-before-swap.pdf", pdf_bytes("Stable before swap"), "application/pdf")},
     ).json()
     backup = client.post("/api/backups").json()
-    client.post(
+    later = client.post(
         "/api/books/import",
         files={"file": ("later-before-swap.pdf", pdf_bytes("Later before swap"), "application/pdf")},
-    )
+    ).json()
     data_root = tmp_path / "noveltrad-data"
     imports_dir = data_root / "imports"
     original_sources = {p.name: p.read_bytes() for p in imports_dir.iterdir()}
@@ -897,10 +897,7 @@ def test_restore_imports_swap_failure_preserves_live_library_and_sources(client,
     assert response.status_code == 500
     assert failed["value"] is True
     assert {p.name: p.read_bytes() for p in imports_dir.iterdir()} == original_sources
-    assert {book["id"] for book in client.get("/api/books").json()} == {
-        imported["id"],
-        next(book["id"] for book in client.get("/api/books").json() if book["id"] != imported["id"]),
-    }
+    assert {book["id"] for book in client.get("/api/books").json()} == {imported["id"], later["id"]}
 
 
 def test_backup_prune_and_restore_operations_are_serialized_together(client, tmp_path, monkeypatch):
@@ -915,6 +912,10 @@ def test_backup_prune_and_restore_operations_are_serialized_together(client, tmp
     assert first.status_code == 200, first.text
     stale = client.post("/api/backups")
     assert stale.status_code == 200, stale.text
+    # Ensure retention removes the deliberately older snapshot, not the restore target.
+    stale_path = tmp_path / "noveltrad-data" / "backups" / stale.json()["name"]
+    import os
+    os.utime(stale_path, (stale_path.stat().st_atime - 60, stale_path.stat().st_mtime - 60))
     target = client.post("/api/backups")
     assert target.status_code == 200, target.text
     target_name = target.json()["name"]
