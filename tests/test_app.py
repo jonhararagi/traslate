@@ -162,6 +162,8 @@ def test_home_contains_reader_entry_point(client):
     assert "Historial" in response.text
     assert "Glosario de esta novela" in response.text
     assert "Proteger nombre/término" in response.text
+    assert "Editar" in response.text
+    assert "Eliminar" in response.text
 
 
 
