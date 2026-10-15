@@ -2,7 +2,7 @@
 
 NovelTrad is a local-first Windows-friendly reader and translation workspace for light novels, webnovels, and fanfiction. It is designed around a calm reading experience, persistent per-book terminology, protected names, and optional help from a chat website without paid API keys.
 
-> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor with CRUD controls. Fully translated books can be exported as Spanish EPUB. An on-demand local neural preview is available through Ollama; the persistent whole-book queue is merged into `main`. Evidence-based glossary candidate extraction is merged and tested. The feature presents source evidence for terms and names and requires explicit human approval before glossary rules become active. OCR, a real-chapter quality benchmark, and clean-Windows manual testing remain unfinished.
+> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor with CRUD controls. Fully translated books can be exported as Spanish EPUB. An on-demand local neural preview is available through Ollama; the persistent whole-book queue is merged into `main`. Evidence-based glossary candidate extraction is merged and tested. The feature presents source evidence for terms and names and requires explicit human approval before glossary rules become active. A feature branch adds heuristic per-fragment quality warnings (short/identical output, omissions, paragraph structure and suspicious repetition) to help human review; warnings do not certify correctness. OCR, a real-chapter quality benchmark, and clean-Windows manual testing remain unfinished.
 
 ## Product principles
 
@@ -113,7 +113,7 @@ To test the headless runner manually, run `python -m noveltrad.backup_cli` with 
 
 1. Run the portable build on a clean Windows profile and verify startup, EPUB/PDF import, backup/restore, queue creation, Ollama errors, queue resume after restart, review/apply and EPUB export.
 2. Evaluate translation quality on an authorized excerpt from the exact edition of *I Became the Academy Villain's Daughter*. Measure omissions, repeated text, protected names and contextual gamer terms such as `farm`, `level`, `Steal` and `tsundere`; the existing synthetic cases are not evidence of real-chapter quality.
-3. Evaluate the evidence-based glossary extractor on varied authorized imported chapters and large books; confirm its false-positive rate and scan performance before relying on it as a complete glossary.
+3. Evaluate glossary-candidate precision and the new translation-quality warnings against varied authorized chapters, including Korean/English source and normal repeated dialogue/refrains. Heuristic warnings are prompts for review, not a correctness score.
 4. Add OCR as a separately scoped feature for scanned PDFs or comic images, with clear licensing and user-provided input boundaries.
 5. Keep EPUB export structure, reader accessibility and Windows recovery under regression testing.
 
