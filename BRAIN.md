@@ -167,3 +167,14 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - A newer push-triggered CI run for the merge commit was started: [run 38772528998](https://github.com/jonhararagi/traslate/actions/runs/38772528998). Refresh its status before treating the post-merge workflow as complete; pre-merge tests and the matching app-code portable build have passed.
 - Still not fully validated: running the actual portable EXE on a clean Windows profile with user-installed Ollama; measuring omissions/repetitions/terminology against an authorized excerpt from the exact *I Became the Academy Villain's Daughter* edition; OCR for scanned PDFs/comics; evidence-based glossary candidate extraction. These are explicit quality/feature gaps, not CI failures.
 - Do not call the product 100% complete until the clean-Windows manual smoke test and the authorized real-chapter quality benchmark are done. Modo local remains deterministic rules/glossary processing, not general translation.
+
+
+## Continuation — evidence-based glossary candidate extraction (2026-10-15; PR in progress)
+
+- New branch: `feat/evidence-based-glossary-candidates`, based on the merged full-book queue in `main`. PR #10 is planned once the tests/docs are committed.
+- Adds SQLite `glossary_candidates` storage keyed by normalized term + book, with occurrence counts, up to three local evidence snippets, chapter/title references, candidate notes, pending/approved/ignored state and a linked glossary entry identifier.
+- A local-only scan detects terms from `data/novels/i_became_the_academy_villains_daughter.json`, a conservative gamer/otaku vocabulary, and recurring title-case names/entities. Scan is limited to 25,000,000 source chars and 500 candidates per pass. It does not invoke a model or mutate source text.
+- UI: `Buscar candidatos en el texto original`; inspect chapter snippets, edit preferred spelling, select preserve/protect/contextual/translate rule, then explicitly approve or ignore. Approval updates an existing unapproved seeded glossary entry when applicable; a scan never approves automatically. Rescans preserve candidate status.
+- Fixes the profile resource path for PyInstaller onedir: try the source-checkout data path, then the `_internal/data` path used by the portable Windows package. Test helper added to verify both path layouts.
+- Added `tests/test_glossary_candidates.py` for profile path resolution, source-backed detection of Oknodie/Steal skill/farm/tsundere, no model invocation, no auto-approval or source mutation, explicit approval, ignored-state persistence across re-scan, and duplicate approval protection. Do not state these tests pass until CI completes.
+- Candidate heuristics may have false positives and only read imported searchable text; OCR remains unsupported. Real-chapter quality and clean-Windows manual testing remain open.
