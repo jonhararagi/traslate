@@ -328,26 +328,6 @@ def translation_versions(chapter_id: str) -> list[dict[str, object]]:
 
 @app.get("/", response_class=HTMLResponse)
 def home() -> str:
-    return '''<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NovelTrad — Tu biblioteca</title><style>
-:root{color-scheme:light dark;--bg:#f5f0e8;--panel:#fffdf8;--ink:#28251f;--muted:#777064;--accent:#6b5a9e;--line:#e4ddd1}
-@media(prefers-color-scheme:dark){:root{--bg:#191a20;--panel:#23252d;--ink:#ece9e2;--muted:#aaa6b0;--accent:#c0b2ff;--line:#393b46}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}main{max-width:960px;margin:auto;padding:32px 20px 64px}.top{display:flex;align-items:center;gap:12px;margin-bottom:28px}.mark{background:var(--accent);color:white;border-radius:14px;padding:9px 12px;font-weight:800}.sub{color:var(--muted)}h1{font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.15;margin:.2rem 0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;margin:18px 0;box-shadow:0 6px 24px #00000008}button,.file{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:white;border:0;border-radius:12px;padding:11px 16px;font:inherit;font-weight:650;cursor:pointer}input[type=file]{max-width:100%;margin:12px 0}button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:3px}.book{padding:14px 0;border-bottom:1px solid var(--line)}.book:last-child{border:0}.empty{padding:24px;text-align:center;color:var(--muted)}#status{margin-top:12px;min-height:1.5em}.pill{font-size:.8rem;border:1px solid var(--line);border-radius:99px;padding:3px 9px;color:var(--muted)}</style></head>
-<body><main><header class="top"><div class="mark">NT</div><div><strong>NovelTrad</strong><div class="sub">Tu biblioteca, tus reglas, tu espacio</div></div><span style="margin-left:auto" class="pill">Local-first</span></header>
-<h1>Volvé a tu historia.</h1><p class="sub">Un lector tranquilo para tus novelas, con memoria de traducción propia. Tus libros se guardan en este equipo.</p>
-<section class="panel"><h2>Importar una novela</h2><p class="sub">Solo EPUB y PDF · Máximo 100 MB por archivo. Los PDF escaneados todavía necesitan OCR.</p><form id="upload"><input id="file" name="file" type="file" accept=".epub,.pdf,application/pdf,application/epub+zip" required><br><button type="submit">Añadir a mi biblioteca</button></form><div id="status" role="status" aria-live="polite"></div></section>
-<section class="panel"><h2>Mi biblioteca</h2><div id="books" class="empty">Cargando biblioteca…</div></section>
-<p class="sub" style="font-size:.9rem">Esta primera base incluye biblioteca, importación y memoria terminológica. La traducción automática y el lector completo se incorporarán en fases posteriores.</p></main>
-<script>
-const statusEl=document.querySelector('#status'), booksEl=document.querySelector('#books');
-async function refresh(){try{const r=await fetch('/api/books');if(!r.ok)throw new Error('No se pudo leer la biblioteca');const books=await r.json();booksEl.className=books.length?'':'empty';booksEl.innerHTML=books.length?books.map(b=>`<article class="book"><strong>${escapeHtml(b.title)}</strong><div class="sub">${b.chapter_count} secciones · ${b.source_format.toUpperCase()} · Importado</div></article>`).join(''):'Todavía no hay novelas. Importá un EPUB o PDF para empezar.'}catch(e){booksEl.textContent=e.message}}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-document.querySelector('#upload').addEventListener('submit',async e=>{e.preventDefault();const file=document.querySelector('#file').files[0];if(!file)return;statusEl.textContent='Importando y preparando el libro…';const data=new FormData();data.append('file',file);try{const r=await fetch('/api/books/import',{method:'POST',body:data});const result=await r.json();if(!r.ok)throw new Error(result.detail||'No se pudo importar el archivo');statusEl.textContent=`“${result.title}” se importó correctamente (${result.chapter_count} secciones).`;e.target.reset();await refresh()}catch(err){statusEl.textContent=err.message}});refresh();
-</script></body></html>'''
-
-
-def home() -> str:
     return r'''<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NovelTrad — Tu biblioteca</title><style>
