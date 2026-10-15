@@ -15,7 +15,7 @@ def test_first_novel_profile_links_official_sources_and_keeps_terms_unapproved()
     assert sources["original_web_novel"]["url"] == "https://novelpia.com/novel/96311"
     assert sources["licensed_comic_adaptation"]["url"].startswith("https://tapas.io/")
     candidates = {item["source"]: item for item in profile["terminology_candidates"]}
-    for term in ("Oknodie", "farm", "farming", "steal", "Steal", "level", "tsundere", "min-maxing"):
+    for term in ("Oknodie", "farm", "farmed", "farming", "steal", "Steal skill", "level", "tsundere", "min-maxing"):
         assert term in candidates
         assert candidates[term]["approved"] is False
 
