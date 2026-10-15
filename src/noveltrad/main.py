@@ -40,7 +40,7 @@ BACKUP_OPERATION_LOCK = threading.RLock()
 
 
 def serialized_backup_operation(function):
-    \"\"\"Serialize backup, pruning, and restore operations within this process.\"\"\"
+    """Serialize backup, pruning, and restore operations within this process."""
     @wraps(function)
     def wrapped(*args, **kwargs):
         with BACKUP_OPERATION_LOCK:
