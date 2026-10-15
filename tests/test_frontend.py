@@ -48,3 +48,7 @@ def test_manual_narrative_assistant_exposes_consent_gated_workflow():
     assert "source.addEventListener('input', revokeConsentOnEdit)" in page
     assert "context.addEventListener('input', revokeConsentOnEdit)" in page
     assert "task.addEventListener('change', revokeConsentOnEdit)" in page
+    assert "function closeDialog()" in page
+    assert "button.focus()" in page
+    assert "if (e.key !== 'Tab') return" in page
+    assert "overlay.contains(document.activeElement)" in page
