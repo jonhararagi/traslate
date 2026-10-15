@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import io
-
 import fitz
 import pytest
 from fastapi.testclient import TestClient
@@ -19,7 +17,7 @@ def client(tmp_path, monkeypatch):
 def pdf_bytes(text: str = "Chapter One\nOknodie reached level 10.") -> bytes:
     document = fitz.open()
     page = document.new_page()
-    page.insert_text((72, 72), text)
+    page.insert_textbox(fitz.Rect(72, 72, 520, 720), text)
     result = document.tobytes()
     document.close()
     return result
@@ -62,10 +60,12 @@ def test_only_epub_and_pdf_are_accepted(client):
 
 
 def test_glossary_entry_persists_for_book(client):
-    imported = client.post(
+    imported_response = client.post(
         "/api/books/import",
         files={"file": ("sample.pdf", pdf_bytes(), "application/pdf")},
-    ).json()
+    )
+    assert imported_response.status_code == 200, imported_response.text
+    imported = imported_response.json()
     response = client.post(
         f"/api/books/{imported['id']}/glossary",
         json={
