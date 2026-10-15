@@ -86,14 +86,14 @@ The CI suite covers PDF and EPUB import (including EPUB spine reading order), un
 Use an installed Python environment that has NovelTrad's project dependencies available. From PowerShell in the repository root, register a per-user task (admin rights are not normally required):
 
 ```powershell
-.\\.venv\\Scripts\\python.exe -m pip install -e .
-.\\scripts\\install-windows-backup-task.ps1 -PythonExe (Resolve-Path .\\.venv\\Scripts\\python.exe).Path -ProjectRoot (Get-Location).Path
+.\.venv\Scripts\python.exe -m pip install -e .
+.\scripts\install-windows-backup-task.ps1 -PythonExe (Resolve-Path .\.venv\Scripts\python.exe).Path -ProjectRoot (Get-Location).Path
 ```
 
 The task checks hourly; the app's saved frequency (1–720 hours), enabled flag, and retention count remain authoritative. It works with NovelTrad closed but uses the current user's interactive Windows session, so it does not run while that user is logged out. To remove only the task (not backups or library data):
 
 ```powershell
-.\\scripts\\uninstall-windows-backup-task.ps1
+.\scripts\uninstall-windows-backup-task.ps1
 ```
 
 To test the headless runner manually, run `python -m noveltrad.backup_cli` with the same Python environment and `NOVELTRAD_HOME` used by the app. A missing or corrupt database causes a non-zero exit and no backup is created. The task installation is opt-in; no task is registered automatically.
