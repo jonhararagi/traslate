@@ -55,6 +55,8 @@ Imported source files are stored under `imports/`; SQLite stores books, extracte
 - `GET /api/books/{book_id}/chapters` — extracted sections.
 - `GET /api/books/{book_id}/glossary` — per-book and global glossary entries.
 - `POST /api/books/{book_id}/glossary` — add a glossary rule (`preserve`, `translate`, `contextual`, or `protect`).
+- `PUT /api/books/{book_id}/glossary/{entry_id}` — edit a term belonging to that book.
+- `DELETE /api/books/{book_id}/glossary/{entry_id}` — delete a term belonging to that book.
 - `PUT /api/books/{book_id}/progress` — persist the current chapter and reading scroll position.
 - `PUT /api/chapters/{chapter_id}/translation` — save a chapter translation separately from immutable imported text.
 - `GET /api/chapters/{chapter_id}/translation/versions` — inspect saved prior translation snapshots.
@@ -69,13 +71,13 @@ Scanned PDFs currently return a clear error because OCR has not been integrated.
 pytest
 ```
 
-The CI suite currently covers PDF and EPUB import (including EPUB spine reading order), unsupported formats, glossary persistence, saved reading position, immutable source text, translation history/restore, the reader entry point, local-path privacy, and embedded JavaScript syntax. The latest pull-request run passed all 12 tests.
+The CI suite covers PDF and EPUB import (including EPUB spine reading order), unsupported formats, glossary normalization, duplicate rejection, scoped glossary edit/delete, saved reading position, immutable source text, translation history/restore, reader controls, local-path privacy, and embedded JavaScript syntax. The test count is expected to grow as this branch develops.
 
 ## Roadmap
 
-1. Harden import and persistence with tests, file validation, backups, and recovery.
-2. Finish reader UX: broader accessibility checks, automated regression coverage, and more theme/typography settings.
-3. Add translation-history restore, stronger glossary validation, entity management, and translation-memory workflows.
+1. Harden import and persistence with content validation, backups, and recovery.
+2. Finish reader UX: broader accessibility checks, stronger typography/theme controls, and manual Windows verification.
+3. Add entity management and translation-memory workflows.
 4. Evaluate offline English→Spanish and Japanese→Spanish engines separately; keep rule-based mode distinct from local neural translation.
 5. Add contextual prompt generation for user-mediated chat-web assistance.
 6. Add versioned translation, quality checks, and TXT/EPUB/PDF export.
