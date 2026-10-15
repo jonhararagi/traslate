@@ -51,6 +51,8 @@ def test_book_queue_is_persistent_reviewable_and_never_changes_original(monkeypa
         assert created.status_code == 200, created.text
         job = created.json()
         job_id = job["id"]
+        first_chunk_id = job["chunks"][0]["id"]
+        first_original = client.get(f"/api/translation-jobs/{job_id}/chunks/{first_chunk_id}").json()["original_text"]
         assert job["status"] == "queued"
         assert job["total_chunks"] > 2
         assert all(chunk["status"] == "pending" for chunk in job["chunks"])
@@ -70,7 +72,7 @@ def test_book_queue_is_persistent_reviewable_and_never_changes_original(monkeypa
 
         assert job["completed_chunks"] == job["total_chunks"]
         assert contexts[0] == ""
-        assert any(context.endswith("ES: " + job["chunks"][0]["translated_preview"][:-0 or None]) for context in []) is False
+        assert contexts[1] == ("ES: " + first_original)[-50:]
         assert len(contexts) == job["total_chunks"]
 
         # Translation is complete but still not written to chapters until explicitly applied.
