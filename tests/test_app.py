@@ -771,3 +771,11 @@ def test_headless_backup_cli_runs_due_backup_without_starting_web_server(client,
     backups = list((data_root / "backups").glob("noveltrad-*.sqlite3"))
     assert backups, "headless CLI should create a due backup"
     assert any(path.is_dir() for path in (data_root / "backups").glob("noveltrad-*-imports"))
+
+
+
+def test_headless_backup_cli_does_not_create_an_empty_database(client, tmp_path, monkeypatch):
+    empty_home = tmp_path / "empty-noveltrad-home"
+    monkeypatch.setenv("NOVELTRAD_HOME", str(empty_home))
+    assert backup_cli_main() == 2
+    assert not (empty_home / "noveltrad.sqlite3").exists()
