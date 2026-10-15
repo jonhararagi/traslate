@@ -52,3 +52,33 @@ def test_manual_narrative_assistant_exposes_consent_gated_workflow():
     assert "button.focus()" in page
     assert "if (e.key !== 'Tab') return" in page
     assert "overlay.contains(document.activeElement)" in page
+
+
+def test_manual_narrative_assistant_has_no_network_or_persistence_side_channels():
+    page = home()
+    marker = "/* Manual narrative-assistance micro-window: no network calls or provider-session automation. */"
+    assert marker in page
+    assistant = page.split(marker, 1)[1].split("\\n})();", 1)[0]
+
+    # The assistant may use the clipboard and open fixed provider home pages, but
+    # must not call app/API endpoints or read/write browser persistence/session APIs.
+    forbidden_patterns = (
+        r"\\bfetch\\s*\\(",
+        r"\\bXMLHttpRequest\\b",
+        r"\\bWebSocket\\b",
+        r"\\bEventSource\\b",
+        r"\\bsendBeacon\\s*\\(",
+        r"\\bpostMessage\\s*\\(",
+        r"\\blocalStorage\\b",
+        r"\\bsessionStorage\\b",
+        r"\\bindexedDB\\b",
+        r"\\bdocument\\.cookie\\b",
+        r"\\bcaches\\.",
+        r"\\bserviceWorker\\b",
+    )
+    for pattern in forbidden_patterns:
+        assert not re.search(pattern, assistant), f"Assistant must not use forbidden network/persistence API: {pattern}"
+
+    assert "window.open(url, '_blank', 'noopener,noreferrer')" in assistant
+    assert "openProvider('https://chatgpt.com/')" in assistant
+    assert "openProvider('https://gemini.google.com/app')" in assistant
