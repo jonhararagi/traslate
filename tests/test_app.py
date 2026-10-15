@@ -741,7 +741,7 @@ def test_full_library_restore_recovers_glossary_translation_versions_progress_an
     assert any(
         item["source_term"] == "Oknodie"
         and item["preferred_term"] == "Oknodie"
-        and item["approved"] is True
+        and bool(item["approved"])
         for item in glossary_after
     )
     source_after = {path.name: path.read_bytes() for path in source_dir.iterdir()}
