@@ -9,7 +9,7 @@ from noveltrad import main
 
 
 def test_split_translation_chunks_preserves_short_paragraphs():
-    source = "Opening paragraph.\\n\\nSecond paragraph with gamer slang."
+    source = "Opening paragraph.\n\nSecond paragraph with gamer slang."
     chunks = main._split_translation_chunks(source, 100)
     assert chunks == [source]
 
@@ -19,9 +19,8 @@ def test_split_translation_chunks_bounds_long_text_and_preserves_characters():
     chunks = main._split_translation_chunks(source, 80)
     assert len(chunks) > 1
     assert all(0 < len(chunk) <= 80 for chunk in chunks)
-    # Chunk boundaries may normalize whitespace, but must not omit or reorder source words.
-    normalized_source = re.sub(r"\\s+", " ", source).strip()
-    normalized_chunks = re.sub(r"\\s+", " ", " ".join(chunks)).strip()
+    normalized_source = re.sub(r"\s+", " ", source).strip()
+    normalized_chunks = re.sub(r"\s+", " ", " ".join(chunks)).strip()
     assert normalized_chunks == normalized_source
 
 
@@ -29,7 +28,7 @@ def test_chunked_preview_is_sequential_reviewable_and_never_saves(monkeypatch, t
     monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path))
     main.init_db()
     book_id, chapter_id = str(uuid4()), str(uuid4())
-    source = "Oknodie starts farming.\\n\\nHer level rises.\\n\\nShe uses Steal skill."
+    source = "Oknodie starts farming.\n\nHer level rises.\n\nShe uses Steal skill."
     with main.connection() as conn:
         conn.execute(
             "INSERT INTO books(id,title,source_format,source_name,source_path,created_at) VALUES(?,?,?,?,?,?)",
@@ -58,7 +57,7 @@ def test_chunked_preview_is_sequential_reviewable_and_never_saves(monkeypatch, t
     assert payload["saved"] is False
     assert payload["chunk_count"] == len(payload["chunks"])
     assert [item["index"] for item in payload["chunks"]] == list(range(1, len(payload["chunks"]) + 1))
-    assert payload["text"] == "\\n\\n".join(item["translated"] for item in payload["chunks"])
+    assert payload["text"] == "\n\n".join(item["translated"] for item in payload["chunks"])
     assert contexts[0] == ""
     if len(contexts) > 1:
         assert contexts[1] == ("ES: " + payload["chunks"][0]["original"])[-50:]
