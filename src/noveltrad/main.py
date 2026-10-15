@@ -589,6 +589,11 @@ class BackupScheduler:
 backup_scheduler = BackupScheduler()
 
 
+class ChunkedTranslationInput(BaseModel):
+    chunk_size: int = Field(default=3500, ge=1000, le=6000)
+    context_chars: int = Field(default=1200, ge=0, le=2000)
+
+
 class OfflineRulesInput(BaseModel):
     profile_id: str = Field(default="light_novel_es", max_length=80)
     phrase_map: dict[str, str] = Field(default_factory=dict)
@@ -680,7 +685,9 @@ PREMIUM_PREVIEW_MAX_CHARS = 12000
 PREMIUM_MODEL_DEFAULT = "qwen2.5:3b"
 
 
-def _translate_with_local_model(text: str, glossary: list[dict[str, str]]) -> str:
+def _translate_with_local_model(
+    text: str, glossary: list[dict[str, str]], continuity_context: str = ""
+) -> str:
     """Translate through Ollama on loopback only; never call a remote API."""
     import urllib.error
     import urllib.request
@@ -700,6 +707,8 @@ def _translate_with_local_model(text: str, glossary: list[dict[str, str]]) -> st
         "explain, or add facts. Apply the approved glossary exactly. If a phrase is ambiguous, "
         "translate conservatively. Output only the Spanish translation, without commentary.\n\n"
         "Approved glossary (source => Spanish):\n" + glossary_block +
+        ("\n\nCONTINUITY CONTEXT (reference only; do not translate or repeat it):\n" + continuity_context
+         if continuity_context.strip() else "") +
         "\n\nSOURCE TEXT:\n" + text
     )
     payload = json.dumps({
@@ -774,6 +783,112 @@ def preview_premium_translation(chapter_id: str) -> dict[str, object]:
         "warnings": [
             "Traducción neuronal local; revisá nombres, honoríficos, bromas y matices antes de guardar.",
             "El modelo se solicita bajo demanda y se le pide descargarlo de memoria tras la respuesta (keep_alive=0). El uso real depende del modelo y del runtime."
+        ],
+    }
+
+
+def _split_translation_chunks(text: str, max_chars: int) -> list[str]:
+    """Split on paragraph/sentence boundaries where possible, preserving all source text."""
+    import re
+
+    paragraphs = text.split("\n\n")
+    units: list[str] = []
+    for paragraph in paragraphs:
+        if len(paragraph) <= max_chars:
+            units.append(paragraph)
+            continue
+        # A very long paragraph is split on sentence boundaries first.
+        sentences = re.split(r"(?<=[.!?…])\s+", paragraph)
+        current = ""
+        for sentence in sentences:
+            while len(sentence) > max_chars:
+                if current:
+                    units.append(current)
+                    current = ""
+                units.append(sentence[:max_chars])
+                sentence = sentence[max_chars:]
+            candidate = sentence if not current else current + " " + sentence
+            if len(candidate) > max_chars and current:
+                units.append(current)
+                current = sentence
+            else:
+                current = candidate
+        if current:
+            units.append(current)
+
+    chunks: list[str] = []
+    current = ""
+    for unit in units:
+        candidate = unit if not current else current + "\n\n" + unit
+        if len(candidate) > max_chars and current:
+            chunks.append(current)
+            current = unit
+        else:
+            current = candidate
+    if current:
+        chunks.append(current)
+    return chunks or [text]
+
+
+@app.post("/api/chapters/{chapter_id}/premium-translation-preview/chunked")
+def preview_chunked_premium_translation(
+    chapter_id: str, payload: ChunkedTranslationInput
+) -> dict[str, object]:
+    """Translate an entire chapter in sequential local-model chunks; return reviewable, unsaved pairs."""
+    init_db()
+    with connection() as conn:
+        chapter = conn.execute(
+            "SELECT c.original_text, c.book_id FROM chapters c WHERE c.id = ?",
+            (chapter_id,),
+        ).fetchone()
+        if not chapter:
+            raise HTTPException(status_code=404, detail="No se encontró el capítulo.")
+        source_text = chapter["original_text"] or ""
+        if not source_text.strip():
+            raise HTTPException(status_code=422, detail="El capítulo original está vacío.")
+        # Bound total work to prevent an accidental multi-hour model job.
+        if len(source_text) > 200_000:
+            raise HTTPException(status_code=413, detail="Este capítulo supera los 200.000 caracteres. Dividilo en capítulos o secciones más pequeñas.")
+        rows = conn.execute(
+            "SELECT source_term, preferred_term FROM glossary_entries "
+            "WHERE approved = 1 AND (book_id = ? OR book_id IS NULL) "
+            "ORDER BY length(source_term) DESC LIMIT 200",
+            (chapter["book_id"],),
+        ).fetchall()
+    glossary = [dict(row) for row in rows]
+    chunks = _split_translation_chunks(source_text, payload.chunk_size)
+    translated_chunks: list[dict[str, object]] = []
+    previous_translation = ""
+    for index, source_chunk in enumerate(chunks, start=1):
+        context = previous_translation[-payload.context_chars:] if payload.context_chars else ""
+        try:
+            translated = _translate_with_local_model(source_chunk, glossary, context)
+        except HTTPException as exc:
+            raise HTTPException(
+                status_code=exc.status_code,
+                detail=f"Falló el fragmento {index}/{len(chunks)}. No se guardó ningún resultado. {exc.detail}",
+            ) from exc
+        translated_chunks.append({
+            "index": index,
+            "original": source_chunk,
+            "translated": translated,
+            "source_chars": len(source_chunk),
+            "translated_chars": len(translated),
+        })
+        previous_translation += ("\n\n" if previous_translation else "") + translated
+    return {
+        "mode": "premium-local-neural-chunked",
+        "model": os.environ.get("NOVELTRAD_PREMIUM_MODEL", PREMIUM_MODEL_DEFAULT),
+        "preview_only": True,
+        "saved": False,
+        "chunk_count": len(translated_chunks),
+        "source_chars": len(source_text),
+        "text": "\n\n".join(str(item["translated"]) for item in translated_chunks),
+        "chunks": translated_chunks,
+        "warnings": [
+            "Traducción neuronal local por fragmentos secuenciales; el contexto de continuidad usa el final de la traducción anterior como referencia, no como texto a repetir.",
+            "Revisá cada pareja original/traducción. Ningún resultado se guarda hasta que lo pases al editor y pulses Guardar.",
+            "El glosario aprobado se aplica en cada fragmento; los nombres, honoríficos, bromas y términos ambiguos requieren revisión humana."
         ],
     }
 
@@ -1355,9 +1470,9 @@ def home() -> str:
 <section id="reader"><div class="reader-head"><button id="back" class="quiet" type="button">← Biblioteca</button><h2 id="book-title">Leyendo</h2><button id="toggle-glossary" class="secondary" type="button">Glosario</button><label class="small">Texto <select id="font-size" aria-label="Tamaño del texto"><option value="17">Pequeño</option><option value="19" selected>Mediano</option><option value="22">Grande</option><option value="26">Muy grande</option></select></label></div>
 <div class="chapter-nav"><button id="previous" class="secondary" type="button">← Anterior</button><select id="chapter-select" aria-label="Elegir capítulo"></select><button id="next" class="secondary" type="button">Siguiente →</button></div>
 <div class="reader-grid"><section class="reading-pane"><h3>Original</h3><div id="original" class="original-text" tabindex="0"></div></section><section class="reading-pane"><h3>Traducción</h3><p class="sub small">El original permanece intacto. Tus cambios se guardan aparte.</p><textarea id="translation" class="translation-text" aria-label="Texto de traducción" placeholder="Escribí o pegá aquí tu traducción…"></textarea><div class="reader-actions"><button id="save-translation" class="primary" type="button">Guardar traducción</button><button id="offline-rules-open" class="secondary" type="button">Reglas offline</button><button id="export-epub" class="secondary" type="button">Exportar EPUB</button><button id="show-history" class="secondary" type="button">Historial</button><span id="save-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">Cada guardado conserva una versión anterior.</p>
-<div id="offline-rules-panel" class="panel hidden"><h3>Motor de traducción</h3><p class="sub small">Elegí un modo por operación. Ambos generan una vista previa y nunca guardan por su cuenta.</p><label>Modo <select id="translation-mode" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="local">Modo local — reglas, glosario y formato (RAM mínima)</option><option value="premium">Modo premium — modelo neuronal local (más RAM/CPU)</option></select></label><p id="premium-info" class="sub small">Premium usa Ollama en este equipo (127.0.0.1), no una API remota. Modelo predeterminado: qwen2.5:3b; debe instalarse manualmente. La vista previa se limita a 12.000 caracteres y solicita descargar el modelo tras cada operación.</p><label>Perfil editorial <select id="offline-profile" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="light_novel_es">Novela ligera en español</option><option value="faithful_literary_es">Traducción literaria fiel</option><option value="webnovel_es">Novela web en español</option></select></label><label>Mapa de frases, una por línea: original =&gt; traducción<textarea id="offline-phrase-map" rows="4" style="display:block;width:100%;padding:9px;margin:6px 0 12px" placeholder="reached =&gt; alcanzó&#10;magic stone =&gt; piedra mágica"></textarea></label><div class="reader-actions"><button id="offline-run" class="primary" type="button">Generar vista previa</button><button id="offline-apply" class="secondary" type="button" disabled>Pasar al editor</button><button id="offline-close" class="quiet" type="button">Cerrar</button></div><p id="offline-status" class="sub small" role="status" aria-live="polite"></p><pre id="offline-result" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:32rem;overflow:auto"></pre></div><div id="translation-history" class="hidden"><h4>Versiones guardadas</h4><div id="history-list"></div><p id="history-status" class="sub small" role="status" aria-live="polite"></p></div></section></div>
+<div id="offline-rules-panel" class="panel hidden"><h3>Motor de traducción</h3><p class="sub small">Elegí un modo por operación. Ambos generan una vista previa y nunca guardan por su cuenta.</p><label>Modo <select id="translation-mode" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="local">Modo local — reglas, glosario y formato (RAM mínima)</option><option value="premium">Modo premium — modelo neuronal local (más RAM/CPU)</option></select></label><p id="premium-info" class="sub small">Premium usa Ollama local (127.0.0.1), no una API remota. Modelo predeterminado: qwen2.5:3b, instalado manualmente. Traduce el capítulo en fragmentos secuenciales de hasta 3.500 caracteres, con contexto del fragmento anterior; revisá cada pareja antes de pasar el resultado al editor.</p><label>Perfil editorial <select id="offline-profile" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="light_novel_es">Novela ligera en español</option><option value="faithful_literary_es">Traducción literaria fiel</option><option value="webnovel_es">Novela web en español</option></select></label><label>Mapa de frases, una por línea: original =&gt; traducción<textarea id="offline-phrase-map" rows="4" style="display:block;width:100%;padding:9px;margin:6px 0 12px" placeholder="reached =&gt; alcanzó&#10;magic stone =&gt; piedra mágica"></textarea></label><div class="reader-actions"><button id="offline-run" class="primary" type="button">Generar vista previa</button><button id="offline-apply" class="secondary" type="button" disabled>Pasar al editor</button><button id="offline-close" class="quiet" type="button">Cerrar</button></div><p id="offline-status" class="sub small" role="status" aria-live="polite"></p><pre id="offline-result" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:32rem;overflow:auto"></pre><div id="offline-chunks" class="reader-grid" style="margin-top:14px"></div></div><div id="translation-history" class="hidden"><h4>Versiones guardadas</h4><div id="history-list"></div><p id="history-status" class="sub small" role="status" aria-live="polite"></p></div></section></div>
 <section id="glossary-panel" class="panel hidden"><div class="reader-head"><h2>Glosario de esta novela</h2><button id="close-glossary" class="quiet" type="button">Cerrar</button></div><p class="sub small">Protegé nombres y fijá términos para mantener la coherencia. Las reglas se guardan por novela.</p><form id="glossary-form"><div class="reader-grid"><label>Término original<input id="glossary-source" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label><label>Forma preferida<input id="glossary-target" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label></div><div class="reader-actions"><label>Regla <select id="glossary-rule" style="padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)"><option value="protect">Proteger nombre/término</option><option value="preserve">Conservar exactamente</option><option value="translate">Traducir siempre así</option><option value="contextual">Depende del contexto</option></select></label><label><input id="glossary-approved" type="checkbox"> Aprobado</label><button id="glossary-submit" class="primary" type="submit">Guardar término</button><button id="glossary-cancel" class="secondary hidden" type="button">Cancelar edición</button></div><label>Notas opcionales<textarea id="glossary-notes" rows="2" maxlength="2000" style="display:block;width:100%;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Nombre propio; no traducir."></textarea></label><p id="glossary-status" class="sub small" role="status" aria-live="polite"></p></form><div id="glossary-list"></div></section>
-</section><p class="sub small">El motor de traducción automática todavía no está configurado. Esta versión permite leer, guardar traducciones propias y retomar el progreso.</p></main>
+</section><p class="sub small">Modo local aplica reglas aprobadas, pero no traduce por sí solo frases desconocidas. Para traducción neuronal, activa Modo premium y configura Ollama localmente. Las vistas previas nunca se guardan automáticamente.</p></main>
 <script>
 const $=s=>document.querySelector(s);let currentBook=null,chapters=[],chapterPos=0,saveTimer=null,translationDirty=false,editingGlossaryId=null;
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -1386,7 +1501,7 @@ $('#export-epub').addEventListener('click',async()=>{if(!currentBook)return;cons
 $('#save-translation').addEventListener('click',async()=>{const c=chapters[chapterPos];$('#save-status').textContent='Guardando…';try{const result=await api('/api/chapters/'+c.id+'/translation',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({translated_text:$('#translation').value})});c.translated_text=result.translated_text;translationDirty=false;$('#save-status').textContent='Guardado en este equipo.'}catch(e){$('#save-status').textContent='Error: '+e.message}});
 let offlinePreviewText=null;
 $('#offline-rules-open').addEventListener('click',()=>{$('#offline-rules-panel').classList.remove('hidden');$('#offline-status').textContent='El original se mantiene intacto. Generá una vista previa para ver las sustituciones.'});
-$('#offline-close').addEventListener('click',()=>$('#offline-rules-panel').classList.add('hidden'));
+$('#offline-close').addEventListener('click',()=>$('#offline-rules-panel').classList.add('hidden'));$('#offline-chunks').addEventListener('input',()=>{translationDirty=true});
 $('#offline-run').addEventListener('click',async()=>{
  const c=chapters[chapterPos], map={};
  for(const line of $('#offline-phrase-map').value.split(/\r?\n/)){const sep=line.indexOf('=>');if(sep<0)continue;const source=line.slice(0,sep).trim(),target=line.slice(sep+2).trim();if(source&&target)map[source]=target}
@@ -1394,13 +1509,13 @@ $('#offline-run').addEventListener('click',async()=>{
  try{
   let report;
   if($('#translation-mode').value==='premium'){
-   report=await api('/api/chapters/'+c.id+'/premium-translation-preview',{method:'POST'});
+   report=await api('/api/chapters/'+c.id+'/premium-translation-preview/chunked',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chunk_size:3500,context_chars:1200})});
    $('#offline-status').textContent='Modo premium local · '+report.model+' · vista previa sin guardar. '+report.warnings.join(' ');
   }else{
    report=await api('/api/chapters/'+c.id+'/offline-rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile_id:$('#offline-profile').value,phrase_map:map,normalize_typography:true})});
    $('#offline-status').textContent='Modo local · '+report.replacements.length+' tipos de sustitución. '+report.warnings.join(' ');
   }
-  offlinePreviewText=report.text;$('#offline-result').textContent=report.text;$('#offline-apply').disabled=false;
+  offlinePreviewText=report.text;$('#offline-result').textContent=report.text;const review=$('#offline-chunks');review.replaceChildren();if(Array.isArray(report.chunks)){for(const part of report.chunks){const card=document.createElement('article');card.className='reading-pane';const heading=document.createElement('h4');heading.textContent='Fragmento '+part.index+' · '+part.source_chars+' caracteres';const source=document.createElement('div');source.className='original-text';source.style.maxHeight='22rem';source.textContent=part.original;const target=document.createElement('textarea');target.className='translation-text';target.style.minHeight='12rem';target.value=part.translated;target.setAttribute('aria-label','Traducción del fragmento '+part.index);target.addEventListener('input',()=>{const all=Array.from(review.querySelectorAll('textarea')).map(el=>el.value);offlinePreviewText=all.join('\n\n');$('#offline-result').textContent=offlinePreviewText;translationDirty=true;});const label1=document.createElement('strong');label1.textContent='Original';const label2=document.createElement('strong');label2.textContent='Traducción revisable';const pair=document.createElement('div');pair.className='reader-grid';pair.append(label1,source,label2,target);card.append(heading,pair);review.append(card)}}else{review.replaceChildren()}$('#offline-apply').disabled=false;
  }
  catch(e){$('#offline-status').textContent='No se pudo generar la vista previa: '+e.message;$('#offline-result').textContent=''}
  finally{button.disabled=false}

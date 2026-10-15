@@ -22,16 +22,16 @@ Premium es un modo real de inferencia neuronal local, no una suscripción y no u
 
 - Premium no se ejecuta en segundo plano ni automáticamente al importar/abrir un libro.
 - Solo se permite una petición por acción; límite actual: 12.000 caracteres por vista previa.
-- Se solicita `num_ctx=4096`, una salida máxima de 4096 tokens, temperatura 0,1 y `keep_alive=0` para pedir a Ollama que descargue el modelo de memoria al terminar.
+- Se solicita `num_ctx=4096`, una salida máxima de 4096 tokens, temperatura 0,1 y `keep_alive=0` para pedir a Ollama que descargue el modelo de memoria al terminar. La traducción de capítulos usa peticiones secuenciales, no paralelas.
 - El uso real depende de la cuantización, el runtime, el tamaño del contexto y otras aplicaciones abiertas. Un modelo 3B cuantizado puede consumir varios GB entre pesos y memoria de ejecución; 16 GB no garantizan que no haya presión de RAM. Cerrar aplicaciones pesadas y preferir Local cuando no haga falta traducción neuronal.
-- Si el capítulo supera el límite, NovelTrad devuelve un error explícito; el usuario debe dividirlo en fragmentos. El troceado automático y la reconciliación de contexto entre fragmentos siguen pendientes.
+- La vista previa de capítulo trocea automáticamente hasta 200.000 caracteres de origen en fragmentos de 3.500 caracteres por defecto (configuración interna permitida: 1.000–6.000), priorizando límites de párrafo y oración. El final de la traducción anterior se pasa al modelo como referencia de continuidad; no debe repetirse como salida. Los capítulos mayores de 200.000 caracteres se rechazan explícitamente.
 - El endpoint de premium solo acepta la llamada a loopback codificada en la aplicación. No se configura una URL remota. No se envía el texto a proveedores externos.
 - El modelo puede equivocarse, omitir matices, alterar nombres o traducir mal juegos de palabras. El glosario aprobado se incluye en el prompt, pero no es una garantía absoluta.
 
 ## Límites actuales y tareas pendientes
 
 - Premium produce una traducción neuronal del texto del capítulo solo si cabe en el límite de 12.000 caracteres. No guarda el resultado por sí mismo.
-- Falta una experiencia de traducción por fragmentos con comparación original/traducción, reintentos por fragmento y continuidad entre contextos.
+- La experiencia de capítulo por fragmentos muestra cada original junto a una traducción editable, con contexto secuencial y vista previa combinada. Todavía faltan cola de traducción de libro completo y controles para reintentar/reanudar desde un fragmento fallido.
 - Falta una comprobación de calidad con capítulos reales de la edición que el usuario importe.
 - El modo Local no es traducción automática general; solo aplica reglas aprobadas.
 - Nunca se debe afirmar que el libro completo está traducido sin verificar cada capítulo y sus resultados.
