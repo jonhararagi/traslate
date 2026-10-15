@@ -1215,7 +1215,14 @@ $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay
   });
   $('na-close-nt').addEventListener('click', () => { overlay.style.display = 'none'; consent.checked = false; sync(); });
   overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.style.display = 'none'; consent.checked = false; sync(); } });
-  consent.addEventListener('change', sync); source.addEventListener('input', sync);
+  function revokeConsentOnEdit() {
+    if (consent.checked) consent.checked = false;
+    sync();
+  }
+  consent.addEventListener('change', sync);
+  source.addEventListener('input', revokeConsentOnEdit);
+  context.addEventListener('input', revokeConsentOnEdit);
+  task.addEventListener('change', revokeConsentOnEdit);
   copy.addEventListener('click', async () => {
     if (!consent.checked || !source.value.trim()) return;
     const value = promptText();
