@@ -21,7 +21,7 @@ Las reglas no aprobadas se ignoran. El original del capítulo no se modifica por
 
 Esto **no es un traductor automático general**. Si el diccionario solo contiene diez términos, el programa solo puede transformar esos términos; no puede comprender ni traducir las demás frases. No se debe presentar un capítulo como traducido si solo se aplicaron reemplazos.
 
-Para traducir capítulos enteros sin un servicio remoto hace falta incorporar un motor de traducción offline (por ejemplo, un modelo neuronal local con licencia y pesos distribuidos por separado) o un diccionario/reglas exhaustivos para el dominio. Un motor neuronal local sigue siendo IA, aunque no use internet ni una API de pago. La calidad debe evaluarse con capítulos de prueba y revisión humana.
+Para traducir frases desconocidas sin un servicio remoto, NovelTrad ya incluye un **Modo premium** opcional que solicita inferencia a un modelo local de Ollama. El **Modo local** sigue siendo determinista y no carga IA. Premium no convierte automáticamente un libro entero: cada vista previa está limitada a 12.000 caracteres, no se guarda por sí sola y exige instalar el modelo manualmente. Un motor neuronal local sigue siendo IA, aunque no use internet ni una API de pago. La calidad debe evaluarse con capítulos de prueba y revisión humana.
 
 ## Flujo recomendado por novela
 
@@ -41,5 +41,7 @@ Para traducir capítulos enteros sin un servicio remoto hace falta incorporar un
 - [ ] Las frases largas se procesan antes que sus subfrases.
 - [ ] Los párrafos se conservan salvo normalizaciones documentadas.
 - [ ] No se llama a servicios externos ni se usa persistencia desde el motor.
-- [ ] La interfaz debe llamar a este motor de forma explícita y rotular el resultado como **reglas offline**, nunca como traducción neuronal.
+- [x] La interfaz ofrece Modo local y Modo premium como modos diferenciados; ambos producen una vista previa que no se guarda automáticamente.
+- [x] Premium llama solo a Ollama en loopback, limita la entrada a 12.000 caracteres y solicita `keep_alive=0`.
+- [ ] La traducción por fragmentos con continuidad entre peticiones y la validación de calidad sobre capítulos reales siguen pendientes.
 - [ ] Una futura traducción completa requiere un motor local independiente y pruebas de calidad; no se acepta afirmar que está lista solo porque pasan pruebas unitarias.
