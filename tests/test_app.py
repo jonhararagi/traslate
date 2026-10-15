@@ -157,3 +157,5 @@ def test_home_contains_reader_entry_point(client):
     assert "Abrir novela" in response.text
     assert "Traducción" in response.text
     assert "Guardar traducción" in response.text
+    assert "Glosario de esta novela" in response.text
+    assert "Proteger nombre/término" in response.text
