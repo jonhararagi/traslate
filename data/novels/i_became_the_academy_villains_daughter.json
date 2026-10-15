@@ -1,0 +1,59 @@
+{
+  "id": "i_became_the_academy_villains_daughter",
+  "display_title": "I Became the Academy Villain's Daughter",
+  "alternate_titles": [
+    "I Became the Daughter of the Academy's Villain",
+    "I Became the Villain's Daughter at the Academy"
+  ],
+  "original_title_ko": "아카데미 흑막의 딸이 되었다",
+  "target_language": "es",
+  "source_languages": ["ko", "en", "ja"],
+  "editorial_profile": "webnovel_es",
+  "glossary_policy": "candidate-unapproved-until-verified",
+  "notes": [
+    "The first novel configured for NovelTrad.",
+    "Do not treat third-party summaries as authoritative for chapter-specific canon.",
+    "Verify spellings and terminology against the exact imported edition and user-approved source text.",
+    "Keep pun-based names and game terminology intact unless the user approves a Spanish rendering."
+  ],
+  "terminology_candidates": [
+    {
+      "source": "Oknodie",
+      "target": "Oknodie",
+      "type": "character",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "Publisher/series listing spelling; verify against the user's edition.",
+      "notes": "Do not translate or normalize this proper name without approval."
+    },
+    {
+      "source": "Graduate from the Academy by Luck",
+      "target": "Graduate from the Academy by Luck",
+      "type": "in-world game title",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "English series synopsis; translation may vary by edition.",
+      "notes": "Keep the source title until the user chooses an official Spanish rendering."
+    },
+    {
+      "source": "I Became the Academy Villain's Daughter",
+      "target": "I Became the Academy Villain's Daughter",
+      "type": "work title",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "English publisher/series listing.",
+      "notes": "Display title, not an in-story term."
+    }
+  ],
+  "characters": [],
+  "places": [],
+  "organizations": [],
+  "ranks_and_titles": [],
+  "skills_and_items": [],
+  "honorifics": [],
+  "open_questions": [
+    "Confirm the exact source edition and whether the imported text is Korean, English, or Japanese.",
+    "Confirm the preferred Spanish rendering of the novel title and in-world game title.",
+    "Populate named characters, organizations, ranks, skills, items, and honorifics from actual chapters; do not infer them from summaries."
+  ]
+}
