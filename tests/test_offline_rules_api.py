@@ -116,3 +116,41 @@ def test_premium_mode_is_local_preview_and_does_not_save(offline_client, monkeyp
 def test_premium_mode_missing_chapter_returns_404(offline_client):
     response = offline_client.post("/api/chapters/missing/premium-translation-preview")
     assert response.status_code == 404
+
+
+
+def test_importing_first_novel_seeds_only_unapproved_profile_candidates(offline_client):
+    imported = offline_client.post(
+        "/api/books/import",
+        files={
+            "file": (
+                "I Became the Academy Villain's Daughter.pdf",
+                _pdf_with_text("Oknodie entered the academy."),
+                "application/pdf",
+            )
+        },
+    )
+    assert imported.status_code == 200, imported.text
+    payload = imported.json()
+    assert payload["unapproved_profile_candidates"] >= 3
+
+    glossary = offline_client.get(f"/api/books/{payload['id']}/glossary")
+    assert glossary.status_code == 200
+    entries = glossary.json()
+    candidates = {entry["source_term"]: entry for entry in entries}
+    assert "Oknodie" in candidates
+    assert candidates["Oknodie"]["approved"] == 0
+    assert candidates["Oknodie"]["rule"] == "preserve"
+    assert "no aprobado" in candidates["Oknodie"]["notes"].lower()
+
+
+def test_unrelated_book_does_not_receive_first_novel_candidates(offline_client):
+    imported = offline_client.post(
+        "/api/books/import",
+        files={"file": ("Different Novel.pdf", _pdf_with_text("A hero arrived."), "application/pdf")},
+    )
+    assert imported.status_code == 200, imported.text
+    assert imported.json()["unapproved_profile_candidates"] == 0
+    glossary = offline_client.get(f"/api/books/{imported.json()['id']}/glossary")
+    assert glossary.status_code == 200
+    assert glossary.json() == []
