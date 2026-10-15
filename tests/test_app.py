@@ -9,6 +9,7 @@ import ebooklib
 from ebooklib import epub
 from fastapi.testclient import TestClient
 
+import noveltrad.main as noveltrad_main
 from noveltrad.main import app
 
 
@@ -518,3 +519,119 @@ def test_import_rejects_epub_with_excessive_compression_ratio(client):
     )
     assert response.status_code == 422
     assert "compresión segura" in response.json()["detail"]
+
+
+def test_backup_settings_validate_and_retention_prunes_companion_files(client, tmp_path):
+    created = []
+    for index in range(3):
+        response = client.post(
+            "/api/books/import",
+            files={"file": (f"novel-{index}.pdf", pdf_bytes(f"Novel {index}"), "application/pdf")},
+        )
+        assert response.status_code == 200
+        backup = client.post("/api/backups")
+        assert backup.status_code == 200, backup.text
+        created.append(backup.json()["name"])
+
+    settings = client.put(
+        "/api/backups/settings",
+        json={"enabled": True, "interval_hours": 6, "retention_count": 2},
+    )
+    assert settings.status_code == 200, settings.text
+    assert settings.json()["interval_hours"] == 6
+    assert settings.json()["retention_count"] == 2
+    assert len(settings.json()["removed_backups"]) == 1
+
+    backup_dir = tmp_path / "noveltrad-data" / "backups"
+    remaining = {item["name"] for item in client.get("/api/backups").json()}
+    assert len(remaining) == 2
+    removed = set(created) - remaining
+    assert len(removed) == 1
+    for name in removed:
+        assert not (backup_dir / f"{name.removesuffix('.sqlite3')}-imports").exists()
+
+    invalid_interval = client.put(
+        "/api/backups/settings",
+        json={"enabled": True, "interval_hours": 0, "retention_count": 2},
+    )
+    assert invalid_interval.status_code == 422
+    invalid_retention = client.put(
+        "/api/backups/settings",
+        json={"enabled": True, "interval_hours": 6, "retention_count": 101},
+    )
+    assert invalid_retention.status_code == 422
+
+
+def test_scheduler_waits_for_interval_then_creates_backup(client, tmp_path):
+    settings = client.put(
+        "/api/backups/settings",
+        json={"enabled": True, "interval_hours": 1, "retention_count": 3},
+    )
+    assert settings.status_code == 200
+    settings_path = tmp_path / "noveltrad-data" / "backup-settings.json"
+    saved = __import__("json").loads(settings_path.read_text(encoding="utf-8"))
+    saved["schedule_started_at"] = "2020-01-01T00:00:00+00:00"
+    settings_path.write_text(__import__("json").dumps(saved), encoding="utf-8")
+
+    due = noveltrad_main.run_scheduled_backup_if_due()
+    assert due["status"] == "created"
+    assert due["created"]
+    saved_after = noveltrad_main.load_backup_settings()
+    assert saved_after["last_success_at"]
+    not_due = noveltrad_main.run_scheduled_backup_if_due()
+    assert not_due["status"] == "not_due"
+
+
+def test_scheduler_failure_is_recorded_and_retried_without_advancing_schedule(client, tmp_path, monkeypatch):
+    settings_path = tmp_path / "noveltrad-data" / "backup-settings.json"
+    saved = __import__("json").loads(settings_path.read_text(encoding="utf-8"))
+    saved["enabled"] = True
+    saved["interval_hours"] = 1
+    saved["schedule_started_at"] = "2020-01-01T00:00:00+00:00"
+    saved["last_success_at"] = None
+    settings_path.write_text(__import__("json").dumps(saved), encoding="utf-8")
+
+    def fail_backup():
+        raise OSError("simulated disk full")
+
+    monkeypatch.setattr(noveltrad_main, "create_database_backup", fail_backup)
+    first = noveltrad_main.run_scheduled_backup_if_due()
+    assert first["status"] == "error"
+    assert "simulated disk full" in first["error"]
+    persisted = noveltrad_main.load_backup_settings()
+    assert persisted["last_success_at"] is None
+    assert "simulated disk full" in persisted["last_error"]
+    second = noveltrad_main.run_scheduled_backup_if_due()
+    assert second["status"] == "error"
+
+
+def test_restore_filesystem_failure_rolls_back_imports_and_keeps_live_database(client, tmp_path, monkeypatch):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("stable.pdf", pdf_bytes("Stable book"), "application/pdf")},
+    ).json()
+    backup = client.post("/api/backups").json()
+    client.post(
+        "/api/books/import",
+        files={"file": ("later.pdf", pdf_bytes("Later book"), "application/pdf")},
+    )
+    imports_dir = tmp_path / "noveltrad-data" / "imports"
+    original_sources = {p.name: p.read_bytes() for p in imports_dir.iterdir()}
+    real_replace = noveltrad_main.os.replace
+    failed = {"value": False}
+
+    def fail_live_db_swap(source, destination):
+        if (not failed["value"] and Path(destination) == noveltrad_main.database_path()
+                and Path(source).name.startswith("restore-")):
+            failed["value"] = True
+            raise OSError("simulated disk failure during restore")
+        return real_replace(source, destination)
+
+    from pathlib import Path
+    monkeypatch.setattr(noveltrad_main.os, "replace", fail_live_db_swap)
+    response = client.post(f"/api/backups/{backup['name']}/restore")
+    assert response.status_code == 500
+    assert failed["value"] is True
+    assert len(client.get("/api/books").json()) == 2
+    assert {p.name: p.read_bytes() for p in imports_dir.iterdir()} == original_sources
+    assert any(book["id"] == imported["id"] for book in client.get("/api/books").json())
