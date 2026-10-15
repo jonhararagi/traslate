@@ -191,3 +191,12 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Queue UI shows warning counts in the progress line and per-chunk warning detail in the review surface. Warning-free chunks still require explicit human review before application.
 - Added `tests/test_translation_quality.py` for helper behavior, conservative repetition handling, end-to-end persistence and warning clearance after editing. Tests passed on Ubuntu and Windows.
 - Real authorized-chapter quality benchmark and clean-Windows manual smoke test remain not performed. Do not claim 100% completion until those are actually tested.
+
+
+## Continuation — mandatory glossary consistency checks (2026-10-15; PR in progress)
+
+- Branch: `feat/glossary-consistency-checks`, based on main after PR #11.
+- Premium prompt now sends explicit instruction labels for approved `protect`, `preserve`, `translate`, and `contextual` rules. Glossary snapshot queries include the rule alongside source/preferred term.
+- The quality warning helper now checks whether the preferred form for a mandatory rule is present in output when its source term occurs in the chunk. Missing `Oknodie`, `Steal skill`, or approved forced translations such as `farm => farmear` are flagged; `contextual` terms such as `tsundere` are intentionally not treated as mandatory.
+- QA checks run after model output and after manual edits; persisted queue warnings keep the human review panel informed. This does not hard-block the user from editing/applying, because inflection/context can cause false positives and the check is literal/conservative rather than semantic.
+- Added tests for missing mandatory terms, non-mandatory contextual terms, queue snapshot rule storage and the prompt directives. Do not claim pass until CI finishes.

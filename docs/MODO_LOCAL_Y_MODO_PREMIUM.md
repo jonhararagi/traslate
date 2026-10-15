@@ -65,3 +65,8 @@ Los candidatos se guardan en SQLite con estado pendiente, aprobado o ignorado. V
 La cola registra hasta cinco advertencias por fragmento completado: salida vacía o idéntica al original, longitud desproporcionadamente corta/larga, estructura de párrafos muy distinta, marcadores de omisión/respuesta genérica y posible repetición extensa en la salida. Las advertencias se guardan junto a cada fragmento y se vuelven a calcular al guardar una revisión manual. En la lista de fragmentos se indica cuáles requieren atención.
 
 Estas verificaciones son heurísticas y deliberadamente no bloquean una revisión por sí solas. Las traducciones pueden expandirse o contraerse según el idioma, una frase repetida puede ser intencional y algunos fragmentos (nombres, interfaz, terminología) pueden coincidir con el original. La ausencia de alertas **no** certifica la calidad. La cola sigue exigiendo la revisión explícita de todos los fragmentos antes de aplicar el resultado final.
+
+
+## Coherencia de reglas aprobadas del glosario (rama de trabajo)
+
+Las reglas aprobadas `protect`, `preserve` y `translate` se envían al modelo con instrucciones explícitas. Además, después de traducir y después de guardar la revisión, NovelTrad comprueba si la forma preferida aparece en el resultado cuando el término fuente estaba en el fragmento original. Si falta, crea una advertencia visible en la revisión. Las reglas `contextual` no generan una alerta por ausencia, porque no deben imponerse en todos los usos. Esta comprobación es un detector conservador de términos ausentes, no una prueba de equivalencia semántica: puede haber falsos positivos si cambia la flexión o el término no debe aparecer en la traducción final.

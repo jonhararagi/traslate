@@ -108,3 +108,92 @@ def test_quality_warnings_are_persisted_and_returned_for_queue_chunks(monkeypatc
         assert refreshed["reviewed_chunks"] == 1
         assert refreshed["quality_warning_chunks"] == 0
         assert refreshed["chunks"][0]["quality_warnings"] == []
+
+
+def test_quality_diagnostics_check_mandatory_glossary_rules_but_not_contextual_terms():
+    original = "Oknodie uses Steal skill to farm while the tsundere rival watches."
+    glossary = [
+        {"source_term": "Oknodie", "preferred_term": "Oknodie", "rule": "protect"},
+        {"source_term": "Steal skill", "preferred_term": "Steal skill", "rule": "preserve"},
+        {"source_term": "farm", "preferred_term": "farmear", "rule": "translate"},
+        {"source_term": "tsundere", "preferred_term": "tsundere", "rule": "contextual"},
+    ]
+
+    warnings = main._translation_quality_warnings(
+        original, "La protagonista utiliza una habilidad.", glossary
+    )
+    assert any("Oknodie" in warning for warning in warnings)
+    assert any("Steal skill" in warning for warning in warnings)
+    assert any("farmear" in warning for warning in warnings)
+    assert not any("tsundere" in warning for warning in warnings)
+
+    compliant = main._translation_quality_warnings(
+        original,
+        "Oknodie activa Steal skill para farmear mientras observa la rival tsundere.",
+        glossary,
+    )
+    assert not any("glosario aprobado exige" in warning for warning in compliant)
+
+
+def test_queue_snapshots_glossary_rules_and_warns_when_required_terms_disappear(monkeypatch, tmp_path):
+    monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path / "noveltrad-data"))
+    main.init_db()
+    source = "Oknodie uses Steal skill to farm while the tsundere rival watches."
+    book_id, _ = _create_book(source)
+    now = "2026-10-15T00:00:00+00:00"
+    entries = [
+        ("Oknodie", "Oknodie", "protect"),
+        ("Steal skill", "Steal skill", "preserve"),
+        ("farm", "farmear", "translate"),
+        ("tsundere", "tsundere", "contextual"),
+    ]
+    with main.connection() as conn:
+        for source_term, preferred_term, rule in entries:
+            conn.execute(
+                "INSERT INTO glossary_entries(id,book_id,source_term,preferred_term,rule,notes,approved,created_at) "
+                "VALUES(?,?,?,?,?,?,1,?)",
+                (str(uuid4()), book_id, source_term, preferred_term, rule, "", now),
+            )
+
+    monkeypatch.setattr(main, "_translate_with_local_model", lambda text, glossary, continuity_context="": "La protagonista utiliza una habilidad.")
+    with TestClient(main.app) as client:
+        created = client.post(f"/api/books/{book_id}/translation-jobs", json={})
+        assert created.status_code == 200, created.text
+        job_id = created.json()["id"]
+        output = client.post(f"/api/translation-jobs/{job_id}/run-next")
+        assert output.status_code == 200, output.text
+        state = output.json()
+        warnings = state["chunks"][0]["quality_warnings"]
+        assert any("Oknodie" in warning for warning in warnings)
+        assert any("Steal skill" in warning for warning in warnings)
+        assert any("farmear" in warning for warning in warnings)
+        assert not any("tsundere" in warning for warning in warnings)
+        with main.connection() as conn:
+            job = conn.execute("SELECT glossary_json FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
+        snapshot = __import__("json").loads(job["glossary_json"])
+        assert any(item.get("rule") == "protect" and item["source_term"] == "Oknodie" for item in snapshot)
+
+
+def test_local_model_prompt_describes_approved_glossary_rules(monkeypatch):
+    import io
+    import json
+    import urllib.request
+
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["payload"] = json.loads(request.data.decode("utf-8"))
+        return io.BytesIO(json.dumps({"response": "Oknodie usa Steal skill."}).encode("utf-8"))
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    result = main._translate_with_local_model(
+        "Oknodie uses Steal skill.",
+        [
+            {"source_term": "Oknodie", "preferred_term": "Oknodie", "rule": "protect"},
+            {"source_term": "Steal skill", "preferred_term": "Steal skill", "rule": "preserve"},
+        ],
+    )
+    assert result == "Oknodie usa Steal skill."
+    prompt = captured["payload"]["prompt"]
+    assert "Oknodie => Oknodie [MUST preserve this proper name/form exactly]" in prompt
+    assert "Steal skill => Steal skill [MUST preserve this term exactly]" in prompt
