@@ -22,7 +22,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "Tests failed; Windows packaging has been stopped."
 }
 
-& $Python -m PyInstaller --noconfirm --clean --onedir --windowed --name NovelTrad --collect-all uvicorn --collect-all fitz --add-data "data;data" scripts/noveltrad_launcher.py
+& $Python -m PyInstaller --noconfirm --clean --onedir --windowed --name NovelTrad --paths src --collect-all uvicorn --collect-all fitz --add-data "data;data" scripts/noveltrad_launcher.py
 if ($LASTEXITCODE -ne 0) {
     throw "PyInstaller failed to package NovelTrad."
 }
