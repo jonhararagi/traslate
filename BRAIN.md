@@ -193,10 +193,11 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Real authorized-chapter quality benchmark and clean-Windows manual smoke test remain not performed. Do not claim 100% completion until those are actually tested.
 
 
-## Continuation — mandatory glossary consistency checks (2026-10-15; PR in progress)
+## Continuation — mandatory glossary consistency checks (2026-10-15; PR #12 merged)
 
-- Branch: `feat/glossary-consistency-checks`, based on main after PR #11.
-- Premium prompt now sends explicit instruction labels for approved `protect`, `preserve`, `translate`, and `contextual` rules. Glossary snapshot queries include the rule alongside source/preferred term.
-- The quality warning helper now checks whether the preferred form for a mandatory rule is present in output when its source term occurs in the chunk. Missing `Oknodie`, `Steal skill`, or approved forced translations such as `farm => farmear` are flagged; `contextual` terms such as `tsundere` are intentionally not treated as mandatory.
-- QA checks run after model output and after manual edits; persisted queue warnings keep the human review panel informed. This does not hard-block the user from editing/applying, because inflection/context can cause false positives and the check is literal/conservative rather than semantic.
-- Added tests for missing mandatory terms, non-mandatory contextual terms, queue snapshot rule storage and the prompt directives. Do not claim pass until CI finishes.
+- PR [#12](https://github.com/jonhararagi/traslate/pull/12) merged at `adff3d19d5eeca9a970daac55806bed95155c364`.
+- [Ubuntu/Windows test workflow](https://github.com/jonhararagi/traslate/actions/runs/38775368775) passed on exact PR head `e1db976a67c659588aa535ef0b2b5e05ee769427`; [Windows portable package build/upload](https://github.com/jonhararagi/traslate/actions/runs/38775368574) passed on the same app code before merge.
+- Current build artifact ID `11994220267`, name `NovelTrad-Windows-x64`, size 40,727,974 bytes; SHA-256 `33820a1b715913c73de8293136a9707f3e81b8564bed78b0103e8297a21c92d1`. ZIP integrity checked; contains `NovelTrad.exe` and the bundled Oknodie terminology profile under `_internal/data/novels/`.
+- Premium prompt now sends explicit instruction labels for approved `protect`, `preserve`, `translate`, and `contextual` rules. Persistent queue glossary snapshots contain the rule alongside source/preferred term.
+- Quality warnings check whether a preferred form for a mandatory rule is present in output when its source term appears in the chunk. Missing `Oknodie`, `Steal skill`, or approved translations such as `farm => farmear` are flagged; `contextual` terms such as `tsundere` are not forced. Checks run after model output and after manual edits, but are literal/conservative and non-blocking.
+- Tests cover missing mandatory terms, non-mandatory contextual terms, queue rule snapshots and prompt directives. Clean-Windows manual smoke test and real authorized-chapter translation benchmark remain outstanding.
