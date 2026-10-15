@@ -1036,3 +1036,27 @@ def test_backup_file_lock_is_released_after_abrupt_process_exit(tmp_path, monkey
             holder.stdout.close()
         if holder.stderr:
             holder.stderr.close()
+
+
+def test_backup_settings_atomic_write_preserves_previous_file_on_replace_failure(client, tmp_path, monkeypatch):
+    import json
+
+    settings_path = tmp_path / "noveltrad-data" / "backup-settings.json"
+    original_bytes = settings_path.read_bytes()
+    settings = noveltrad_main.load_backup_settings()
+    settings["retention_count"] = 7
+    real_replace = noveltrad_main.os.replace
+
+    def fail_settings_replace(source, destination):
+        if __import__("pathlib").Path(destination) == settings_path:
+            raise OSError("simulated interrupted settings commit")
+        return real_replace(source, destination)
+
+    monkeypatch.setattr(noveltrad_main.os, "replace", fail_settings_replace)
+    with pytest.raises(OSError, match="simulated interrupted settings commit"):
+        noveltrad_main.save_backup_settings(settings)
+
+    assert settings_path.read_bytes() == original_bytes
+    assert json.loads(settings_path.read_text(encoding="utf-8"))["retention_count"] == 14
+    assert not list(settings_path.parent.glob("backup-settings.json.*.tmp"))
+
