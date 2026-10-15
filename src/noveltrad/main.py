@@ -263,7 +263,7 @@ def list_backups() -> list[dict[str, object]]:
 @app.post("/api/backups/{backup_name}/restore")
 def restore_backup(backup_name: str) -> dict[str, object]:
     init_db()
-    if not re.fullmatch(r"noveltrad-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}\\.sqlite3", backup_name):
+    if not re.fullmatch(r"noveltrad-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}\.sqlite3", backup_name):
         raise HTTPException(status_code=400, detail="Nombre de copia no válido.")
     root = backup_dir().resolve()
     source_path = (root / backup_name).resolve()
