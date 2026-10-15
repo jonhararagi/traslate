@@ -169,6 +169,9 @@ def test_home_contains_reader_entry_point(client):
     assert "Editar" in response.text
     assert "Eliminar" in response.text
     assert "Exportar EPUB" in response.text
+    assert "Copias de seguridad" in response.text
+    assert "Crear copia ahora" in response.text
+    assert "Restaurar copia seleccionada" in response.text
 
 
 
@@ -493,3 +496,17 @@ def test_restore_can_recover_when_active_database_is_corrupt(client, tmp_path):
     assert restored.json()["safety_backup"]
     books = client.get("/api/books").json()
     assert [book["id"] for book in books] == [imported["id"]]
+
+
+def test_import_rejects_epub_with_excessive_compression_ratio(client):
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("mimetype", "application/epub+zip", compress_type=zipfile.ZIP_STORED)
+        archive.writestr("META-INF/container.xml", "<container/>", compress_type=zipfile.ZIP_DEFLATED)
+        archive.writestr("OEBPS/chapter.xhtml", "A" * 100_000, compress_type=zipfile.ZIP_DEFLATED)
+    response = client.post(
+        "/api/books/import",
+        files={"file": ("compressed.epub", buffer.getvalue(), "application/epub+zip")},
+    )
+    assert response.status_code == 422
+    assert "compresión segura" in response.json()["detail"]
