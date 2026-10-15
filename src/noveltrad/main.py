@@ -327,6 +327,39 @@ def translation_versions(chapter_id: str) -> list[dict[str, object]]:
         return [dict(row) for row in rows]
 
 
+@app.post("/api/chapters/{chapter_id}/translation/restore/{version_number}")
+def restore_translation_version(chapter_id: str, version_number: int) -> dict[str, object]:
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with connection() as conn:
+        chapter = conn.execute(
+            "SELECT id, translated_text FROM chapters WHERE id = ?", (chapter_id,)
+        ).fetchone()
+        if not chapter:
+            raise HTTPException(status_code=404, detail="No se encontró el capítulo.")
+        target = conn.execute(
+            "SELECT translated_text FROM translation_versions WHERE chapter_id = ? AND version_number = ?",
+            (chapter_id, version_number),
+        ).fetchone()
+        if not target:
+            raise HTTPException(status_code=404, detail="No se encontró esa versión de la traducción.")
+        next_version = conn.execute(
+            "SELECT COALESCE(MAX(version_number), 0) + 1 AS next_version "
+            "FROM translation_versions WHERE chapter_id = ?", (chapter_id,)
+        ).fetchone()["next_version"]
+        conn.execute(
+            "INSERT INTO translation_versions(id, chapter_id, version_number, translated_text, created_at) "
+            "VALUES(?,?,?,?,?)",
+            (str(uuid4()), chapter_id, next_version, chapter["translated_text"], now),
+        )
+        restored = target["translated_text"]
+        conn.execute(
+            "UPDATE chapters SET translated_text = ?, status = ? WHERE id = ?",
+            (restored, "translated" if restored.strip() else "imported", chapter_id),
+        )
+    return {"chapter_id": chapter_id, "version_number": version_number, "translated_text": restored, "restored": True}
+
+
 @app.get("/", response_class=HTMLResponse)
 def home() -> str:
     return r'''<!doctype html>
