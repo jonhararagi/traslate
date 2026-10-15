@@ -112,3 +112,8 @@ To test the headless runner manually, run `python -m noveltrad.backup_cli` with 
 6. Add contextual prompt generation for user-mediated chat-web assistance.
 7. Add versioned translation, quality checks, and TXT/EPUB/PDF export.
 8. Package and test the Windows application on a clean machine.
+
+
+## Windows portable build
+
+The first portable Windows packaging path is documented in [docs/PRIMERA_ENTREGA_WINDOWS.md](docs/PRIMERA_ENTREGA_WINDOWS.md). On Windows with Python 3.11+, run `.\scripts\build-windows.ps1` from PowerShell. The script runs the test suite before building a portable folder at `dist/NovelTrad/`. The folder, not only the EXE, must be distributed. The matching GitHub Actions workflow builds on a Windows runner and publishes a downloadable artifact for 14 days. A successful CI build is not a substitute for testing the artifact on a clean Windows machine.
