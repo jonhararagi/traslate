@@ -80,11 +80,11 @@ The last known main integration included:
 
 ## Priority order
 
-1. Verify this file and all documented behavior against the current repository and CI.
-2. Run and repair CI for the Local/Premium selector and local model endpoint; test unavailable runtime, oversize chapters, timeout, and no-cloud/no-save guarantees.
-3. Wire the novel-specific profile and candidate glossary into the app for user review without auto-approving or inventing canon.
-4. Add tests for mode selection, model unavailable/timeout/oversize responses, privacy boundaries, and preview-only behavior.
-5. Build chapter chunking, side-by-side review, glossary extraction suggestions, and consistency checks; never auto-approve generated terms.
+1. Re-check current `main`, the latest CI runs, and this file before each continuation; the glossary-seeding PR #5 is merged and its PR and main-merge workflows passed on Ubuntu and Windows.
+2. Expand negative-path tests for Premium: Ollama missing/unavailable, request timeout, oversized chapter, malformed response, no cloud fallback, and preview-only/no-save behavior. Fix issues found.
+3. Build chapter chunking and side-by-side review with explicit context carryover, retry controls, and per-fragment preview; never save automatically.
+4. Add glossary extraction suggestions from imported chapters with evidence snippets and candidate status; never auto-approve names, titles, or translations.
+5. Add consistency checks for protected names, honorifics, terms, and character spellings using the per-novel profile.
 6. Keep backups, recovery, import validation, original preservation, and translation history covered by regression tests.
 
 ## How to update this brain
