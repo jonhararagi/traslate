@@ -820,3 +820,42 @@ def test_concurrent_due_scheduler_calls_create_only_one_backup(client, tmp_path)
     assert sum(result["status"] == "not_due" for result in results) == 3
     backups = list((tmp_path / "noveltrad-data" / "backups").glob("noveltrad-*.sqlite3"))
     assert len(backups) == 1
+
+
+
+def test_backup_lock_serializes_independent_processes(tmp_path, monkeypatch):
+    import os
+    import subprocess
+    import sys
+    import time
+
+    data_home = tmp_path / "noveltrad-cross-process"
+    monkeypatch.setenv("NOVELTRAD_HOME", str(data_home))
+    script = (
+        'import time; from noveltrad.main import _cross_process_backup_lock; '
+        'lock = _cross_process_backup_lock(); lock.__enter__(); '
+        'print("LOCK_HELD", flush=True); time.sleep(1.0); lock.__exit__(None, None, None)'
+    )
+    child = subprocess.Popen(
+        [sys.executable, "-c", script],
+        env=os.environ.copy(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        assert child.stdout is not None
+        assert child.stdout.readline().strip() == "LOCK_HELD"
+        started = time.monotonic()
+        with noveltrad_main._cross_process_backup_lock():
+            waited = time.monotonic() - started
+        assert waited >= 0.5, f"second process did not wait for the lock (waited {waited:.3f}s)"
+        assert child.wait(timeout=5) == 0, child.stderr.read() if child.stderr else ""
+    finally:
+        if child.poll() is None:
+            child.kill()
+            child.wait(timeout=5)
+        if child.stdout:
+            child.stdout.close()
+        if child.stderr:
+            child.stderr.close()
