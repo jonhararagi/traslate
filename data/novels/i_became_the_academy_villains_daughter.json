@@ -7,14 +7,46 @@
   ],
   "original_title_ko": "아카데미 흑막의 딸이 되었다",
   "target_language": "es",
-  "source_languages": ["ko", "en", "ja"],
+  "source_languages": [
+    "ko",
+    "en",
+    "ja"
+  ],
   "editorial_profile": "webnovel_es",
   "glossary_policy": "candidate-unapproved-until-verified",
+  "source_catalog": [
+    {
+      "language": "en",
+      "format": "licensed_comic_adaptation",
+      "title": "I Became the Villain's Daughter at the Academy",
+      "publisher": "Tapas Entertainment",
+      "url": "https://tapas.io/series/i-became-the-villains-daughter-at-the-academy/info",
+      "usage_note": "Official English comic adaptation; not the prose novel and not an EPUB/PDF source. Use for title/name/context verification only; import only a file the user is authorized to use."
+    },
+    {
+      "language": "ko",
+      "format": "original_web_novel",
+      "title": "아카데미 흑막의 딸이 되었다",
+      "publisher": "Novelpia",
+      "url": "https://novelpia.com/novel/96311",
+      "usage_note": "Official Korean source. Access may require account/paid chapters; do not scrape or redistribute chapter text."
+    },
+    {
+      "language": "en",
+      "format": "licensed_novel_listing",
+      "title": "I Became the Daughter of the Academy's Villain",
+      "publisher": "Novelpia Global (as listed by Novel Updates)",
+      "url": "https://www.novelupdates.com/series/i-became-the-daughter-of-the-academys-villain/",
+      "usage_note": "Discovery/metadata listing, not a chapter file. Verify current publisher access before treating it as a downloadable English novel."
+    }
+  ],
   "notes": [
     "The first novel configured for NovelTrad.",
     "Do not treat third-party summaries as authoritative for chapter-specific canon.",
     "Verify spellings and terminology against the exact imported edition and user-approved source text.",
-    "Keep pun-based names and game terminology intact unless the user approves a Spanish rendering."
+    "Keep pun-based names and game terminology intact unless the user approves a Spanish rendering.",
+    "The novel's defining mechanic is veteran-style stat optimization inside a VR game, alongside comic misunderstandings: distinguish gamer intent from literal dictionary meanings.",
+    "All starter terms remain unapproved until verified in the imported edition. Context-sensitive words must not be translated globally."
   ],
   "terminology_candidates": [
     {
@@ -23,8 +55,8 @@
       "type": "character",
       "status": "candidate",
       "approved": false,
-      "evidence": "Publisher/series listing spelling; verify against the user's edition.",
-      "notes": "Do not translate or normalize this proper name without approval."
+      "evidence": "Official English Tapas series synopsis and publisher metadata; verify against the exact imported edition.",
+      "notes": "Protected proper name. Never translate, respell as 'OK NO DIE', or normalize without explicit user approval."
     },
     {
       "source": "Graduate from the Academy by Luck",
@@ -32,8 +64,8 @@
       "type": "in-world game title",
       "status": "candidate",
       "approved": false,
-      "evidence": "English series synopsis; translation may vary by edition.",
-      "notes": "Keep the source title until the user chooses an official Spanish rendering."
+      "evidence": "Official English Tapas series synopsis.",
+      "notes": "Keep source title until an approved Spanish rendering is chosen."
     },
     {
       "source": "I Became the Academy Villain's Daughter",
@@ -41,8 +73,152 @@
       "type": "work title",
       "status": "candidate",
       "approved": false,
-      "evidence": "English publisher/series listing.",
+      "evidence": "English series metadata; alternate official localization may vary by edition.",
       "notes": "Display title, not an in-story term."
+    },
+    {
+      "source": "level",
+      "target": "level",
+      "type": "context-sensitive gamer term",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "General gaming vocabulary; must be verified in actual chapter context.",
+      "notes": "Could mean character level, stage/floor, volume, or degree. Do not apply a global replacement."
+    },
+    {
+      "source": "level up",
+      "target": "subir de nivel",
+      "type": "gamer action",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "General gaming vocabulary; candidate translation only.",
+      "notes": "Approve only after checking whether the source uses it as a UI/system label or narration."
+    },
+    {
+      "source": "farm",
+      "target": "farmear",
+      "type": "context-sensitive gamer verb",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "User's requested gamer terminology; not verified against a chapter yet.",
+      "notes": "When it means repeatedly defeating enemies/collecting resources or experience, 'farmear' may fit. Elsewhere it can mean granja/cultivar and must be translated by context."
+    },
+    {
+      "source": "farming",
+      "target": "farmeo",
+      "type": "context-sensitive gamer noun",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "User's requested gamer terminology; not verified against a chapter yet.",
+      "notes": "Use only when it refers to repetitive resource/experience gathering."
+    },
+    {
+      "source": "grind",
+      "target": "grindear",
+      "type": "context-sensitive gamer term",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "General gaming vocabulary; candidate translation only.",
+      "notes": "May mean repetitive progression work; elsewhere it means grind/crush/friction. Never replace globally without context."
+    },
+    {
+      "source": "min-maxing",
+      "target": "optimización extrema de estadísticas",
+      "type": "gamer strategy",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "Series metadata describes a protagonist obsessed with stat-building; verify exact term in the user's edition.",
+      "notes": "Possible Spanish rendering; gamer loanword 'min-maxing' may be retained if the user prefers it."
+    },
+    {
+      "source": "stats",
+      "target": "estadísticas",
+      "type": "game system term",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "General RPG terminology; candidate only.",
+      "notes": "Distinguish character attributes/stat points from statistics in ordinary prose."
+    },
+    {
+      "source": "build",
+      "target": "build",
+      "type": "context-sensitive gamer noun",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "General gaming vocabulary; candidate only.",
+      "notes": "Keep as 'build' if it means a character's configuration; otherwise translate by sentence meaning."
+    },
+    {
+      "source": "steal",
+      "target": "robar",
+      "type": "context-sensitive verb or skill name",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "User's requested terminology; not verified against a chapter yet.",
+      "notes": "Translate as 'robar' when it is the ordinary verb. If capitalized as a named skill/UI label, preserve pending confirmation."
+    },
+    {
+      "source": "Steal skill",
+      "target": "Steal",
+      "type": "possible skill-name phrase",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "Candidate distinction based on capitalization only; no chapter evidence yet.",
+      "notes": "Candidate phrase only; verify in the imported edition. A capitalization difference alone does not prove that a word is a skill name."
+    },
+    {
+      "source": "skill",
+      "target": "habilidad",
+      "type": "game system term",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "General RPG terminology; candidate only.",
+      "notes": "Use 'habilidad' unless the exact system/edition establishes a different convention."
+    },
+    {
+      "source": "quest",
+      "target": "misión",
+      "type": "game system term",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "General gaming vocabulary; candidate only.",
+      "notes": "Use 'misión' for a game objective; verify if the text distinguishes quests from tasks."
+    },
+    {
+      "source": "drop",
+      "target": "botín",
+      "type": "context-sensitive gamer term",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "General gaming vocabulary; candidate only.",
+      "notes": "In game context may mean loot/drop; as a verb can mean dejar caer, soltar, bajar, or abandonar."
+    },
+    {
+      "source": "reroll",
+      "target": "volver a tirar",
+      "type": "context-sensitive gamer term",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "General gaming vocabulary; candidate only.",
+      "notes": "Could refer to rerolling a character/stat/attempt; select rendering from the exact mechanic."
+    },
+    {
+      "source": "tsundere",
+      "target": "tsundere",
+      "type": "otaku archetype",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "User's requested otaku terminology; not verified against a chapter yet.",
+      "notes": "Usually retain 'tsundere' as a genre/archetype term; do not flatten it to 'fría' or 'antipática'."
+    },
+    {
+      "source": "farmed",
+      "target": "farmear",
+      "type": "context-sensitive gamer verb form",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "User-requested gamer terminology; not verified against a chapter yet.",
+      "notes": "Potential past-tense form when it means repeated resource/experience gathering. Do not use a global substitution without checking context."
     }
   ],
   "characters": [],
@@ -54,6 +230,8 @@
   "open_questions": [
     "Confirm the exact source edition and whether the imported text is Korean, English, or Japanese.",
     "Confirm the preferred Spanish rendering of the novel title and in-world game title.",
-    "Populate named characters, organizations, ranks, skills, items, and honorifics from actual chapters; do not infer them from summaries."
+    "Populate named characters, organizations, ranks, skills, items, and honorifics from actual chapters; do not infer them from summaries.",
+    "Run the translation benchmark against a user-authorized EPUB/PDF from the exact edition; the official English Tapas source is a comic adaptation and scanned/image content currently requires OCR, which is not implemented.",
+    "Review each context-sensitive gamer term before approving any glossary rule."
   ]
 }

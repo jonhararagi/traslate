@@ -68,13 +68,13 @@ PROFILES: dict[str, StyleProfile] = {
 class TermRule:
     source: str
     target: str
-    mode: str = "translate"  # translate, preserve, protect
+    mode: str = "translate"  # translate, preserve, protect, contextual
     approved: bool = True
 
     def __post_init__(self) -> None:
         if not self.source.strip():
             raise ValueError("El término de origen no puede estar vacío.")
-        if self.mode not in {"translate", "preserve", "protect"}:
+        if self.mode not in {"translate", "preserve", "protect", "contextual"}:
             raise ValueError("mode debe ser translate, preserve o protect.")
         if self.mode == "translate" and not self.target.strip():
             raise ValueError("Una regla translate necesita un término de destino.")
@@ -132,19 +132,27 @@ def apply_offline_rules(
     applied: list[tuple[str, str, int]] = []
     warnings: list[str] = []
 
-    # Protect/preserve rules are applied before translation mappings and use
-    # temporary tokens so later rules cannot accidentally mutate their output.
+    # Approved contextual terms are protected from global replacement. We report
+    # their occurrences for review instead of pretending a word has one meaning.
     protected: dict[str, str] = {}
     rules = [rule for rule in term_rules if rule.approved]
     rules.sort(key=lambda rule: len(rule.source), reverse=True)
     for index, rule in enumerate(rules):
-        if rule.mode not in {"preserve", "protect"}:
+        if rule.mode == "contextual":
+            pattern = re.compile(r"(?<!\w)" + re.escape(rule.source) + r"(?!\w)", re.IGNORECASE)
+            count = len(pattern.findall(result))
+            if count:
+                warnings.append(
+                    f"El término contextual «{rule.source}» aparece {count} vez/veces; no se sustituyó automáticamente. Revisá cada ocurrencia."
+                )
+        if rule.mode not in {"preserve", "protect", "contextual"}:
             continue
         token = f"\uE000NT{index}TOKEN\uE001"
         result, count = _replace_literal(result, rule.source, token)
         if count:
             protected[token] = rule.source
-            applied.append((rule.source, rule.source, count))
+            if rule.mode in {"preserve", "protect"}:
+                applied.append((rule.source, rule.source, count))
 
     mappings: list[tuple[str, str]] = []
     for rule in rules:

@@ -91,3 +91,23 @@ The last known main integration included:
 ## How to update this brain
 
 At the end of each significant task, update status, commit/PR links, tested platforms and exact results. Do not replace a verified status with an assumption. This file is a handoff, not a substitute for inspecting the live repository.
+
+
+## Continuation — first Windows packaging path (2026-10-15)
+
+- Branch: `feat/windows-first-release`; PR [#6](https://github.com/jonhararagi/traslate/pull/6) is open and unmerged.
+- Added optional `build` extra with PyInstaller, a desktop launcher that opens the local UI in the default browser, a PowerShell build script, Windows CI packaging workflow, and release instructions in `docs/PRIMERA_ENTREGA_WINDOWS.md`.
+- The Windows workflow is intended to run the full pytest suite before producing a portable `dist/NovelTrad/` artifact. The launcher binds only to `127.0.0.1:8765`; user data remains in `%LOCALAPPDATA%\\NovelTrad`. It does not bundle models or change the default Local mode.
+- External implementation research: Argos Translate is a potential offline translation engine with Japanese, Korean, English, and Spanish listed among supported languages; package/model availability and quality must be validated per direction before adoption. PyInstaller supports bundling Python apps for Windows. References: https://github.com/argosopentech/argos-translate and https://pyinstaller.org/en/stable/operating-mode.html.
+- Status distinction: packaging code is committed on this branch, but not yet validated by the new Windows workflow or a clean-machine manual test. Do not call the Windows app released until the artifact has been downloaded and smoke-tested. This branch does not complete batch translation, OCR, or contextual chunking.
+
+
+## Continuation — first novel source and terminology pilot (2026-10-15)
+
+- Added official/discovery source metadata and 18 unapproved terminology candidates to `data/novels/i_became_the_academy_villains_daughter.json` on `feat/windows-first-release` (PR #6). Current profile includes the Novelpia Korean original, official Tapas English comic adaptation, and a Novel Updates discovery listing for the English novel. Source distinctions and URLs are in `docs/PILOTO_OKNODIE_Y_TERMINOLOGIA_GAMER.md`.
+- Added synthetic diagnostic cases in `data/benchmarks/academy_villain_context_cases.json` for Oknodie, farm/farming, level, steal/Steal, tsundere, build, drop, and min-maxing. These are invented test sentences, not excerpts or canon from the novel.
+- Added `tests/test_academy_villain_profile.py` to verify official source metadata, unapproved status, and context-risk cases.
+- Critical limitation: no full chapter has been downloaded or imported. The official Tapas English version is a comic adaptation, not prose EPUB/PDF; OCR is not implemented. Novelpia is the official Korean source and access may require account/paid chapters. Do not scrape or redistribute commercial chapters. Real translation-quality validation requires a user-authorized EPUB/PDF of the exact edition or an explicitly provided excerpt.
+- No neural/offline engine has been run on a real chapter in this continuation. Do not claim the benchmark passed on CI until GitHub Actions results are inspected. The existing deterministic engine is not a full translator and global substitutions cannot safely resolve ambiguous words; candidates remain unapproved.
+
+- Follow-up implementation: glossary mode `contextual` is now accepted by `TermRule` and passed through the offline preview API. Approved contextual terms are protected from global substitutions and produce a review warning with occurrence count; they are not silently replaced. Tests were added in `tests/test_narrative_rules.py`. This is a safety improvement, not full per-occurrence semantic disambiguation.

@@ -112,3 +112,12 @@ To test the headless runner manually, run `python -m noveltrad.backup_cli` with 
 6. Add contextual prompt generation for user-mediated chat-web assistance.
 7. Add versioned translation, quality checks, and TXT/EPUB/PDF export.
 8. Package and test the Windows application on a clean machine.
+
+
+## Windows portable build
+
+The first portable Windows packaging path is documented in [docs/PRIMERA_ENTREGA_WINDOWS.md](docs/PRIMERA_ENTREGA_WINDOWS.md). On Windows with Python 3.11+, run `.\scripts\build-windows.ps1` from PowerShell. The script runs the test suite before building a portable folder at `dist/NovelTrad/`. The folder, not only the EXE, must be distributed. The matching GitHub Actions workflow builds on a Windows runner and publishes a downloadable artifact for 14 days. A successful CI build is not a substitute for testing the artifact on a clean Windows machine.
+
+## First novel: Oknodie terminology pilot
+
+NovelTrad seeds unapproved terminology candidates when importing an EPUB/PDF whose title matches *I Became the Academy Villain's Daughter*. Source links, gamer/otaku terminology, synthetic diagnostic cases, and the honest validation procedure are documented in [the Oknodie pilot guide](docs/PILOTO_OKNODIE_Y_TERMINOLOGIA_GAMER.md). Candidate terms such as `farm`, `level`, `steal`/`Steal`, and `tsundere` are not approved global replacements because their meaning depends on context. The benchmark sentences are synthetic and are not excerpts from the novel. The official English Tapas release is a comic adaptation, not an EPUB/PDF prose novel; importing its image pages requires OCR, which is not yet implemented.

@@ -73,3 +73,19 @@ def test_no_dictionary_does_not_claim_to_translate():
 
 def test_lint_empty_chapter():
     assert lint_chapter("   ") == ("El capítulo está vacío.",)
+
+
+def test_contextual_term_is_reported_and_never_globally_replaced():
+    result = apply_offline_rules(
+        "She farmed monsters, then returned to the farm.",
+        term_rules=[TermRule("farm", "farmear", "contextual", True)],
+        normalize_typography=False,
+    )
+    assert result.text == "She farmed monsters, then returned to the farm."
+    assert any("término contextual" in warning and "farm" in warning for warning in result.warnings)
+    assert not result.replacements
+
+
+def test_contextual_mode_is_a_valid_glossary_rule():
+    rule = TermRule("steal", "robar", "contextual", True)
+    assert rule.mode == "contextual"

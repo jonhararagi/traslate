@@ -1,0 +1,50 @@
+name: Windows Portable Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "data/**"
+      - "scripts/**"
+      - "pyproject.toml"
+      - ".github/workflows/windows-build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-package:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install application, test and build dependencies
+        run: python -m pip install -e ".[test,build]"
+
+      - name: Run automated tests
+        run: python -m pytest -q
+
+      - name: Build portable Windows application
+        run: >-
+          python -m PyInstaller --noconfirm --clean --onedir --windowed
+          --name NovelTrad --paths src --collect-all uvicorn --collect-all fitz
+          --add-data "data;data" scripts/noveltrad_launcher.py
+
+      - name: Upload portable application folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovelTrad-Windows-x64
+          path: dist/NovelTrad/
+          if-no-files-found: error
+          retention-days: 14
