@@ -1,0 +1,96 @@
+{
+  "id": "academy-villain-context-v1",
+  "novel_profile": "i_became_the_academy_villains_daughter",
+  "status": "synthetic-diagnostic-cases-not-excerpts-from-the-novel",
+  "purpose": "Detect gamer/otaku terminology errors before approving a glossary. These invented sentences are not quotations from the copyrighted novel and are not evidence of chapter canon.",
+  "target_language": "es",
+  "cases": [
+    {
+      "id": "name-001",
+      "source": "Oknodie gained one level after the trial.",
+      "expected_es": "Oknodie subió un nivel después de la prueba.",
+      "checks": [
+        "proper_name_unchanged",
+        "level_as_character_level"
+      ],
+      "risk": "Do not split, translate, or respell Oknodie."
+    },
+    {
+      "id": "farm-001",
+      "source": "She farmed low-level monsters to gain experience.",
+      "expected_es": "Farmeó monstruos de bajo nivel para ganar experiencia.",
+      "checks": [
+        "farm_as_gaming_grind",
+        "level_as_character_level"
+      ],
+      "risk": "A dictionary translation such as 'cultivó monstruos' loses the game mechanic."
+    },
+    {
+      "id": "farm-002",
+      "source": "The villagers returned to the farm before sunset.",
+      "expected_es": "Los aldeanos regresaron a la granja antes del atardecer.",
+      "checks": [
+        "farm_as_physical_place"
+      ],
+      "risk": "A global replacement of farm with 'farmear' would be wrong."
+    },
+    {
+      "id": "steal-001",
+      "source": "The Steal skill failed, so she tried to steal the key herself.",
+      "expected_es": "La habilidad Steal falló, así que intentó robar la llave ella misma.",
+      "checks": [
+        "possible_skill_name_preserved",
+        "steal_as_ordinary_verb"
+      ],
+      "risk": "One global replacement cannot reliably handle the skill label and ordinary verb in the same sentence."
+    },
+    {
+      "id": "tsundere-001",
+      "source": "Everyone called the tsundere girl cold, but Oknodie knew better.",
+      "expected_es": "Todos llamaban fría a la chica tsundere, pero Oknodie sabía que no era así.",
+      "checks": [
+        "otaku_archetype_preserved",
+        "proper_name_unchanged"
+      ],
+      "risk": "Flattening tsundere to only 'fría' loses the archetype."
+    },
+    {
+      "id": "build-001",
+      "source": "Her build focused on Luck instead of Strength.",
+      "expected_es": "Su build se centraba en Suerte en lugar de Fuerza.",
+      "checks": [
+        "build_as_character_configuration",
+        "stat_names_case_sensitive_if_system_labels"
+      ],
+      "risk": "Build can mean construction outside gaming; use context."
+    },
+    {
+      "id": "drop-001",
+      "source": "The monster dropped a rare item.",
+      "expected_es": "El monstruo soltó un objeto raro.",
+      "checks": [
+        "drop_as_verb_not_loot_noun"
+      ],
+      "risk": "Translating every occurrence of drop as 'botín' can break sentence grammar."
+    },
+    {
+      "id": "level-002",
+      "source": "The next level of the tower was sealed.",
+      "expected_es": "El siguiente piso de la torre estaba sellado.",
+      "checks": [
+        "level_as_physical_floor"
+      ],
+      "risk": "Level does not always mean character level."
+    },
+    {
+      "id": "minmax-001",
+      "source": "He was min-maxing Luck to survive the early game.",
+      "expected_es": "Estaba optimizando al máximo la Suerte para sobrevivir a la fase inicial del juego.",
+      "checks": [
+        "min_maxing_as_stat_optimization",
+        "game_context"
+      ],
+      "risk": "Literal word-by-word translation loses the strategy concept."
+    }
+  ]
+}
