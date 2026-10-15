@@ -11,7 +11,12 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -22,5 +27,26 @@ jobs:
           cache: pip
       - name: Install package and test dependencies
         run: python -m pip install -e '.[test]'
+      - name: Validate Windows PowerShell maintenance scripts
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $scripts = @(
+            "scripts/run-windows-backup.ps1",
+            "scripts/install-windows-backup-task.ps1",
+            "scripts/uninstall-windows-backup-task.ps1"
+          )
+          foreach ($script in $scripts) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Join-Path $PWD $script), [ref]$tokens, [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error ($script + ': ' + $_.Message) }
+              exit 1
+            }
+            Write-Host "PowerShell syntax OK: $script"
+          }
       - name: Run tests
         run: pytest -q
