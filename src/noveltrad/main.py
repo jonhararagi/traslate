@@ -98,15 +98,19 @@ ALLOWED_SUFFIXES = {".epub", ".pdf"}
 
 
 _NOVEL_PROFILE_RELATIVE_PATH = Path("data") / "novels" / "i_became_the_academy_villains_daughter.json"
-_PROFILE_PATH_CANDIDATES = (
-    Path(__file__).resolve().parents[2] / _NOVEL_PROFILE_RELATIVE_PATH,
-    Path(__file__).resolve().parents[1] / _NOVEL_PROFILE_RELATIVE_PATH,
-)
-# PyInstaller onedir stores add-data resources under _internal; select the existing path.
-NOVEL_PROFILE_PATH = next(
-    (candidate for candidate in _PROFILE_PATH_CANDIDATES if candidate.is_file()),
-    _PROFILE_PATH_CANDIDATES[0],
-)
+
+
+def _resolve_novel_profile_path(module_file: str | Path) -> Path:
+    """Resolve profile data from source checkouts and PyInstaller's _internal folder."""
+    module_path = Path(module_file).resolve()
+    candidates = (
+        module_path.parents[2] / _NOVEL_PROFILE_RELATIVE_PATH,
+        module_path.parents[1] / _NOVEL_PROFILE_RELATIVE_PATH,
+    )
+    return next((candidate for candidate in candidates if candidate.is_file()), candidates[0])
+
+
+NOVEL_PROFILE_PATH = _resolve_novel_profile_path(__file__)
 MAX_GLOSSARY_SCAN_CHARS = 25_000_000
 MAX_GLOSSARY_CANDIDATES = 500
 _COMMON_TITLE_WORDS = {
