@@ -229,3 +229,30 @@ def test_import_epub_preserves_original_text_and_chapter_title(client, tmp_path)
     assert len(chapters) == 1
     assert chapters[0]["title"] == "Chapter One"
     assert "Oknodie reached level 10." in chapters[0]["original_text"]
+
+
+
+def test_epub_sections_follow_spine_reading_order(client, tmp_path):
+    book_file = epub.EpubBook()
+    book_file.set_identifier("noveltrad-order-test")
+    book_file.set_title("Reading Order")
+    book_file.set_language("en")
+    first = epub.EpubHtml(title="First", file_name="first.xhtml", lang="en")
+    first.content = "<html><body><h1>First</h1><p>First section text.</p></body></html>"
+    second = epub.EpubHtml(title="Second", file_name="second.xhtml", lang="en")
+    second.content = "<html><body><h1>Second</h1><p>Second section text.</p></body></html>"
+    book_file.add_item(first)
+    book_file.add_item(second)
+    book_file.add_item(epub.EpubNcx())
+    book_file.add_item(epub.EpubNav())
+    book_file.spine = ["nav", second, first]
+    epub_path = tmp_path / "reading-order.epub"
+    epub.write_epub(str(epub_path), book_file)
+
+    response = client.post(
+        "/api/books/import",
+        files={"file": ("reading-order.epub", epub_path.read_bytes(), "application/epub+zip")},
+    )
+    assert response.status_code == 200, response.text
+    chapters = client.get(f"/api/books/{response.json()['id']}/chapters").json()
+    assert [chapter["title"] for chapter in chapters] == ["Second", "First"]
