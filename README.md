@@ -2,7 +2,7 @@
 
 NovelTrad is a local-first Windows-friendly reader and translation workspace for light novels, webnovels, and fanfiction. It is designed around a calm reading experience, persistent per-book terminology, protected names, and optional help from a chat website without paid API keys.
 
-> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor with CRUD controls. Fully translated books can be exported as Spanish EPUB. An on-demand local neural preview is now available through Ollama; batch translation across an entire book, automatic chunking, and OCR remain unfinished.
+> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor with CRUD controls. Fully translated books can be exported as Spanish EPUB. An on-demand local neural preview is now available through Ollama; automatic sequential chapter chunking with continuity context and side-by-side review is now implemented in the working branch; full-book queueing, glossary extraction from source chapters, OCR, and real-chapter quality validation remain unfinished.
 
 ## Product principles
 
@@ -18,7 +18,7 @@ NovelTrad is a local-first Windows-friendly reader and translation workspace for
 
 - Python 3.11 or newer.
 - Internet is only needed to install dependencies initially. EPUB/PDF import and local storage run on the computer.
-- The reader now exposes two distinct modes: **Modo local** applies approved deterministic rules without a model; **Modo premium** can request an on-demand translation from a user-installed Ollama model running on loopback. Premium is optional, resource-intensive, limited to 12,000 characters per preview, and never saves automatically. See [the mode and hardware guide](docs/MODO_LOCAL_Y_MODO_PREMIUM.md).
+- The reader now exposes two distinct modes: **Modo local** applies approved deterministic rules without a model; **Modo premium** can request an on-demand translation from a user-installed Ollama model running on loopback. Premium is optional and resource-intensive. The chunked chapter preview processes up to 200,000 source characters sequentially in 3,500-character chunks, carries a short translation context forward, exposes original/translation pairs for review, and never saves automatically. This is not yet a full-book batch queue. See [the mode and hardware guide](docs/MODO_LOCAL_Y_MODO_PREMIUM.md).
 
 ## Run on Windows
 
