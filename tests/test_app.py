@@ -845,7 +845,11 @@ def test_backup_lock_serializes_independent_processes(tmp_path, monkeypatch):
     )
     try:
         assert child.stdout is not None
-        assert child.stdout.readline().strip() == "LOCK_HELD"
+        while True:
+            line = child.stdout.readline()
+            assert line, child.stderr.read() if child.stderr else "child exited before acquiring the lock"
+            if line.strip() == "LOCK_HELD":
+                break
         started = time.monotonic()
         with noveltrad_main._cross_process_backup_lock():
             waited = time.monotonic() - started
