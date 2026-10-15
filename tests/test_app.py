@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import fitz
 import pytest
+import shutil
 import zipfile
 from io import BytesIO
 from bs4 import BeautifulSoup
@@ -1123,3 +1124,34 @@ os._exit(0)
     assert book_ids == {old.json()["id"], newer.json()["id"]}
     assert not list(data_root.glob("restore-*.sqlite3"))
     assert not list(data_root.glob("restore-imports-*"))
+
+
+
+
+def test_interrupted_restore_removes_new_imports_when_no_previous_directory_existed(client, tmp_path):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("before-restore.pdf", pdf_bytes("Database before restore"), "application/pdf")},
+    )
+    assert imported.status_code == 200, imported.text
+    safety = noveltrad_main.create_pre_restore_snapshot()
+    assert safety is not None
+    data_root = tmp_path / "noveltrad-data"
+    imports_dir = data_root / "imports"
+    shutil.rmtree(imports_dir)
+    imports_dir.mkdir()
+    (imports_dir / "unexpected-new-source.pdf").write_bytes(b"partial restore")
+    previous_imports = data_root / f"imports-before-restore-{'a' * 32}"
+    noveltrad_main._write_restore_transaction({
+        "version": 1,
+        "safety_backup": safety.name,
+        "database_existed": True,
+        "previous_imports": previous_imports.name,
+        "imports_snapshot_present": True,
+        "imports_directory_existed": False,
+    })
+
+    assert noveltrad_main.recover_interrupted_restore() is True
+    assert not imports_dir.exists()
+    assert not (data_root / ".restore-transaction.json").exists()
+    assert client.get("/api/books").status_code == 200
