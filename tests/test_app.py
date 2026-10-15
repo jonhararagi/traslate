@@ -476,3 +476,20 @@ def test_restore_rejects_corrupt_backup_without_changing_active_library(client, 
     assert restored.status_code == 422
     books = client.get("/api/books").json()
     assert [book["id"] for book in books] == [imported["id"]]
+
+
+def test_restore_can_recover_when_active_database_is_corrupt(client, tmp_path):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("recover.pdf", pdf_bytes("Recover me"), "application/pdf")},
+    ).json()
+    backup = client.post("/api/backups").json()
+    active_db = tmp_path / "noveltrad-data" / "noveltrad.sqlite3"
+    active_db.write_bytes(b"damaged active database bytes")
+
+    restored = client.post(f"/api/backups/{backup['name']}/restore")
+    assert restored.status_code == 200, restored.text
+    assert restored.json()["restored"] is True
+    assert restored.json()["safety_backup"]
+    books = client.get("/api/books").json()
+    assert [book["id"] for book in books] == [imported["id"]]
