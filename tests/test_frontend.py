@@ -32,3 +32,15 @@ def test_embedded_reader_javascript_parses():
         assert result.returncode == 0, result.stderr
     finally:
         script_path.unlink(missing_ok=True)
+
+
+
+def test_manual_narrative_assistant_exposes_consent_gated_workflow():
+    page = home()
+    assert "Microventana de asistencia narrativa" in page
+    assert "na-consent-nt" in page
+    assert "Copiar prompt autorizado" in page
+    assert "https://chatgpt.com/" in page
+    assert "https://gemini.google.com/app" in page
+    assert "no automatiza ChatGPT/Gemini" in page
+    assert "no hay envío automático" in page
