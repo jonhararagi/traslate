@@ -121,7 +121,15 @@ def extract_pdf(path: Path) -> list[tuple[str, str]]:
 def extract_epub(path: Path) -> list[tuple[str, str]]:
     book = epub.read_epub(str(path), options={"ignore_ncx": True})
     chapters: list[tuple[str, str]] = []
-    for item in book.get_items_of_type(ITEM_DOCUMENT):
+    ordered_items = []
+    for spine_entry in book.spine:
+        item_id = spine_entry[0] if isinstance(spine_entry, (tuple, list)) else spine_entry
+        item = book.get_item_with_id(item_id)
+        if item is not None and item.get_type() == ITEM_DOCUMENT:
+            ordered_items.append(item)
+    if not ordered_items:
+        ordered_items = list(book.get_items_of_type(ITEM_DOCUMENT))
+    for item in ordered_items:
         soup = BeautifulSoup(item.get_content(), "html.parser")
         for node in soup(["script", "style", "nav"]):
             node.decompose()
