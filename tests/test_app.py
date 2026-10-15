@@ -603,7 +603,18 @@ def test_scheduler_failure_is_recorded_and_retried_without_advancing_schedule(cl
     assert persisted["last_success_at"] is None
     assert "simulated disk full" in persisted["last_error"]
     second = noveltrad_main.run_scheduled_backup_if_due()
-    assert second["status"] == "error"
+    assert second["status"] == "retry_wait"
+    assert second["retry_after_at"] == first["retry_after_at"]
+    assert noveltrad_main.load_backup_settings()["failure_count"] == 1
+
+    dt = __import__("datetime")
+    retry_time = dt.datetime.fromisoformat(first["retry_after_at"]) + dt.timedelta(seconds=1)
+    third = noveltrad_main.run_scheduled_backup_if_due(now=retry_time)
+    assert third["status"] == "error"
+    assert third["retry_delay_seconds"] == 600
+    persisted = noveltrad_main.load_backup_settings()
+    assert persisted["failure_count"] == 2
+    assert persisted["retry_after_at"] == third["retry_after_at"]
 
 
 def test_restore_filesystem_failure_rolls_back_imports_and_keeps_live_database(client, tmp_path, monkeypatch):
@@ -779,3 +790,33 @@ def test_headless_backup_cli_does_not_create_an_empty_database(client, tmp_path,
     monkeypatch.setenv("NOVELTRAD_HOME", str(empty_home))
     assert backup_cli_main() == 2
     assert not (empty_home / "noveltrad.sqlite3").exists()
+
+
+def test_scheduler_backoff_resets_after_success(client, tmp_path):
+    from datetime import datetime, timezone
+    settings_path = tmp_path / "noveltrad-data" / "backup-settings.json"
+    saved = __import__("json").loads(settings_path.read_text(encoding="utf-8"))
+    saved.update({"enabled": True, "interval_hours": 1, "schedule_started_at": "2020-01-01T00:00:00+00:00", "last_success_at": None, "failure_count": 2, "retry_after_at": "2020-01-01T00:10:00+00:00"})
+    settings_path.write_text(__import__("json").dumps(saved), encoding="utf-8")
+    result = noveltrad_main.run_scheduled_backup_if_due(now=datetime(2026, 1, 1, tzinfo=timezone.utc))
+    assert result["status"] == "created"
+    persisted = noveltrad_main.load_backup_settings()
+    assert persisted["failure_count"] == 0
+    assert persisted["retry_after_at"] is None
+    assert persisted["last_error"] is None
+
+
+def test_concurrent_due_scheduler_calls_create_only_one_backup(client, tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    from datetime import datetime, timezone
+    settings_path = tmp_path / "noveltrad-data" / "backup-settings.json"
+    saved = __import__("json").loads(settings_path.read_text(encoding="utf-8"))
+    saved.update({"enabled": True, "interval_hours": 1, "schedule_started_at": "2020-01-01T00:00:00+00:00", "last_success_at": None, "retry_after_at": None, "failure_count": 0})
+    settings_path.write_text(__import__("json").dumps(saved), encoding="utf-8")
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(lambda _: noveltrad_main.run_scheduled_backup_if_due(now=now), range(4)))
+    assert sum(result["status"] == "created" for result in results) == 1
+    assert sum(result["status"] == "not_due" for result in results) == 3
+    backups = list((tmp_path / "noveltrad-data" / "backups").glob("noveltrad-*.sqlite3"))
+    assert len(backups) == 1
