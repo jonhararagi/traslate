@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import fitz
 import pytest
+import zipfile
+from io import BytesIO
+from bs4 import BeautifulSoup
+import ebooklib
 from ebooklib import epub
 from fastapi.testclient import TestClient
 
@@ -347,3 +351,41 @@ def test_glossary_entry_can_be_edited_and_deleted_only_within_its_book(client):
     assert deleted.status_code == 200
     assert deleted.json()["deleted"] is True
     assert not any(x["id"] == entry_id for x in client.get(f"/api/books/{first_book['id']}/glossary").json())
+
+
+
+def test_epub_export_requires_all_chapters_to_be_translated(client):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", pdf_bytes(), "application/pdf")},
+    ).json()
+    response = client.get(f"/api/books/{imported['id']}/export/epub")
+    assert response.status_code == 409
+    assert "sin traducir" in response.json()["detail"]
+
+
+def test_epub_export_contains_only_saved_spanish_translation_and_escapes_markup(client, tmp_path):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", pdf_bytes("Chapter One\nOriginal source text."), "application/pdf")},
+    ).json()
+    chapter = client.get(f"/api/books/{imported['id']}/chapters").json()[0]
+    translated = "Oknodie & <nivel 10>."
+    saved = client.put(
+        f"/api/chapters/{chapter['id']}/translation",
+        json={"translated_text": translated},
+    )
+    assert saved.status_code == 200
+
+    response = client.get(f"/api/books/{imported['id']}/export/epub")
+    assert response.status_code == 200, response.text
+    assert response.headers["content-type"].startswith("application/epub+zip")
+    assert "attachment;" in response.headers["content-disposition"]
+
+    exported_path = tmp_path / "translated.epub"
+    exported_path.write_bytes(response.content)
+    exported = epub.read_epub(str(exported_path))
+    docs = [item for item in exported.get_items_of_type(ebooklib.ITEM_DOCUMENT)]
+    exported_text = "\n".join(BeautifulSoup(item.get_content(), "html.parser").get_text(" ", strip=True) for item in docs)
+    assert "Oknodie & <nivel 10>." in exported_text
+    assert "Original source text." not in exported_text
