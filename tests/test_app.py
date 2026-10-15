@@ -1155,3 +1155,106 @@ def test_interrupted_restore_removes_new_imports_when_no_previous_directory_exis
     assert not imports_dir.exists()
     assert not (data_root / ".restore-transaction.json").exists()
     assert client.get("/api/books").status_code == 200
+
+
+
+def test_backup_crash_during_originals_snapshot_does_not_leave_publishable_partial_backup(client, tmp_path, monkeypatch):
+    import os
+    import subprocess
+    import sys
+
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("source-before-backup.pdf", pdf_bytes("Source that must be backed up"), "application/pdf")},
+    )
+    assert imported.status_code == 200, imported.text
+    data_root = tmp_path / "noveltrad-data"
+    script = r'''
+import os
+from noveltrad import main
+def crash_during_snapshot(path):
+    os._exit(91)
+main.snapshot_imports_for_backup = crash_during_snapshot
+main.create_database_backup()
+os._exit(0)
+'''
+    child = subprocess.run(
+        [sys.executable, "-c", script],
+        env=os.environ.copy(),
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert child.returncode == 91, child.stderr
+
+    backup_root = data_root / "backups"
+    snapshots = list(backup_root.glob("noveltrad-*.sqlite3"))
+    assert snapshots, "the crash simulation must occur after the SQLite snapshot is written"
+    for snapshot in snapshots:
+        companion = backup_root / f"{snapshot.stem}-imports"
+        assert companion.is_dir(), f"published backup {snapshot.name} has no companion originals directory"
+        assert any(companion.iterdir()), f"published backup {snapshot.name} has no backed-up original files"
+
+
+def test_interrupted_restore_from_corrupt_active_database_can_recover_valid_target(client, tmp_path, monkeypatch):
+    import os
+    import subprocess
+    import sys
+
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("valid-target.pdf", pdf_bytes("Restored target remains readable"), "application/pdf")},
+    )
+    assert imported.status_code == 200, imported.text
+    backup = client.post("/api/backups")
+    assert backup.status_code == 200, backup.text
+    backup_name = backup.json()["name"]
+
+    data_root = tmp_path / "noveltrad-data"
+    active_db = data_root / "noveltrad.sqlite3"
+    active_db.write_bytes(b"corrupt pre-restore database")
+    script = r'''
+import os
+from pathlib import Path
+import sys
+from noveltrad import main
+backup_name = sys.argv[1]
+real_replace = main.os.replace
+def crash_after_database_replace(source, destination):
+    result = real_replace(source, destination)
+    source_path, destination_path = Path(source), Path(destination)
+    if destination_path == main.database_path() and source_path.name.startswith("restore-"):
+        os._exit(92)
+    return result
+main.os.replace = crash_after_database_replace
+main.restore_backup(backup_name)
+os._exit(0)
+'''
+    child = subprocess.run(
+        [sys.executable, "-c", script, backup_name],
+        env=os.environ.copy(),
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert child.returncode == 92, child.stderr
+
+    # A corrupt pre-restore database cannot be rolled back into a usable library.
+    # Recovery must handle this case safely rather than permanently blocking startup.
+    assert noveltrad_main.recover_interrupted_restore() is True
+    assert noveltrad_main.validate_database_file(active_db) is None
+    books = client.get("/api/books")
+    assert books.status_code == 200, books.text
+    assert [book["id"] for book in books.json()] == [imported.json()["id"]]
+
+
+def test_backup_retention_removes_orphaned_originals_snapshot_directories(client, tmp_path):
+    data_root = tmp_path / "noveltrad-data"
+    backup_root = data_root / "backups"
+    orphan = backup_root / "noveltrad-20200101T000000Z-deadbeef-imports"
+    orphan.mkdir(parents=True)
+    (orphan / "stale-original.pdf").write_bytes(b"orphaned data")
+
+    noveltrad_main.prune_backups(retention_count=1)
+
+    assert not orphan.exists(), "retention should remove orphaned originals directories that have no matching database snapshot"
