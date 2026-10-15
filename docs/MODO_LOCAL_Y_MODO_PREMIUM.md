@@ -51,3 +51,10 @@ Fuentes de referencia inicial para identificar la obra (no sustituyen el texto d
 La sección «Traducción de libro completo» de la biblioteca permite preparar la cola, iniciar/reanudar, pausar, reintentar fragmentos fallidos, revisar cada salida y aplicar las traducciones al editor de la biblioteca. Preparar la cola no consume inferencia. La ejecución solo empieza con una acción explícita. El manifiesto y las traducciones provisionales se guardan en la base local; cerrar NovelTrad no borra el avance. El botón de aplicación permanece bloqueado hasta que todos los fragmentos estén traducidos y revisados. El texto original es de solo lectura y no se actualiza desde esta función.
 
 La cola limita cada sección a 200.000 caracteres, usa 3.500 caracteres por fragmento por defecto (configurable por API entre 1.000 y 6.000) y 1.200 caracteres de contexto previo por defecto. El glosario aprobado se guarda como instantánea al crear el trabajo. Una traducción completa no equivale a una traducción de calidad validada: los nombres y términos ambiguos requieren revisión humana.
+
+
+## Análisis local de candidatos del glosario
+
+La rama de trabajo de esta función añade «Buscar candidatos en el texto original» al panel del glosario. Examina el texto local importado; combina los términos del perfil de Oknodie con una lista heurística gamer/otaku y nombres potenciales detectados por mayúsculas repetidas. Cada candidato incluye frecuencia y hasta tres fragmentos breves con capítulo y ubicación. El escaneo no llama a Ollama, a la nube ni a ningún servicio externo.
+
+Los candidatos se guardan en SQLite con estado pendiente, aprobado o ignorado. Volver a escanear actualiza la frecuencia/evidencia sin restablecer una decisión previa. Aprobar exige que el usuario revise forma preferida, regla y notas. El botón «Ignorar» solo oculta ese candidato de la lista pendiente. Los nombres que se infieren solo por mayúsculas pueden ser falsos positivos; no se deben aprobar sin leer la evidencia. El escaneo está limitado a 25 millones de caracteres y 500 candidatos por pasada. Estos límites son protección de recursos, no una promesa de exhaustividad.

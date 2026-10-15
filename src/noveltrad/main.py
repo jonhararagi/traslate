@@ -97,7 +97,43 @@ REQUIRED_BACKUP_TABLES = {"books", "chapters", "glossary_entries", "translation_
 ALLOWED_SUFFIXES = {".epub", ".pdf"}
 
 
-NOVEL_PROFILE_PATH = Path(__file__).resolve().parents[2] / "data" / "novels" / "i_became_the_academy_villains_daughter.json"
+_NOVEL_PROFILE_RELATIVE_PATH = Path("data") / "novels" / "i_became_the_academy_villains_daughter.json"
+
+
+def _resolve_novel_profile_path(module_file: str | Path) -> Path:
+    """Resolve profile data from source checkouts and PyInstaller's _internal folder."""
+    module_path = Path(module_file).resolve()
+    candidates = (
+        module_path.parents[2] / _NOVEL_PROFILE_RELATIVE_PATH,
+        module_path.parents[1] / _NOVEL_PROFILE_RELATIVE_PATH,
+    )
+    return next((candidate for candidate in candidates if candidate.is_file()), candidates[0])
+
+
+NOVEL_PROFILE_PATH = _resolve_novel_profile_path(__file__)
+MAX_GLOSSARY_SCAN_CHARS = 25_000_000
+MAX_GLOSSARY_CANDIDATES = 500
+_COMMON_TITLE_WORDS = {
+    "a", "an", "and", "after", "as", "at", "before", "but", "by", "chapter",
+    "during", "for", "from", "he", "her", "here", "his", "however", "i", "if",
+    "in", "it", "its", "me", "my", "of", "on", "once", "or", "our", "she",
+    "so", "than", "that", "the", "their", "them", "then", "there", "these",
+    "they", "this", "those", "to", "until", "upon", "we", "when", "where",
+    "which", "while", "who", "why", "with", "you", "your",
+}
+_PROPER_ENTITY_PATTERN = re.compile(
+    r"\b[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ’'’-]{0,28}"
+    r"(?:\s+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ’'’-]{0,28}){0,2}\b"
+)
+_BUILTIN_GAMER_TERMS = (
+    "level", "level up", "level-up", "lvl", "farm", "farming", "farmed",
+    "grind", "grinding", "min-maxing", "stats", "stat points", "build",
+    "skill", "skills", "quest", "quests", "drop", "drop rate", "loot", "boss",
+    "buff", "debuff", "aggro", "EXP", "XP", "HP", "MP", "DPS", "NPC",
+    "party", "guild", "mana", "dungeon", "isekai", "yandere", "tsundere",
+    "craft", "crafting", "reroll", "cooldown", "cool down", "passive skill",
+    "active skill", "steal skill",
+)
 
 
 def _normalized_novel_title(value: str) -> str:
@@ -517,6 +553,22 @@ def init_db() -> None:
                 updated_at TEXT NOT NULL,
                 UNIQUE(job_id, chapter_id, chunk_index)
             );
+            CREATE TABLE IF NOT EXISTS glossary_candidates (
+                id TEXT PRIMARY KEY,
+                book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+                normalized_term TEXT NOT NULL,
+                source_term TEXT NOT NULL,
+                category TEXT NOT NULL,
+                occurrences INTEGER NOT NULL DEFAULT 0,
+                evidence_json TEXT NOT NULL DEFAULT '[]',
+                candidate_notes TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'ignored')),
+                glossary_entry_id TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE(book_id, normalized_term)
+            );
+            CREATE INDEX IF NOT EXISTS idx_glossary_candidates_book_status ON glossary_candidates(book_id, status, occurrences DESC);
             CREATE INDEX IF NOT EXISTS idx_translation_jobs_book ON translation_jobs(book_id, created_at);
             CREATE INDEX IF NOT EXISTS idx_translation_job_chunks_order ON translation_job_chunks(job_id, chapter_index, chunk_index);
             """
@@ -605,6 +657,17 @@ class GlossaryInput(BaseModel):
     @field_validator("source_term", "preferred_term", "notes", mode="before")
     @classmethod
     def strip_text_fields(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
+
+class GlossaryCandidateApprovalInput(BaseModel):
+    preferred_term: str = Field(min_length=1, max_length=300)
+    rule: str = Field(pattern="^(preserve|translate|contextual|protect)$")
+    notes: str = Field(default="", max_length=2000)
+
+    @field_validator("preferred_term", "notes", mode="before")
+    @classmethod
+    def strip_candidate_fields(cls, value: object) -> object:
         return value.strip() if isinstance(value, str) else value
 
 
@@ -1885,6 +1948,233 @@ def add_glossary_entry(book_id: str, entry: GlossaryInput) -> dict[str, object]:
     return {"id": entry_id, **entry.model_dump()}
 
 
+
+
+def _normalize_candidate_term(value: str) -> str:
+    return re.sub(r"\s+", " ", value.casefold().strip())
+
+
+def _candidate_literal_pattern(value: str) -> re.Pattern[str]:
+    words = re.split(r"\s+", value.strip())
+    body = r"\s+".join(re.escape(word) for word in words if word)
+    return re.compile(r"(?<!\w)" + body + r"(?!\w)", re.IGNORECASE)
+
+
+def _load_candidate_specs() -> dict[str, dict[str, object]]:
+    """Load novel-profile terms and common gamer terms without approving any rule."""
+    try:
+        profile = json.loads(NOVEL_PROFILE_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        profile = {}
+    specs: dict[str, dict[str, object]] = {}
+    for candidate in profile.get("terminology_candidates", []):
+        source = str(candidate.get("source", "")).strip()
+        if source:
+            specs[_normalize_candidate_term(source)] = {
+                "term": source, "category": str(candidate.get("type", "perfil de novela")),
+                "minimum": 1, "notes": str(candidate.get("notes", "")),
+            }
+    for source in _BUILTIN_GAMER_TERMS:
+        specs.setdefault(_normalize_candidate_term(source), {
+            "term": source, "category": "término gamer/otaku (contextual)", "minimum": 2,
+            "notes": "Candidato heurístico: verifica el significado en el capítulo antes de aprobar una regla.",
+        })
+    return specs
+
+
+def _record_candidate_hit(
+    hits: dict[str, dict[str, object]], key: str, actual_term: str,
+    category: str, notes: str, minimum: int, chapter: sqlite3.Row,
+    text: str, start: int, end: int,
+) -> None:
+    item = hits.get(key)
+    if item is None:
+        item = {
+            "source_term": actual_term, "category": category, "candidate_notes": notes,
+            "minimum": minimum, "occurrences": 0, "evidence": [],
+        }
+        hits[key] = item
+    item["occurrences"] = int(item["occurrences"]) + 1
+    evidence = item["evidence"]
+    if len(evidence) >= 3:
+        return
+    excerpt = re.sub(r"\s+", " ", text[max(0, start - 65):min(len(text), end + 65)]).strip()
+    record = {"chapter_index": int(chapter["chapter_index"]), "chapter_title": str(chapter["title"]), "snippet": excerpt}
+    if excerpt and record not in evidence:
+        evidence.append(record)
+
+
+def _candidate_row(row: sqlite3.Row) -> dict[str, object]:
+    result = dict(row)
+    try:
+        decoded = json.loads(result.get("evidence_json") or "[]")
+        result["evidence"] = decoded if isinstance(decoded, list) else []
+    except (json.JSONDecodeError, TypeError):
+        result["evidence"] = []
+    result.pop("evidence_json", None)
+    result["occurrences"] = int(result.get("occurrences") or 0)
+    return result
+
+
+@app.post("/api/books/{book_id}/glossary/candidates/extract")
+def extract_glossary_candidates(book_id: str) -> dict[str, object]:
+    """Analyze imported source text locally; never invokes a model or approves a term."""
+    init_db()
+    with connection() as conn:
+        if not conn.execute("SELECT 1 FROM books WHERE id = ?", (book_id,)).fetchone():
+            raise HTTPException(status_code=404, detail="No se encontró la novela.")
+        chapters = conn.execute(
+            "SELECT id, chapter_index, title, original_text FROM chapters WHERE book_id = ? ORDER BY chapter_index",
+            (book_id,),
+        ).fetchall()
+        total_chars = sum(len(row["original_text"] or "") for row in chapters)
+        if total_chars > MAX_GLOSSARY_SCAN_CHARS:
+            raise HTTPException(status_code=413, detail=f"El análisis está limitado a {MAX_GLOSSARY_SCAN_CHARS:,} caracteres por pasada. Divide el libro y vuelve a intentarlo.")
+    specs = _load_candidate_specs()
+    patterns = {key: _candidate_literal_pattern(str(spec["term"])) for key, spec in specs.items()}
+    hits: dict[str, dict[str, object]] = {}
+    for chapter in chapters:
+        text = chapter["original_text"] or ""
+        if not text:
+            continue
+        for key, pattern in patterns.items():
+            spec = specs[key]
+            for match in pattern.finditer(text):
+                _record_candidate_hit(
+                    hits, key, match.group(0), str(spec["category"]), str(spec["notes"]),
+                    int(spec["minimum"]), chapter, text, match.start(), match.end(),
+                )
+        for match in _PROPER_ENTITY_PATTERN.finditer(text):
+            actual = match.group(0).strip()
+            first_word = actual.split()[0].casefold() if actual else ""
+            if not actual or first_word in _COMMON_TITLE_WORDS:
+                continue
+            key = _normalize_candidate_term(actual)
+            if key not in specs:
+                _record_candidate_hit(
+                    hits, key, actual, "posible nombre propio o entidad",
+                    "Detectado por uso repetido de mayúsculas; verifica si realmente es un nombre.",
+                    2, chapter, text, match.start(), match.end(),
+                )
+    found = [(key, item) for key, item in hits.items() if int(item["occurrences"]) >= int(item["minimum"])]
+    found.sort(key=lambda pair: (-int(pair[1]["occurrences"]), pair[0]))
+    found = found[:MAX_GLOSSARY_CANDIDATES]
+    now = datetime.now(timezone.utc).isoformat()
+    created = refreshed = 0
+    with connection() as conn:
+        for key, item in found:
+            existing = conn.execute(
+                "SELECT id FROM glossary_candidates WHERE book_id = ? AND normalized_term = ?", (book_id, key)
+            ).fetchone()
+            if existing:
+                refreshed += 1
+            else:
+                created += 1
+            conn.execute(
+                "INSERT INTO glossary_candidates(id, book_id, normalized_term, source_term, category, occurrences, evidence_json, "
+                "candidate_notes, status, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,'pending',?,?) "
+                "ON CONFLICT(book_id, normalized_term) DO UPDATE SET category=excluded.category, "
+                "occurrences=excluded.occurrences, evidence_json=excluded.evidence_json, "
+                "candidate_notes=excluded.candidate_notes, updated_at=excluded.updated_at",
+                (str(uuid4()), book_id, key, str(item["source_term"]), str(item["category"]),
+                 int(item["occurrences"]), json.dumps(item["evidence"], ensure_ascii=False), str(item["candidate_notes"]), now, now),
+            )
+        total_pending = int(conn.execute(
+            "SELECT COUNT(*) FROM glossary_candidates WHERE book_id = ? AND status = 'pending'", (book_id,)
+        ).fetchone()[0])
+        total_saved = int(conn.execute(
+            "SELECT COUNT(*) FROM glossary_candidates WHERE book_id = ?", (book_id,)
+        ).fetchone()[0])
+        return {
+            "book_id": book_id, "scanned_chapters": len(chapters), "scanned_characters": total_chars,
+            "found_in_this_pass": len(found), "new_candidates": created, "refreshed_candidates": refreshed,
+            "saved_candidates": total_saved, "pending_candidates": total_pending, "approved_automatically": 0,
+        }
+
+
+@app.get("/api/books/{book_id}/glossary/candidates")
+def list_glossary_candidates(book_id: str, status: str = "pending") -> list[dict[str, object]]:
+    init_db()
+    if status not in {"pending", "approved", "ignored", "all"}:
+        raise HTTPException(status_code=422, detail="Estado inválido. Usa pending, approved, ignored o all.")
+    with connection() as conn:
+        if not conn.execute("SELECT 1 FROM books WHERE id = ?", (book_id,)).fetchone():
+            raise HTTPException(status_code=404, detail="No se encontró la novela.")
+        if status == "all":
+            rows = conn.execute(
+                "SELECT * FROM glossary_candidates WHERE book_id = ? ORDER BY CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END, occurrences DESC, source_term COLLATE NOCASE",
+                (book_id,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM glossary_candidates WHERE book_id = ? AND status = ? ORDER BY occurrences DESC, source_term COLLATE NOCASE",
+                (book_id, status),
+            ).fetchall()
+        return [_candidate_row(row) for row in rows]
+
+
+@app.post("/api/books/{book_id}/glossary/candidates/{candidate_id}/approve")
+def approve_glossary_candidate(book_id: str, candidate_id: str, payload: GlossaryCandidateApprovalInput) -> dict[str, object]:
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with connection() as conn:
+        if not conn.execute("SELECT 1 FROM books WHERE id = ?", (book_id,)).fetchone():
+            raise HTTPException(status_code=404, detail="No se encontró la novela.")
+        candidate = conn.execute(
+            "SELECT * FROM glossary_candidates WHERE id = ? AND book_id = ?", (candidate_id, book_id)
+        ).fetchone()
+        if not candidate:
+            raise HTTPException(status_code=404, detail="No se encontró el candidato.")
+        if candidate["status"] != "pending":
+            raise HTTPException(status_code=409, detail="Solo se pueden aprobar candidatos pendientes.")
+        existing = conn.execute(
+            "SELECT id, approved FROM glossary_entries WHERE book_id = ? AND source_term = ? COLLATE NOCASE",
+            (book_id, candidate["source_term"]),
+        ).fetchone()
+        if existing and bool(existing["approved"]):
+            raise HTTPException(status_code=409, detail="Este término ya existe aprobado en el glosario.")
+        if existing:
+            entry_id = existing["id"]
+            conn.execute(
+                "UPDATE glossary_entries SET preferred_term = ?, rule = ?, notes = ?, approved = 1 WHERE id = ? AND book_id = ?",
+                (payload.preferred_term, payload.rule, payload.notes, entry_id, book_id),
+            )
+        else:
+            entry_id = str(uuid4())
+            conn.execute(
+                "INSERT INTO glossary_entries(id, book_id, source_term, preferred_term, rule, notes, approved, created_at) VALUES(?,?,?,?,?,?,1,?)",
+                (entry_id, book_id, candidate["source_term"], payload.preferred_term, payload.rule, payload.notes, now),
+            )
+        conn.execute(
+            "UPDATE glossary_candidates SET status = 'approved', glossary_entry_id = ?, updated_at = ? WHERE id = ? AND book_id = ?",
+            (entry_id, now, candidate_id, book_id),
+        )
+        row = conn.execute(
+            "SELECT id, book_id, source_term, preferred_term, rule, notes, approved FROM glossary_entries WHERE id = ?",
+            (entry_id,),
+        ).fetchone()
+        return {"candidate_id": candidate_id, "status": "approved", "glossary_entry": dict(row)}
+
+
+@app.post("/api/books/{book_id}/glossary/candidates/{candidate_id}/ignore")
+def ignore_glossary_candidate(book_id: str, candidate_id: str) -> dict[str, object]:
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with connection() as conn:
+        candidate = conn.execute(
+            "SELECT status FROM glossary_candidates WHERE id = ? AND book_id = ?", (candidate_id, book_id)
+        ).fetchone()
+        if not candidate:
+            raise HTTPException(status_code=404, detail="No se encontró el candidato.")
+        if candidate["status"] != "pending":
+            raise HTTPException(status_code=409, detail="Solo se pueden ignorar candidatos pendientes.")
+        conn.execute(
+            "UPDATE glossary_candidates SET status = 'ignored', updated_at = ? WHERE id = ? AND book_id = ?",
+            (now, candidate_id, book_id),
+        )
+        return {"candidate_id": candidate_id, "status": "ignored"}
+
+
 @app.put("/api/books/{book_id}/progress")
 def save_progress(book_id: str, progress: ProgressInput) -> dict[str, object]:
     init_db()
@@ -2018,7 +2308,7 @@ def home() -> str:
 <div class="chapter-nav"><button id="previous" class="secondary" type="button">← Anterior</button><select id="chapter-select" aria-label="Elegir capítulo"></select><button id="next" class="secondary" type="button">Siguiente →</button></div>
 <div class="reader-grid"><section class="reading-pane"><h3>Original</h3><div id="original" class="original-text" tabindex="0"></div></section><section class="reading-pane"><h3>Traducción</h3><p class="sub small">El original permanece intacto. Tus cambios se guardan aparte.</p><textarea id="translation" class="translation-text" aria-label="Texto de traducción" placeholder="Escribí o pegá aquí tu traducción…"></textarea><div class="reader-actions"><button id="save-translation" class="primary" type="button">Guardar traducción</button><button id="offline-rules-open" class="secondary" type="button">Reglas offline</button><button id="export-epub" class="secondary" type="button">Exportar EPUB</button><button id="show-history" class="secondary" type="button">Historial</button><span id="save-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">Cada guardado conserva una versión anterior.</p>
 <div id="offline-rules-panel" class="panel hidden"><h3>Motor de traducción</h3><p class="sub small">Elegí un modo por operación. Ambos generan una vista previa y nunca guardan por su cuenta.</p><label>Modo <select id="translation-mode" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="local">Modo local — reglas, glosario y formato (RAM mínima)</option><option value="premium">Modo premium — modelo neuronal local (más RAM/CPU)</option></select></label><p id="premium-info" class="sub small">Premium usa Ollama local (127.0.0.1), no una API remota. Modelo predeterminado: qwen2.5:3b, instalado manualmente. Traduce el capítulo en fragmentos secuenciales de hasta 3.500 caracteres, con contexto del fragmento anterior; revisá cada pareja antes de pasar el resultado al editor.</p><label>Perfil editorial <select id="offline-profile" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="light_novel_es">Novela ligera en español</option><option value="faithful_literary_es">Traducción literaria fiel</option><option value="webnovel_es">Novela web en español</option></select></label><label>Mapa de frases, una por línea: original =&gt; traducción<textarea id="offline-phrase-map" rows="4" style="display:block;width:100%;padding:9px;margin:6px 0 12px" placeholder="reached =&gt; alcanzó&#10;magic stone =&gt; piedra mágica"></textarea></label><div class="reader-actions"><button id="offline-run" class="primary" type="button">Generar vista previa</button><button id="offline-apply" class="secondary" type="button" disabled>Pasar al editor</button><button id="offline-close" class="quiet" type="button">Cerrar</button></div><p id="offline-status" class="sub small" role="status" aria-live="polite"></p><pre id="offline-result" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:32rem;overflow:auto"></pre><div id="offline-chunks" class="reader-grid" style="margin-top:14px"></div></div><div id="translation-history" class="hidden"><h4>Versiones guardadas</h4><div id="history-list"></div><p id="history-status" class="sub small" role="status" aria-live="polite"></p></div></section></div>
-<section id="glossary-panel" class="panel hidden"><div class="reader-head"><h2>Glosario de esta novela</h2><button id="close-glossary" class="quiet" type="button">Cerrar</button></div><p class="sub small">Protegé nombres y fijá términos para mantener la coherencia. Las reglas se guardan por novela.</p><form id="glossary-form"><div class="reader-grid"><label>Término original<input id="glossary-source" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label><label>Forma preferida<input id="glossary-target" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label></div><div class="reader-actions"><label>Regla <select id="glossary-rule" style="padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)"><option value="protect">Proteger nombre/término</option><option value="preserve">Conservar exactamente</option><option value="translate">Traducir siempre así</option><option value="contextual">Depende del contexto</option></select></label><label><input id="glossary-approved" type="checkbox"> Aprobado</label><button id="glossary-submit" class="primary" type="submit">Guardar término</button><button id="glossary-cancel" class="secondary hidden" type="button">Cancelar edición</button></div><label>Notas opcionales<textarea id="glossary-notes" rows="2" maxlength="2000" style="display:block;width:100%;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Nombre propio; no traducir."></textarea></label><p id="glossary-status" class="sub small" role="status" aria-live="polite"></p></form><div id="glossary-list"></div></section>
+<section id="glossary-panel" class="panel hidden"><div class="reader-head"><h2>Glosario de esta novela</h2><button id="close-glossary" class="quiet" type="button">Cerrar</button></div><p class="sub small">Protegé nombres y fijá términos para mantener la coherencia. Las reglas se guardan por novela.</p><div class="reader-actions"><button id="extract-glossary-candidates" class="secondary" type="button">Buscar candidatos en el texto original</button><span id="glossary-candidate-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">El análisis local busca términos del perfil, vocabulario gamer/otaku y nombres potenciales. Cada candidato muestra evidencia; nada se aprueba ni se aplica automáticamente.</p><div id="glossary-candidates-list"></div><form id="glossary-form"><div class="reader-grid"><label>Término original<input id="glossary-source" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label><label>Forma preferida<input id="glossary-target" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label></div><div class="reader-actions"><label>Regla <select id="glossary-rule" style="padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)"><option value="protect">Proteger nombre/término</option><option value="preserve">Conservar exactamente</option><option value="translate">Traducir siempre así</option><option value="contextual">Depende del contexto</option></select></label><label><input id="glossary-approved" type="checkbox"> Aprobado</label><button id="glossary-submit" class="primary" type="submit">Guardar término</button><button id="glossary-cancel" class="secondary hidden" type="button">Cancelar edición</button></div><label>Notas opcionales<textarea id="glossary-notes" rows="2" maxlength="2000" style="display:block;width:100%;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Nombre propio; no traducir."></textarea></label><p id="glossary-status" class="sub small" role="status" aria-live="polite"></p></form><div id="glossary-list"></div></section>
 </section><p class="sub small">Modo local aplica reglas aprobadas, pero no traduce por sí solo frases desconocidas. Para traducción neuronal, activa Modo premium y configura Ollama localmente. Las vistas previas nunca se guardan automáticamente.</p></main>
 <script>
 const $=s=>document.querySelector(s);let currentBook=null,chapters=[],chapterPos=0,saveTimer=null,translationDirty=false,editingGlossaryId=null;
@@ -2206,11 +2496,54 @@ $('#translation').addEventListener('input',()=>{translationDirty=true;$('#save-s
 window.addEventListener('beforeunload',e=>{if(translationDirty){e.preventDefault();e.returnValue=''}});
 function resetGlossaryForm(){editingGlossaryId=null;$('#glossary-form').reset();$('#glossary-submit').textContent='Guardar término';$('#glossary-cancel').classList.add('hidden')}
 async function loadGlossary(){if(!currentBook)return;try{const entries=await api('/api/books/'+currentBook.id+'/glossary');$('#glossary-list').innerHTML=entries.length?'<div>'+entries.map(g=>'<article class="book"><div class="bookinfo"><strong>'+esc(g.source_term)+' → '+esc(g.preferred_term)+'</strong><div class="sub small">'+esc(g.rule)+' · '+(g.approved?'Aprobado':'Pendiente')+(g.notes?' · '+esc(g.notes):'')+'</div></div>'+(g.book_id===null?'':'<div class="reader-actions"><button class="secondary" type="button" data-edit-glossary="'+esc(g.id)+'">Editar</button><button class="quiet" type="button" data-delete-glossary="'+esc(g.id)+'">Eliminar</button></div>')+'</article>').join('')+'</div>':'<p class="empty">Todavía no hay términos definidos para esta novela.</p>'}catch(e){$('#glossary-status').textContent=e.message}}
-$('#toggle-glossary').addEventListener('click',async()=>{$('#glossary-panel').classList.remove('hidden');await loadGlossary();$('#glossary-source').focus()});
+async function loadGlossaryCandidates(){
+  if(!currentBook)return;
+  try{
+    const candidates=await api('/api/books/'+currentBook.id+'/glossary/candidates');
+    $('#glossary-candidates-list').innerHTML=candidates.length?candidates.map(c=>{
+      const evidence=(c.evidence||[]).map(item=>'<li><strong>'+esc(item.chapter_title)+' ('+(Number(item.chapter_index)+1)+')</strong>: '+esc(item.snippet)+'</li>').join('');
+      return '<article class="book"><div class="bookinfo"><strong>'+esc(c.source_term)+' <span class="sub small">· '+c.occurrences+' apariciones</span></strong><div class="sub small">'+esc(c.category)+' · Pendiente de verificación</div>'+(c.candidate_notes?'<p class="sub small">'+esc(c.candidate_notes)+'</p>':'')+'<details><summary>Ver evidencia en el original ('+(c.evidence||[]).length+' muestras)</summary><ul>'+evidence+'</ul></details></div><div style="min-width:min(100%,260px);display:grid;gap:8px"><label>Forma preferida<input data-candidate-target="'+esc(c.id)+'" value="'+esc(c.source_term)+'" maxlength="300" style="display:block;width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)"></label><label>Regla<select data-candidate-rule="'+esc(c.id)+'" style="display:block;width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)"><option value="contextual" selected>Depende del contexto</option><option value="protect">Proteger nombre/término</option><option value="preserve">Conservar exactamente</option><option value="translate">Traducir siempre así</option></select></label><label>Notas<textarea data-candidate-notes="'+esc(c.id)+'" rows="2" maxlength="2000" style="display:block;width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)">'+esc(c.candidate_notes||'')+'</textarea></label><div class="reader-actions"><button class="primary" type="button" data-approve-candidate="'+esc(c.id)+'">Aprobar regla</button><button class="quiet" type="button" data-ignore-candidate="'+esc(c.id)+'">Ignorar</button></div></div></article>';
+    }).join(''):'<p class="empty">No hay candidatos pendientes. Pulsa «Buscar candidatos en el texto original» para analizar la novela importada.</p>';
+  }catch(err){$('#glossary-candidate-status').textContent='No se pudo cargar el análisis: '+err.message}
+}
+$('#toggle-glossary').addEventListener('click',async()=>{$('#glossary-panel').classList.remove('hidden');await loadGlossary();await loadGlossaryCandidates();$('#glossary-source').focus()});
 $('#close-glossary').addEventListener('click',()=>$('#glossary-panel').classList.add('hidden'));
 $('#glossary-cancel').addEventListener('click',resetGlossaryForm);
 $('#glossary-list').addEventListener('click',async e=>{const edit=e.target.closest('[data-edit-glossary]');const remove=e.target.closest('[data-delete-glossary]');if(edit){const entries=await api('/api/books/'+currentBook.id+'/glossary');const entry=entries.find(g=>g.id===edit.dataset.editGlossary);if(!entry)return;editingGlossaryId=entry.id;$('#glossary-source').value=entry.source_term;$('#glossary-target').value=entry.preferred_term;$('#glossary-rule').value=entry.rule;$('#glossary-notes').value=entry.notes||'';$('#glossary-approved').checked=Boolean(entry.approved);$('#glossary-submit').textContent='Guardar cambios';$('#glossary-cancel').classList.remove('hidden');$('#glossary-source').focus();return}if(remove){if(!confirm('¿Eliminar este término del glosario de esta novela?'))return;try{await api('/api/books/'+currentBook.id+'/glossary/'+remove.dataset.deleteGlossary,{method:'DELETE'});if(editingGlossaryId===remove.dataset.deleteGlossary)resetGlossaryForm();$('#glossary-status').textContent='Término eliminado.';await loadGlossary()}catch(err){$('#glossary-status').textContent='Error: '+err.message}}});
 $('#glossary-form').addEventListener('submit',async e=>{e.preventDefault();if(!currentBook)return;$('#glossary-status').textContent=editingGlossaryId?'Guardando cambios…':'Guardando término…';const payload={source_term:$('#glossary-source').value.trim(),preferred_term:$('#glossary-target').value.trim(),rule:$('#glossary-rule').value,notes:$('#glossary-notes').value.trim(),approved:$('#glossary-approved').checked};try{await api('/api/books/'+currentBook.id+'/glossary'+(editingGlossaryId?'/'+editingGlossaryId:''),{method:editingGlossaryId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});$('#glossary-status').textContent=editingGlossaryId?'Cambios guardados.':'Término guardado.';resetGlossaryForm();await loadGlossary()}catch(e){$('#glossary-status').textContent='Error: '+e.message}});
+$('#extract-glossary-candidates').addEventListener('click',async()=>{
+  if(!currentBook)return;
+  const button=$('#extract-glossary-candidates');button.disabled=true;
+  $('#glossary-candidate-status').textContent='Analizando el texto importado en este equipo…';
+  try{
+    const result=await api('/api/books/'+currentBook.id+'/glossary/candidates/extract',{method:'POST'});
+    $('#glossary-candidate-status').textContent=result.found_in_this_pass+' candidatos encontrados · '+result.new_candidates+' nuevos · '+result.pending_candidates+' pendientes. No se aprobó ninguna regla.';
+    await loadGlossaryCandidates();
+  }catch(err){$('#glossary-candidate-status').textContent='Error: '+err.message}
+  finally{button.disabled=false}
+});
+$('#glossary-candidates-list').addEventListener('click',async e=>{
+  const approve=e.target.closest('[data-approve-candidate]');
+  const ignore=e.target.closest('[data-ignore-candidate]');
+  const button=approve||ignore;if(!button||!currentBook)return;
+  const candidateId=button.dataset.approveCandidate||button.dataset.ignoreCandidate;
+  const card=button.closest('article.book');if(!card)return;
+  try{
+    if(approve){
+      const preferred=card.querySelector('[data-candidate-target]').value.trim();
+      if(!preferred){$('#glossary-candidate-status').textContent='La forma preferida no puede estar vacía.';return}
+      const payload={preferred_term:preferred,rule:card.querySelector('[data-candidate-rule]').value,notes:card.querySelector('[data-candidate-notes]').value.trim()};
+      $('#glossary-candidate-status').textContent='Guardando regla aprobada…';
+      await api('/api/books/'+currentBook.id+'/glossary/candidates/'+candidateId+'/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      $('#glossary-candidate-status').textContent='Regla aprobada y guardada en el glosario de esta novela.';
+      await loadGlossary();await loadGlossaryCandidates();
+    }else{
+      await api('/api/books/'+currentBook.id+'/glossary/candidates/'+candidateId+'/ignore',{method:'POST'});
+      $('#glossary-candidate-status').textContent='Candidato ignorado; no afectará la traducción.';
+      await loadGlossaryCandidates();
+    }
+  }catch(err){$('#glossary-candidate-status').textContent='No se pudo guardar: '+err.message}
+});
 $('#font-size').addEventListener('change',e=>{const size=Number(e.target.value);$('#original').style.fontSize=size+'px';$('#translation').style.fontSize=size+'px'});
 $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay cambios de traducción sin guardar. ¿Salir sin guardarlos?'))return;try{await persistProgressNow()}catch(e){$('#save-status').textContent='No se pudo guardar el progreso: '+e.message;return}translationDirty=false;$('#reader').style.display='none';$('#library').classList.remove('hidden');await refresh()});
 
