@@ -2447,13 +2447,13 @@ function clearQueueView(message){
 }
 async function showQueueState(job){
   currentTranslationJobId=job.id;
-  $('#queue-progress-label').textContent=job.completed_chunks+' / '+job.total_chunks+' fragmentos traducidos · '+job.reviewed_chunks+' revisados';
+  $('#queue-progress-label').textContent=job.completed_chunks+' / '+job.total_chunks+' fragmentos traducidos · '+job.reviewed_chunks+' revisados · '+(job.quality_warning_chunks||0)+' con alertas de calidad';
   $('#queue-status-label').textContent=queueStatusLabel(job.status)+' · '+job.chapter_count+' secciones';
   $('#queue-progress-bar').max=Math.max(job.total_chunks,1);$('#queue-progress-bar').value=job.completed_chunks;
   $('#queue-status').textContent='Progreso persistido localmente. Estado: '+queueStatusLabel(job.status)+'.';
   $('#queue-last-error').textContent=job.last_error||'';
   const chunks=job.chunks||[];
-  $('#queue-chunk-select').innerHTML=chunks.map(c=>'<option value="'+esc(c.id)+'">'+(c.status==='completed'?(c.reviewed?'✓ Revisado':'○ Revisar'):c.status==='failed'?'⚠ Falló':c.status==='running'?'… En curso':'· Pendiente')+' — sección '+(c.chapter_index+1)+', fragmento '+c.chunk_index+' ('+esc(c.chapter_title)+')</option>').join('');
+  $('#queue-chunk-select').innerHTML=chunks.map(c=>'<option value="'+esc(c.id)+'">'+(c.status==='completed'?(c.reviewed?'✓ Revisado':'○ Revisar'):c.status==='failed'?'⚠ Falló':c.status==='running'?'… En curso':'· Pendiente')+(c.quality_warning_count?' ⚠ QA '+c.quality_warning_count:'')+' — sección '+(c.chapter_index+1)+', fragmento '+c.chunk_index+' ('+esc(c.chapter_title)+')</option>').join('');
   $('#queue-review-panel').classList.toggle('hidden',!chunks.length);
   let chosen=chunks.find(c=>c.id===currentQueueChunkId)||chunks.find(c=>c.status==='completed'&&!c.reviewed)||chunks.find(c=>c.status==='completed')||chunks[0];
   if(chosen){currentQueueChunkId=chosen.id;$('#queue-chunk-select').value=chosen.id;await loadQueueChunk(chosen.id,job.id)}
@@ -2466,7 +2466,8 @@ async function loadQueueChunk(chunkId,jobId=currentTranslationJobId){
   try{
     const c=await api('/api/translation-jobs/'+jobId+'/chunks/'+chunkId);
     $('#queue-original').value=c.original_text||'';$('#queue-translation').value=c.translated_text||'';
-    $('#queue-chunk-state').textContent='Sección '+(c.chapter_index+1)+' · '+c.chapter_title+' · Fragmento '+c.chunk_index+' · '+queueStatusLabel(c.status)+' · Intentos: '+c.attempts+(c.reviewed?' · Revisado':'')+(c.error?' · Error: '+c.error:'');
+    const qualityWarnings=c.quality_warnings||[];
+    $('#queue-chunk-state').textContent='Sección '+(c.chapter_index+1)+' · '+c.chapter_title+' · Fragmento '+c.chunk_index+' · '+queueStatusLabel(c.status)+' · Intentos: '+c.attempts+(c.reviewed?' · Revisado':'')+(c.error?' · Error: '+c.error:'')+(qualityWarnings.length?' · ALERTAS DE REVISIÓN: '+qualityWarnings.join(' | '):' · Sin alertas heurísticas detectadas (esto no certifica la traducción).');
     const job=await api('/api/translation-jobs/'+jobId);
     $('#queue-review-save').disabled=queueWorkerActive||job.status==='running'||job.status==='applied'||c.status!=='completed';
   }catch(e){$('#queue-chunk-state').textContent='No se pudo cargar el fragmento: '+e.message}
