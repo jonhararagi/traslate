@@ -94,6 +94,56 @@ REQUIRED_BACKUP_TABLES = {"books", "chapters", "glossary_entries", "translation_
 ALLOWED_SUFFIXES = {".epub", ".pdf"}
 
 
+NOVEL_PROFILE_PATH = Path(__file__).resolve().parents[2] / "data" / "novels" / "i_became_the_academy_villains_daughter.json"
+
+
+def _normalized_novel_title(value: str) -> str:
+    """Normalize punctuation/case for conservative exact title matching."""
+    return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
+
+
+def _seed_novel_profile_candidates(conn: sqlite3.Connection, book_id: str, title: str) -> int:
+    """Copy known candidate terms into a new book glossary without approving them."""
+    try:
+        profile = json.loads(NOVEL_PROFILE_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return 0
+
+    accepted_titles = {
+        _normalized_novel_title(str(profile.get("display_title", ""))),
+        *(_normalized_novel_title(str(item)) for item in profile.get("alternate_titles", [])),
+    }
+    if _normalized_novel_title(title) not in accepted_titles:
+        return 0
+
+    inserted = 0
+    for candidate in profile.get("terminology_candidates", []):
+        source = str(candidate.get("source", "")).strip()
+        target = str(candidate.get("target", source)).strip()
+        if not source or not target:
+            continue
+        exists = conn.execute(
+            "SELECT 1 FROM glossary_entries WHERE book_id = ? AND source_term = ? COLLATE NOCASE",
+            (book_id, source),
+        ).fetchone()
+        if exists:
+            continue
+        entity_type = str(candidate.get("type", "term"))
+        evidence = str(candidate.get("evidence", ""))
+        notes = (
+            f"Candidato importado del perfil de novela; tipo: {entity_type}. "
+            f"No aprobado: verificar contra la edición importada. {evidence}"
+        ).strip()
+        conn.execute(
+            "INSERT INTO glossary_entries(id,book_id,source_term,preferred_term,rule,notes,approved,created_at) "
+            "VALUES(?,?,?,?,?,?,0,?)",
+            (str(uuid4()), book_id, source, target, "preserve", notes,
+             datetime.now(timezone.utc).isoformat()),
+        )
+        inserted += 1
+    return inserted
+
+
 def data_dir() -> Path:
     """Return a per-user data directory; tests can override NOVELTRAD_HOME."""
     override = os.environ.get("NOVELTRAD_HOME")
@@ -1031,6 +1081,7 @@ async def import_book(file: UploadFile = File(...)) -> dict[str, object]:
                 "INSERT INTO books(id,title,source_format,source_name,source_path,created_at) VALUES(?,?,?,?,?,?)",
                 (book_id, title, suffix[1:], filename, str(source_path), now),
             )
+            seeded_candidates = _seed_novel_profile_candidates(conn, book_id, title)
             conn.executemany(
                 "INSERT INTO chapters(id,book_id,chapter_index,title,original_text) VALUES(?,?,?,?,?)",
                 [(str(uuid4()), book_id, index, chapter_title, text) for index, (chapter_title, text) in enumerate(chapters)],
@@ -1038,7 +1089,10 @@ async def import_book(file: UploadFile = File(...)) -> dict[str, object]:
     except Exception:
         source_path.unlink(missing_ok=True)
         raise
-    return {"id": book_id, "title": title, "format": suffix[1:], "chapter_count": len(chapters), "status": "imported"}
+    return {
+        "id": book_id, "title": title, "format": suffix[1:], "chapter_count": len(chapters),
+        "status": "imported", "unapproved_profile_candidates": seeded_candidates,
+    }
 
 
 @app.get("/api/books/{book_id}/chapters")
