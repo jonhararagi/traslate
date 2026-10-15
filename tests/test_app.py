@@ -44,6 +44,7 @@ def test_import_pdf_and_list_chapters(client):
     books = client.get("/api/books").json()
     assert len(books) == 1
     assert books[0]["title"] == "sample"
+    assert "source_path" not in books[0]
 
     chapters = client.get(f"/api/books/{book['id']}/chapters")
     assert chapters.status_code == 200
