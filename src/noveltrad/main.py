@@ -1075,18 +1075,22 @@ def _translation_quality_warnings(original_text: str, translated_text: str) -> l
         warnings.append("La salida contiene una marca de omisión o una respuesta genérica del modelo.")
 
     sentence_splitter = re.compile(r"(?<=[.!?。！？])\s+|\n+")
-    source_sentences = {
-        re.sub(r"\W+", " ", sentence.casefold()).strip()
-        for sentence in sentence_splitter.split(source)
-        if len(re.sub(r"\W+", "", sentence)) >= 40
-    }
+    source_counts: dict[str, int] = {}
+    for sentence in sentence_splitter.split(source):
+        key = re.sub(r"\W+", " ", sentence.casefold()).strip()
+        if len(re.sub(r"\W+", "", sentence)) >= 40:
+            source_counts[key] = source_counts.get(key, 0) + 1
+    max_source_repeat = max(source_counts.values(), default=1)
     target_counts: dict[str, int] = {}
     for sentence in sentence_splitter.split(target):
         key = re.sub(r"\W+", " ", sentence.casefold()).strip()
         if len(re.sub(r"\W+", "", sentence)) >= 40:
             target_counts[key] = target_counts.get(key, 0) + 1
     repeated = next(
-        (sentence for sentence, count in target_counts.items() if count >= 2 and sentence not in source_sentences),
+        (
+            sentence for sentence, count in target_counts.items()
+            if count > max(1, max_source_repeat) and sentence not in source_counts
+        ),
         None,
     )
     if repeated is not None:
