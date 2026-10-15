@@ -2,7 +2,7 @@
 
 NovelTrad is a local-first Windows-friendly reader and translation workspace for light novels, webnovels, and fanfiction. It is designed around a calm reading experience, persistent per-book terminology, protected names, and optional help from a chat website without paid API keys.
 
-> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor with CRUD controls. Fully translated books can be exported as Spanish EPUB. An on-demand local neural preview is now available through Ollama; automatic sequential chapter chunking with continuity context and side-by-side review is now implemented in the working branch; full-book queueing, glossary extraction from source chapters, OCR, and real-chapter quality validation remain unfinished.
+> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor with CRUD controls. Fully translated books can be exported as Spanish EPUB. An on-demand local neural preview is available through Ollama; the persistent whole-book queue is implemented in the active feature branch and is being validated. Glossary extraction from source chapters, OCR, a real-chapter quality benchmark, and clean-Windows manual testing remain unfinished.
 
 ## Product principles
 
@@ -18,7 +18,7 @@ NovelTrad is a local-first Windows-friendly reader and translation workspace for
 
 - Python 3.11 or newer.
 - Internet is only needed to install dependencies initially. EPUB/PDF import and local storage run on the computer.
-- The reader now exposes two distinct modes: **Modo local** applies approved deterministic rules without a model; **Modo premium** can request an on-demand translation from a user-installed Ollama model running on loopback. Premium is optional and resource-intensive. The chunked chapter preview processes up to 200,000 source characters sequentially in 3,500-character chunks, carries a short translation context forward, exposes original/translation pairs for review, and never saves automatically. This is not yet a full-book batch queue. See [the mode and hardware guide](docs/MODO_LOCAL_Y_MODO_PREMIUM.md).
+- The reader now exposes two distinct modes: **Modo local** applies approved deterministic rules without a model; **Modo premium** can request an on-demand translation from a user-installed Ollama model running on loopback. Premium is optional and resource-intensive. The per-chapter preview processes up to 200,000 source characters. The whole-book queue persists a chunk manifest in SQLite, processes one chunk at a time only after the user starts it, resumes after restart, retries failed chunks, snapshots the approved glossary, and requires each chunk to be reviewed before explicit application. Until applied, every translation remains in the queue and chapter originals stay unchanged. See [the mode and hardware guide](docs/MODO_LOCAL_Y_MODO_PREMIUM.md).
 
 ## Run on Windows
 
@@ -65,6 +65,13 @@ Imported source files are stored under `imports/`; SQLite stores books, extracte
 - `POST /api/books/import` — import an EPUB or text-based PDF (100 MB limit). PDF imports must have a PDF signature; EPUB imports must be valid ZIP packages with the required EPUB structure, no encrypted entries, at most 5,000 archive entries, no more than 500 MB uncompressed content, and a maximum 200:1 compression ratio.
 - `GET /api/books/{book_id}/export/epub` — export the saved Spanish translations as EPUB; export is blocked until every section has a translation.
 - `GET /api/books/{book_id}/chapters` — extracted sections.
+- `POST /api/books/{book_id}/translation-jobs` — create a persistent queue for untranslated sections; this does not call the model.
+- `GET /api/books/{book_id}/translation-jobs` — inspect saved queues for the selected book.
+- `GET /api/translation-jobs/{job_id}` — inspect progress, failed fragments and review state.
+- `POST /api/translation-jobs/{job_id}/run-next` — translate one pending chunk with local Ollama; progress is persisted immediately.
+- `POST /api/translation-jobs/{job_id}/pause`, `/resume`, and `/retry-failed` — control and recover a queue.
+- `GET /api/translation-jobs/{job_id}/chunks/{chunk_id}` and `PUT` on the same path — inspect and save a reviewed chunk.
+- `POST /api/translation-jobs/{job_id}/apply` — apply only after all chunks are complete and reviewed; original source fields are never updated.
 - `GET /api/books/{book_id}/glossary` — per-book and global glossary entries.
 - `POST /api/books/{book_id}/glossary` — add a glossary rule (`preserve`, `translate`, `contextual`, or `protect`).
 - `PUT /api/books/{book_id}/glossary/{entry_id}` — edit a term belonging to that book.
@@ -83,7 +90,7 @@ Scanned PDFs currently return a clear error because OCR has not been integrated.
 pytest
 ```
 
-The CI suite covers PDF and EPUB import (including EPUB spine reading order), unsupported formats, glossary normalization, duplicate rejection, scoped glossary edit/delete, saved reading position, immutable source text, translation history/restore, reader controls, local-path privacy, and embedded JavaScript syntax. The CI suite also covers scheduled backup timing, retry behavior after a simulated disk-full error, retention and companion-file cleanup, configuration bounds, rollback when a simulated filesystem failure interrupts restore, full recovery of glossary/translation versions/reading progress/source files, and the headless CLI's refusal to create an empty database.
+The CI suite covers PDF and EPUB import (including EPUB spine reading order), unsupported formats, glossary normalization, duplicate rejection, scoped glossary edit/delete, saved reading position, immutable source text, translation history/restore, reader controls, local-path privacy, and embedded JavaScript syntax. The CI suite also covers scheduled backup timing, retry behavior after a simulated disk-full error, retention and companion-file cleanup, configuration bounds, rollback when a simulated filesystem failure interrupts restore, full recovery of glossary/translation versions/reading progress/source files, and the headless CLI's refusal to create an empty database. New queue tests cover persistent per-chunk progress, sequential context, controlled failure, retry, restart recovery, mandatory review before application, and preservation of imported originals.
 
 ### Optional Windows Task Scheduler integration
 
@@ -102,16 +109,14 @@ The task checks hourly; the app's saved frequency (1–720 hours), enabled flag,
 
 To test the headless runner manually, run `python -m noveltrad.backup_cli` with the same Python environment and `NOVELTRAD_HOME` used by the app. A missing or corrupt database causes a non-zero exit and no backup is created. The task installation is opt-in; no task is registered automatically.
 
-## Roadmap
+## Remaining release work
 
-1. Harden import and persistence with content validation, scheduled backups, retention, and tested recovery.
-2. Finish reader UX: broader accessibility checks, stronger typography/theme controls, and manual Windows verification.
-3. Add entity management and translation-memory workflows.
-4. Add export validation and a richer EPUB table of contents.
-5. Evaluate offline English→Spanish and Japanese→Spanish engines separately; keep rule-based mode distinct from local neural translation.
-6. Add contextual prompt generation for user-mediated chat-web assistance.
-7. Add versioned translation, quality checks, and TXT/EPUB/PDF export.
-8. Package and test the Windows application on a clean machine.
+1. Run the portable build on a clean Windows profile and verify startup, EPUB/PDF import, backup/restore, queue creation, Ollama errors, queue resume after restart, review/apply and EPUB export.
+2. Evaluate translation quality on an authorized excerpt from the exact edition of *I Became the Academy Villain's Daughter*. Measure omissions, repeated text, protected names and contextual gamer terms such as `farm`, `level`, `Steal` and `tsundere`; the existing synthetic cases are not evidence of real-chapter quality.
+3. Add evidence-based glossary candidate extraction from imported source passages without auto-approving terms.
+4. Add OCR as a separately scoped feature for scanned PDFs or comic images, with clear licensing and user-provided input boundaries.
+5. Keep EPUB export structure, reader accessibility and Windows recovery under regression testing.
+
 
 
 ## Windows portable build

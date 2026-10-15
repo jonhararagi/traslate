@@ -147,3 +147,13 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Still incomplete: durable whole-book queue, restart-safe progress and retry/resume, actual authorized chapter benchmark, evidence-based glossary extraction, OCR, and clean Windows manual verification with Ollama installed by the user.
 - Do not state that the app is a complete automatic translator. Modo local is rules/glossary only; Premium is local neural translation with human review and has not yet been benchmarked on the user's actual novel edition.
 
+
+
+## Continuation — durable full-book translation queue (2026-10-15)
+
+- PR [#8](https://github.com/jonhararagi/traslate/pull/8) was merged after both Ubuntu/Windows automated tests and the portable Windows build passed. Merge commit: `5c7151e8e08f7a590e674dc61360f8fda0b26ded`. CI: [Tests run 38769827775](https://github.com/jonhararagi/traslate/actions/runs/38769827775), [portable build run 38769827777](https://github.com/jonhararagi/traslate/actions/runs/38769827777).
+- Current implementation branch: `feat/full-book-translation-queue`. It adds durable SQLite tables for jobs and chunks, snapshots the approved glossary when a queue is created, processes one chunk per explicit request, saves successful outputs immediately, pauses/retries failed work, and recovers in-flight chunks as pending after a process restart.
+- Library UI includes preparing a book queue, start/resume, pause, retry-failed, progress counts, selecting/reading individual chunks, editing and explicitly marking each result reviewed, and applying all reviewed results to untranslated chapter rows. Applying is blocked until all chunks are completed/reviewed and refuses to overwrite chapter translations created by another operation.
+- API surface: create/list jobs per book; get job progress; run-next, pause, resume, retry-failed; get/edit a chunk; apply a reviewed job. Queue creation does not call Ollama. Translation is initiated manually and remains local-only.
+- Added `tests/test_translation_jobs.py` to cover queue persistence, chunk sequencing/context carryover, no-save-before-apply, mandatory review, retry after a provider failure, and recovery after a simulated shutdown. These tests must not be called passing until GitHub Actions completes.
+- Remaining product validation: CI for this branch, clean-Windows manual smoke test with Ollama installed manually, and a user-authorized excerpt from the exact novel edition to evaluate omissions, repeated text, terminology and name preservation. OCR and evidence-based glossary candidate extraction remain separate unfinished features. Modo local remains deterministic rules rather than general translation.

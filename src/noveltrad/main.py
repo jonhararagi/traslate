@@ -39,6 +39,9 @@ BACKUP_RETRY_BASE_SECONDS = 300
 BACKUP_RETRY_MAX_SECONDS = 21600
 BACKUP_OPERATION_LOCK = threading.RLock()
 _BACKUP_LOCK_LOCAL = threading.local()
+# Premium inference is deliberately serialized: this machine runs a single local model.
+TRANSLATION_JOB_LOCK = threading.Lock()
+MAX_TRANSLATION_JOB_CHUNKS = 25000
 
 
 @contextmanager
@@ -485,7 +488,57 @@ def init_db() -> None:
                 scope TEXT NOT NULL CHECK(scope IN ('segment', 'book', 'global')),
                 created_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS translation_jobs (
+                id TEXT PRIMARY KEY,
+                book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+                status TEXT NOT NULL CHECK(status IN ('queued', 'running', 'paused', 'failed', 'completed', 'applied')),
+                chunk_size INTEGER NOT NULL,
+                context_chars INTEGER NOT NULL,
+                glossary_json TEXT NOT NULL DEFAULT '[]',
+                total_chunks INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                last_error TEXT NOT NULL DEFAULT '',
+                applied_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS translation_job_chunks (
+                id TEXT PRIMARY KEY,
+                job_id TEXT NOT NULL REFERENCES translation_jobs(id) ON DELETE CASCADE,
+                chapter_id TEXT NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+                chapter_index INTEGER NOT NULL,
+                chapter_title TEXT NOT NULL,
+                chunk_index INTEGER NOT NULL,
+                original_text TEXT NOT NULL,
+                translated_text TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'running', 'completed', 'failed')),
+                attempts INTEGER NOT NULL DEFAULT 0,
+                reviewed INTEGER NOT NULL DEFAULT 0,
+                error TEXT NOT NULL DEFAULT '',
+                updated_at TEXT NOT NULL,
+                UNIQUE(job_id, chapter_id, chunk_index)
+            );
+            CREATE INDEX IF NOT EXISTS idx_translation_jobs_book ON translation_jobs(book_id, created_at);
+            CREATE INDEX IF NOT EXISTS idx_translation_job_chunks_order ON translation_job_chunks(job_id, chapter_index, chunk_index);
             """
+        )
+
+
+def recover_interrupted_translation_jobs() -> None:
+    """Make jobs safely resumable after the process exits mid-inference."""
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with connection() as conn:
+        running_chunks = conn.execute(
+            "UPDATE translation_job_chunks SET status = 'pending', "
+            "error = 'La aplicación se cerró durante este fragmento; está listo para reintentarse.', updated_at = ? "
+            "WHERE status = 'running'",
+            (now,),
+        ).rowcount
+        conn.execute(
+            "UPDATE translation_jobs SET status = 'paused', "
+            "last_error = CASE WHEN last_error = '' THEN 'Trabajo pausado al cerrar la aplicación; puedes reanudarlo.' ELSE last_error END, "
+            "updated_at = ? WHERE status = 'running'",
+            (now,),
         )
 
 
@@ -594,6 +647,20 @@ class ChunkedTranslationInput(BaseModel):
     context_chars: int = Field(default=1200, ge=0, le=2000)
 
 
+class TranslationJobInput(ChunkedTranslationInput):
+    """Validated settings used to build a durable per-book translation queue."""
+
+
+class TranslationJobChunkEditInput(BaseModel):
+    translated_text: str = Field(min_length=1, max_length=100_000)
+
+    @field_validator("translated_text", mode="before")
+    @classmethod
+    def keep_translation_text(cls, value: object) -> object:
+        # Preserve whitespace and paragraph breaks; only reject non-string values here.
+        return value
+
+
 class OfflineRulesInput(BaseModel):
     profile_id: str = Field(default="light_novel_es", max_length=80)
     phrase_map: dict[str, str] = Field(default_factory=dict)
@@ -615,6 +682,7 @@ class OfflineRulesInput(BaseModel):
 async def lifespan(_: FastAPI):
     recover_interrupted_restore()
     init_db()
+    recover_interrupted_translation_jobs()
     load_backup_settings()
     backup_scheduler.start()
     try:
@@ -895,6 +963,462 @@ def preview_chunked_premium_translation(
             "El glosario aprobado se aplica en cada fragmento; los nombres, honoríficos, bromas y términos ambiguos requieren revisión humana."
         ],
     }
+
+
+
+def _translation_job_snapshot(
+    conn: sqlite3.Connection, job_id: str, include_chunks: bool = True
+) -> dict[str, object]:
+    job = conn.execute("SELECT * FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
+    if not job:
+        raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
+    counts_row = conn.execute(
+        "SELECT COUNT(*) AS total, "
+        "SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed, "
+        "SUM(CASE WHEN status = 'completed' AND reviewed = 1 THEN 1 ELSE 0 END) AS reviewed, "
+        "SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed, "
+        "SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending, "
+        "SUM(CASE WHEN status = 'running' THEN 1 ELSE 0 END) AS running "
+        "FROM translation_job_chunks WHERE job_id = ?",
+        (job_id,),
+    ).fetchone()
+    counts = {key: int(counts_row[key] or 0) for key in ("total", "completed", "reviewed", "failed", "pending", "running")}
+    chapter_count = conn.execute(
+        "SELECT COUNT(DISTINCT chapter_id) FROM translation_job_chunks WHERE job_id = ?", (job_id,)
+    ).fetchone()[0]
+    result: dict[str, object] = {
+        "id": job["id"],
+        "book_id": job["book_id"],
+        "status": job["status"],
+        "chunk_size": job["chunk_size"],
+        "context_chars": job["context_chars"],
+        "total_chunks": job["total_chunks"],
+        "chapter_count": int(chapter_count or 0),
+        "completed_chunks": counts["completed"],
+        "reviewed_chunks": counts["reviewed"],
+        "failed_chunks": counts["failed"],
+        "pending_chunks": counts["pending"],
+        "running_chunks": counts["running"],
+        "progress_percent": round(100 * counts["completed"] / counts["total"]) if counts["total"] else 0,
+        "created_at": job["created_at"],
+        "updated_at": job["updated_at"],
+        "last_error": job["last_error"],
+        "applied_at": job["applied_at"],
+    }
+    if include_chunks:
+        rows = conn.execute(
+            "SELECT id, chapter_id, chapter_index, chapter_title, chunk_index, status, attempts, reviewed, error, "
+            "length(original_text) AS original_chars, length(translated_text) AS translated_chars, "
+            "substr(original_text, 1, 180) AS original_preview, substr(translated_text, 1, 180) AS translated_preview "
+            "FROM translation_job_chunks WHERE job_id = ? ORDER BY chapter_index, chunk_index",
+            (job_id,),
+        ).fetchall()
+        result["chunks"] = [dict(row) for row in rows]
+    return result
+
+
+@app.post("/api/books/{book_id}/translation-jobs")
+def create_translation_job(book_id: str, payload: TranslationJobInput) -> dict[str, object]:
+    """Persist a complete per-book chunk manifest without invoking the model."""
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    job_id = str(uuid4())
+    with connection() as conn:
+        if not conn.execute("SELECT 1 FROM books WHERE id = ?", (book_id,)).fetchone():
+            raise HTTPException(status_code=404, detail="No se encontró la novela.")
+        active = conn.execute(
+            "SELECT id FROM translation_jobs WHERE book_id = ? AND status IN "
+            "('queued', 'running', 'paused', 'failed', 'completed') ORDER BY created_at DESC LIMIT 1",
+            (book_id,),
+        ).fetchone()
+        if active:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Ya existe un trabajo pendiente para esta novela ({active['id']}). Cárgalo para continuar o terminar su revisión.",
+            )
+        chapters = conn.execute(
+            "SELECT id, chapter_index, title, original_text FROM chapters "
+            "WHERE book_id = ? AND trim(COALESCE(translated_text, '')) = '' ORDER BY chapter_index",
+            (book_id,),
+        ).fetchall()
+        if not chapters:
+            raise HTTPException(status_code=409, detail="No hay secciones pendientes: ya tienen traducción o no contienen texto.")
+        valid_chapters = []
+        total_chunks = 0
+        for chapter in chapters:
+            source = chapter["original_text"] or ""
+            if not source.strip():
+                continue
+            if len(source) > 200_000:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"La sección «{chapter['title']}» supera los 200.000 caracteres. Divídela antes de crear la cola.",
+                )
+            split = _split_translation_chunks(source, payload.chunk_size)
+            total_chunks += len(split)
+            valid_chapters.append((chapter, split))
+        if not valid_chapters:
+            raise HTTPException(status_code=422, detail="Las secciones pendientes no contienen texto traducible.")
+        if total_chunks > MAX_TRANSLATION_JOB_CHUNKS:
+            raise HTTPException(
+                status_code=413,
+                detail=f"El libro produciría {total_chunks} fragmentos; el límite seguro por trabajo es {MAX_TRANSLATION_JOB_CHUNKS}.",
+            )
+        glossary_rows = conn.execute(
+            "SELECT source_term, preferred_term FROM glossary_entries "
+            "WHERE approved = 1 AND (book_id = ? OR book_id IS NULL) "
+            "ORDER BY length(source_term) DESC LIMIT 200",
+            (book_id,),
+        ).fetchall()
+        glossary = [dict(row) for row in glossary_rows]
+        conn.execute(
+            "INSERT INTO translation_jobs(id, book_id, status, chunk_size, context_chars, glossary_json, total_chunks, created_at, updated_at) "
+            "VALUES(?, ?, 'queued', ?, ?, ?, ?, ?, ?)",
+            (
+                job_id, book_id, payload.chunk_size, payload.context_chars,
+                json.dumps(glossary, ensure_ascii=False), total_chunks, now, now,
+            ),
+        )
+        for chapter, split in valid_chapters:
+            for index, text in enumerate(split, start=1):
+                conn.execute(
+                    "INSERT INTO translation_job_chunks(id, job_id, chapter_id, chapter_index, chapter_title, chunk_index, "
+                    "original_text, status, updated_at) VALUES(?, ?, ?, ?, ?, ?, ?, 'pending', ?)",
+                    (
+                        str(uuid4()), job_id, chapter["id"], chapter["chapter_index"], chapter["title"],
+                        index, text, now,
+                    ),
+                )
+        return _translation_job_snapshot(conn, job_id)
+
+
+@app.get("/api/books/{book_id}/translation-jobs")
+def list_translation_jobs(book_id: str) -> list[dict[str, object]]:
+    init_db()
+    with connection() as conn:
+        if not conn.execute("SELECT 1 FROM books WHERE id = ?", (book_id,)).fetchone():
+            raise HTTPException(status_code=404, detail="No se encontró la novela.")
+        ids = conn.execute(
+            "SELECT id FROM translation_jobs WHERE book_id = ? ORDER BY created_at DESC LIMIT 20",
+            (book_id,),
+        ).fetchall()
+        return [_translation_job_snapshot(conn, row["id"], include_chunks=False) for row in ids]
+
+
+@app.get("/api/translation-jobs/{job_id}")
+def get_translation_job(job_id: str) -> dict[str, object]:
+    init_db()
+    with connection() as conn:
+        return _translation_job_snapshot(conn, job_id)
+
+
+@app.post("/api/translation-jobs/{job_id}/resume")
+def resume_translation_job(job_id: str) -> dict[str, object]:
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with connection() as conn:
+        job = conn.execute("SELECT status FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
+        if not job:
+            raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
+        if job["status"] == "applied":
+            return _translation_job_snapshot(conn, job_id)
+        failed = conn.execute(
+            "SELECT COUNT(*) FROM translation_job_chunks WHERE job_id = ? AND status = 'failed'", (job_id,)
+        ).fetchone()[0]
+        remaining = conn.execute(
+            "SELECT COUNT(*) FROM translation_job_chunks WHERE job_id = ? AND status IN ('pending', 'running')", (job_id,)
+        ).fetchone()[0]
+        if failed:
+            raise HTTPException(status_code=409, detail="Hay fragmentos fallidos. Usa «Reintentar fallidos» antes de reanudar.")
+        if not remaining:
+            conn.execute(
+                "UPDATE translation_jobs SET status = 'completed', last_error = '', updated_at = ? WHERE id = ?",
+                (now, job_id),
+            )
+        else:
+            conn.execute(
+                "UPDATE translation_jobs SET status = 'queued', last_error = '', updated_at = ? WHERE id = ?",
+                (now, job_id),
+            )
+        return _translation_job_snapshot(conn, job_id)
+
+
+@app.post("/api/translation-jobs/{job_id}/pause")
+def pause_translation_job(job_id: str) -> dict[str, object]:
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with connection() as conn:
+        job = conn.execute("SELECT status FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
+        if not job:
+            raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
+        if job["status"] in ("queued", "running"):
+            conn.execute(
+                "UPDATE translation_jobs SET status = 'paused', updated_at = ? WHERE id = ?", (now, job_id)
+            )
+        return _translation_job_snapshot(conn, job_id)
+
+
+@app.post("/api/translation-jobs/{job_id}/retry-failed")
+def retry_failed_translation_chunks(job_id: str) -> dict[str, object]:
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with connection() as conn:
+        job = conn.execute("SELECT status FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
+        if not job:
+            raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
+        if job["status"] == "applied":
+            raise HTTPException(status_code=409, detail="El trabajo ya se aplicó a la biblioteca.")
+        changed = conn.execute(
+            "UPDATE translation_job_chunks SET status = 'pending', translated_text = '', reviewed = 0, error = '', updated_at = ? "
+            "WHERE job_id = ? AND status = 'failed'",
+            (now, job_id),
+        ).rowcount
+        if not changed:
+            raise HTTPException(status_code=409, detail="Este trabajo no tiene fragmentos fallidos para reintentar.")
+        conn.execute(
+            "UPDATE translation_jobs SET status = 'queued', last_error = '', updated_at = ? WHERE id = ?",
+            (now, job_id),
+        )
+        return _translation_job_snapshot(conn, job_id)
+
+
+@app.post("/api/translation-jobs/{job_id}/run-next")
+def run_next_translation_chunk(job_id: str) -> dict[str, object]:
+    """Translate one durable chunk per request so progress can be resumed after interruption."""
+    init_db()
+    if not TRANSLATION_JOB_LOCK.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="Ya hay otro fragmento usando el modelo local. Espera a que termine.")
+    try:
+        now = datetime.now(timezone.utc).isoformat()
+        with connection() as conn:
+            job = conn.execute("SELECT * FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
+            if not job:
+                raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
+            if job["status"] == "paused":
+                raise HTTPException(status_code=409, detail="La cola está pausada. Pulsa «Iniciar / reanudar».")
+            if job["status"] in ("completed", "applied"):
+                return _translation_job_snapshot(conn, job_id)
+            failed = conn.execute(
+                "SELECT COUNT(*) FROM translation_job_chunks WHERE job_id = ? AND status = 'failed'", (job_id,)
+            ).fetchone()[0]
+            if failed:
+                conn.execute(
+                    "UPDATE translation_jobs SET status = 'failed', updated_at = ? WHERE id = ?", (now, job_id)
+                )
+                return _translation_job_snapshot(conn, job_id)
+            chunk = conn.execute(
+                "SELECT * FROM translation_job_chunks WHERE job_id = ? AND status = 'pending' "
+                "ORDER BY chapter_index, chunk_index LIMIT 1",
+                (job_id,),
+            ).fetchone()
+            if not chunk:
+                conn.execute(
+                    "UPDATE translation_jobs SET status = 'completed', updated_at = ? WHERE id = ?", (now, job_id)
+                )
+                return _translation_job_snapshot(conn, job_id)
+            context_row = conn.execute(
+                "SELECT translated_text FROM translation_job_chunks WHERE job_id = ? AND status = 'completed' "
+                "AND translated_text != '' AND (chapter_index < ? OR (chapter_index = ? AND chunk_index < ?)) "
+                "ORDER BY chapter_index DESC, chunk_index DESC LIMIT 1",
+                (job_id, chunk["chapter_index"], chunk["chapter_index"], chunk["chunk_index"]),
+            ).fetchone()
+            if context_row:
+                continuity_context = context_row["translated_text"]
+            else:
+                previous_saved = conn.execute(
+                    "SELECT translated_text FROM chapters WHERE book_id = ? AND chapter_index < ? "
+                    "AND trim(COALESCE(translated_text, '')) != '' ORDER BY chapter_index DESC LIMIT 1",
+                    (job["book_id"], chunk["chapter_index"]),
+                ).fetchone()
+                continuity_context = previous_saved["translated_text"] if previous_saved else ""
+            glossary = json.loads(job["glossary_json"])
+            source_text = chunk["original_text"]
+            chunk_id = chunk["id"]
+            context_chars = int(job["context_chars"])
+            chapter_index = int(chunk["chapter_index"])
+            chunk_index = int(chunk["chunk_index"])
+            conn.execute(
+                "UPDATE translation_job_chunks SET status = 'running', attempts = attempts + 1, error = '', updated_at = ? WHERE id = ?",
+                (now, chunk_id),
+            )
+            conn.execute(
+                "UPDATE translation_jobs SET status = 'running', last_error = '', updated_at = ? WHERE id = ?",
+                (now, job_id),
+            )
+        context = continuity_context[-context_chars:] if context_chars else ""
+        try:
+            translated = _translate_with_local_model(source_text, glossary, context)
+            if not isinstance(translated, str) or not translated.strip():
+                raise ValueError("El modelo local devolvió una traducción vacía.")
+        except Exception as exc:
+            detail = exc.detail if isinstance(exc, HTTPException) else str(exc) or type(exc).__name__
+            status_code = exc.status_code if isinstance(exc, HTTPException) else 502
+            detail = str(detail)[:1000]
+            failed_at = datetime.now(timezone.utc).isoformat()
+            with connection() as conn:
+                conn.execute(
+                    "UPDATE translation_job_chunks SET status = 'failed', error = ?, reviewed = 0, updated_at = ? WHERE id = ?",
+                    (detail, failed_at, chunk_id),
+                )
+                conn.execute(
+                    "UPDATE translation_jobs SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ?",
+                    (f"Fragmento {chunk_index} de la sección {chapter_index + 1}: {detail}"[:1200], failed_at, job_id),
+                )
+            raise HTTPException(
+                status_code=status_code,
+                detail=f"Falló el fragmento {chunk_index} de la sección {chapter_index + 1}. El avance anterior se conservó y puedes reintentar este fragmento. {detail}",
+            ) from exc
+        completed_at = datetime.now(timezone.utc).isoformat()
+        with connection() as conn:
+            conn.execute(
+                "UPDATE translation_job_chunks SET status = 'completed', translated_text = ?, reviewed = 0, error = '', updated_at = ? WHERE id = ?",
+                (translated.strip(), completed_at, chunk_id),
+            )
+            state = conn.execute("SELECT status FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
+            counts = conn.execute(
+                "SELECT SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending, "
+                "SUM(CASE WHEN status = 'running' THEN 1 ELSE 0 END) AS running, "
+                "SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed "
+                "FROM translation_job_chunks WHERE job_id = ?",
+                (job_id,),
+            ).fetchone()
+            if state["status"] == "paused":
+                next_status = "paused"
+            elif int(counts["failed"] or 0):
+                next_status = "failed"
+            elif int(counts["pending"] or 0) or int(counts["running"] or 0):
+                next_status = "queued"
+            else:
+                next_status = "completed"
+            conn.execute(
+                "UPDATE translation_jobs SET status = ?, last_error = '', updated_at = ? WHERE id = ?",
+                (next_status, completed_at, job_id),
+            )
+            return _translation_job_snapshot(conn, job_id)
+    finally:
+        TRANSLATION_JOB_LOCK.release()
+
+
+@app.get("/api/translation-jobs/{job_id}/chunks/{chunk_id}")
+def get_translation_job_chunk(job_id: str, chunk_id: str) -> dict[str, object]:
+    init_db()
+    with connection() as conn:
+        row = conn.execute(
+            "SELECT id, job_id, chapter_id, chapter_index, chapter_title, chunk_index, original_text, translated_text, "
+            "status, attempts, reviewed, error, updated_at FROM translation_job_chunks WHERE id = ? AND job_id = ?",
+            (chunk_id, job_id),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="No se encontró el fragmento.")
+        return dict(row)
+
+
+@app.put("/api/translation-jobs/{job_id}/chunks/{chunk_id}")
+def review_translation_job_chunk(
+    job_id: str, chunk_id: str, payload: TranslationJobChunkEditInput
+) -> dict[str, object]:
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with connection() as conn:
+        job = conn.execute("SELECT status FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
+        if not job:
+            raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
+        if job["status"] in ("running", "applied"):
+            raise HTTPException(status_code=409, detail="Pausa o termina el trabajo antes de revisar fragmentos.")
+        row = conn.execute(
+            "SELECT status FROM translation_job_chunks WHERE id = ? AND job_id = ?", (chunk_id, job_id)
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="No se encontró el fragmento.")
+        if row["status"] != "completed":
+            raise HTTPException(status_code=409, detail="Solo se pueden revisar fragmentos traducidos correctamente.")
+        conn.execute(
+            "UPDATE translation_job_chunks SET translated_text = ?, reviewed = 1, updated_at = ? WHERE id = ? AND job_id = ?",
+            (payload.translated_text, now, chunk_id, job_id),
+        )
+        return _translation_job_snapshot(conn, job_id)
+
+
+@app.post("/api/translation-jobs/{job_id}/apply")
+def apply_reviewed_translation_job(job_id: str) -> dict[str, object]:
+    """Commit reviewed translations to chapter rows atomically; source text is never touched."""
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with connection() as conn:
+        job = conn.execute("SELECT * FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
+        if not job:
+            raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
+        if job["status"] == "applied":
+            return {"job_id": job_id, "saved": True, "chapter_count": int(conn.execute(
+                "SELECT COUNT(DISTINCT chapter_id) FROM translation_job_chunks WHERE job_id = ?", (job_id,)
+            ).fetchone()[0]), "status": "applied"}
+        stats = conn.execute(
+            "SELECT COUNT(*) AS total, "
+            "SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed, "
+            "SUM(CASE WHEN status = 'completed' AND reviewed = 1 THEN 1 ELSE 0 END) AS reviewed "
+            "FROM translation_job_chunks WHERE job_id = ?",
+            (job_id,),
+        ).fetchone()
+        total, completed, reviewed = (int(stats[key] or 0) for key in ("total", "completed", "reviewed"))
+        if job["status"] != "completed" or completed != total:
+            raise HTTPException(status_code=409, detail="La cola todavía no está completa. Termina o reanuda la traducción antes de aplicar.")
+        if reviewed != total:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Revisa y guarda cada fragmento antes de aplicar. Revisados: {reviewed} de {total}.",
+            )
+        chapter_ids = conn.execute(
+            "SELECT DISTINCT chapter_id FROM translation_job_chunks WHERE job_id = ?", (job_id,)
+        ).fetchall()
+        chapter_ids = [row["chapter_id"] for row in chapter_ids]
+        for chapter_id in chapter_ids:
+            chapter = conn.execute(
+                "SELECT translated_text FROM chapters WHERE id = ? AND book_id = ?", (chapter_id, job["book_id"])
+            ).fetchone()
+            if not chapter:
+                raise HTTPException(status_code=409, detail="Cambió la biblioteca: una sección de este trabajo ya no existe.")
+            if (chapter["translated_text"] or "").strip():
+                raise HTTPException(
+                    status_code=409,
+                    detail="Una sección recibió una traducción por otro medio después de crear la cola. No se aplicó ningún cambio; revisa la biblioteca y crea una nueva cola para lo pendiente.",
+                )
+        updates: dict[str, list[str]] = {}
+        rows = conn.execute(
+            "SELECT chapter_id, translated_text FROM translation_job_chunks WHERE job_id = ? "
+            "ORDER BY chapter_index, chunk_index",
+            (job_id,),
+        ).fetchall()
+        for row in rows:
+            updates.setdefault(row["chapter_id"], []).append(row["translated_text"])
+        for chapter_id, parts in updates.items():
+            full_translation = "\n\n".join(parts).strip()
+            if not full_translation:
+                raise HTTPException(status_code=409, detail="Hay una sección cuya traducción está vacía. No se aplicó ningún cambio.")
+            # Use the same snapshot semantics as the normal translation editor.
+            # Even the initial empty state is retained as history on first save.
+            current = conn.execute(
+                "SELECT translated_text FROM chapters WHERE id = ?", (chapter_id,)
+            ).fetchone()
+            next_version = conn.execute(
+                "SELECT COALESCE(MAX(version_number), 0) + 1 AS next_version "
+                "FROM translation_versions WHERE chapter_id = ?", (chapter_id,)
+            ).fetchone()["next_version"]
+            conn.execute(
+                "INSERT INTO translation_versions(id, chapter_id, version_number, translated_text, created_at) "
+                "VALUES(?,?,?,?,?)",
+                (str(uuid4()), chapter_id, next_version, current["translated_text"], now),
+            )
+            conn.execute(
+                "UPDATE chapters SET translated_text = ?, status = 'translated' WHERE id = ?",
+                (full_translation, chapter_id),
+            )
+        conn.execute(
+            "UPDATE translation_jobs SET status = 'applied', applied_at = ?, updated_at = ?, last_error = '' WHERE id = ?",
+            (now, now, job_id),
+        )
+        return {"job_id": job_id, "saved": True, "chapter_count": len(updates), "status": "applied"}
+
+
 
 
 @app.post("/api/backups")
@@ -1464,11 +1988,30 @@ def home() -> str:
 :root{color-scheme:light dark;--bg:#f5f0e8;--panel:#fffdf8;--ink:#28251f;--muted:#777064;--accent:#6b5a9e;--line:#e4ddd1;--soft:#eee8f8}
 @media(prefers-color-scheme:dark){:root{--bg:#191a20;--panel:#23252d;--ink:#ece9e2;--muted:#aaa6b0;--accent:#c0b2ff;--line:#393b46;--soft:#34303f}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:3px}main{max-width:1120px;margin:auto;padding:24px 20px 60px}.top{display:flex;align-items:center;gap:12px;margin-bottom:28px}.mark{background:var(--accent);color:white;border-radius:14px;padding:9px 12px;font-weight:800}.sub{color:var(--muted)}h1{font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.15;margin:.2rem 0}h2{margin-top:0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;margin:18px 0;box-shadow:0 6px 24px #00000008}.primary,.secondary,.quiet{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:12px;padding:10px 15px;font-weight:650}.primary{background:var(--accent);color:white}.secondary{background:var(--soft);color:var(--ink)}.quiet{background:transparent;color:var(--ink);border:1px solid var(--line)}input[type=file]{max-width:100%;margin:12px 0}.book{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}.book:last-child{border:0}.bookinfo{flex:1;min-width:0}.empty{padding:24px;text-align:center;color:var(--muted)}#status{margin-top:12px;min-height:1.5em}.pill{font-size:.8rem;border:1px solid var(--line);border-radius:99px;padding:3px 9px;color:var(--muted)}#reader{display:none}.reader-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.reader-head h2{margin:0;flex:1}.reader-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.reader-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.reading-pane{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}.reading-pane h3{margin-top:0}.original-text{white-space:pre-wrap;overflow-wrap:anywhere;max-height:65vh;overflow:auto;font-family:Georgia,'Times New Roman',serif;line-height:1.85;font-size:19px}.translation-text{width:100%;min-height:48vh;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);line-height:1.85;font-family:Georgia,'Times New Roman',serif;font-size:19px}.chapter-nav{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:14px 0}.chapter-nav select{max-width:65%;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)}.reader-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.small{font-size:.9rem}.hidden{display:none!important}@media(max-width:760px){main{padding:18px 12px 40px}.reader-grid{grid-template-columns:1fr}.original-text{max-height:45vh}.translation-text{min-height:35vh}.panel{padding:16px}.book{align-items:flex-start;flex-wrap:wrap}.bookinfo{flex-basis:60%}}
+#queue-original,#queue-translation{width:100%;min-height:34vh;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);line-height:1.7;font-family:Georgia,'Times New Roman',serif;font-size:16px}#queue-progress-bar{width:100%;height:14px;margin:8px 0;accent-color:var(--accent)}.queue-meta{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.queue-meta>*{min-width:0}.queue-select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
 </style></head><body><main>
 <header class="top"><div class="mark">NT</div><div><strong>NovelTrad</strong><div class="sub">Tu biblioteca, tus reglas, tu espacio</div></div><span style="margin-left:auto" class="pill">Local-first</span></header>
 <section id="library"><h1>Volvé a tu historia.</h1><p class="sub">Un espacio tranquilo para leer y preparar tus traducciones. Tus libros se guardan en este equipo.</p>
 <section class="panel"><h2>Importar una novela</h2><p class="sub">Solo EPUB y PDF · Máximo 100 MB. Los PDF escaneados todavía necesitan OCR.</p><form id="upload"><input id="file" name="file" type="file" accept=".epub,.pdf,application/pdf,application/epub+zip" required><br><button class="primary" type="submit">Añadir a mi biblioteca</button></form><div id="status" role="status" aria-live="polite"></div></section>
 <section class="panel"><h2>Mi biblioteca</h2><div id="books" class="empty">Cargando biblioteca…</div></section>
+<section class="panel" id="translation-queue">
+<h2>Traducción de libro completo</h2>
+<p class="sub">Usa Premium local (Ollama, instalado por vos). La cola se guarda en este equipo: podés pausar, cerrar NovelTrad y reanudar luego. Los originales no se modifican. La aplicación final exige revisar cada fragmento.</p>
+<label for="queue-book-select">Novela</label><select id="queue-book-select" class="queue-select"><option value="">Importá una novela primero</option></select>
+<div class="reader-actions"><button id="queue-create" class="primary" type="button" disabled>Preparar cola de traducción</button><button id="queue-load" class="secondary" type="button" disabled>Cargar trabajo pendiente</button></div>
+<div id="queue-status" role="status" aria-live="polite" class="sub small">Elegí una novela para preparar o recuperar un trabajo.</div>
+<div class="queue-meta"><strong id="queue-progress-label">Sin cola activa</strong><span id="queue-status-label" class="sub small"></span></div>
+<progress id="queue-progress-bar" max="100" value="0"></progress>
+<div class="reader-actions"><button id="queue-run" class="primary" type="button" disabled>Iniciar / reanudar</button><button id="queue-pause" class="secondary" type="button" disabled>Pausar</button><button id="queue-retry" class="secondary" type="button" disabled>Reintentar fallidos</button><button id="queue-apply" class="secondary" type="button" disabled>Aplicar traducciones revisadas</button></div>
+<p id="queue-last-error" class="sub small" role="status"></p>
+<section id="queue-review-panel" class="panel hidden">
+<h3>Revisión de fragmentos</h3>
+<p class="sub small">Seleccioná cada fragmento traducido, comparalo con el original y pulsá «Guardar revisión». Si editás el texto, se guarda en la cola local, no todavía en la traducción final del capítulo.</p>
+<label for="queue-chunk-select">Fragmento</label><select id="queue-chunk-select" class="queue-select"></select>
+<div id="queue-chunk-state" class="sub small" role="status"></div>
+<div class="reader-grid" style="margin-top:12px"><section class="reading-pane"><h4>Original (protegido)</h4><textarea id="queue-original" readonly aria-label="Original del fragmento"></textarea></section><section class="reading-pane"><h4>Traducción para revisar</h4><textarea id="queue-translation" aria-label="Traducción del fragmento"></textarea><button id="queue-review-save" class="primary" type="button" disabled>Guardar revisión de fragmento</button></section></div>
+</section>
+</section>
 <section class="panel"><h2>Copias de seguridad</h2><p class="sub">Guarda el estado de tu biblioteca y permite recuperarlo. Antes de restaurar se crea otra copia de seguridad automática.</p><div class="reader-actions"><button id="create-backup" class="secondary" type="button">Crear copia ahora</button><button id="refresh-backups" class="quiet" type="button">Actualizar lista</button></div><label class="small" for="backup-select">Copia disponible</label><select id="backup-select" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"><option value="">Todavía no hay copias</option></select><button id="restore-backup" class="secondary" type="button" disabled>Restaurar copia seleccionada</button><div id="backup-status" role="status" aria-live="polite"></div></section>
 <section class="panel"><h2>Copias automáticas</h2><p class="sub">La aplicación crea copias en segundo plano mientras está abierta. La programación y la retención se guardan en este equipo.</p><label><input id="backup-enabled" type="checkbox" checked> Activar copias automáticas</label><div class="reader-actions"><label for="backup-interval">Frecuencia (horas)<input id="backup-interval" type="number" min="1" max="720" value="24" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></label><label for="backup-retention">Copias a conservar<input id="backup-retention" type="number" min="1" max="100" value="14" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></label></div><button id="save-backup-settings" class="secondary" type="button">Guardar programación</button><button id="prune-backups" class="quiet" type="button">Aplicar retención ahora</button><div id="backup-settings-status" role="status" aria-live="polite"></div></section></section>
 <section id="reader"><div class="reader-head"><button id="back" class="quiet" type="button">← Biblioteca</button><h2 id="book-title">Leyendo</h2><button id="toggle-glossary" class="secondary" type="button">Glosario</button><label class="small">Texto <select id="font-size" aria-label="Tamaño del texto"><option value="17">Pequeño</option><option value="19" selected>Mediano</option><option value="22">Grande</option><option value="26">Muy grande</option></select></label></div>
@@ -1479,10 +2022,141 @@ def home() -> str:
 </section><p class="sub small">Modo local aplica reglas aprobadas, pero no traduce por sí solo frases desconocidas. Para traducción neuronal, activa Modo premium y configura Ollama localmente. Las vistas previas nunca se guardan automáticamente.</p></main>
 <script>
 const $=s=>document.querySelector(s);let currentBook=null,chapters=[],chapterPos=0,saveTimer=null,translationDirty=false,editingGlossaryId=null;
+let queueBookId=null,currentTranslationJobId=null,currentQueueChunkId=null,queueWorkerActive=false,queuePauseRequested=false;
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function api(url,options={}){const r=await fetch(url,options);let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.detail||'No se pudo completar la operación');return d}
-async function refresh(){try{const books=await api('/api/books');$('#books').className=books.length?'':'empty';$('#books').innerHTML=books.length?books.map(b=>{let pos={};try{pos=JSON.parse(b.current_location||'{}')}catch{}return '<article class="book"><div class="bookinfo"><strong>'+esc(b.title)+'</strong><div class="sub small">'+b.chapter_count+' secciones · '+esc(b.source_format.toUpperCase())+' · Progreso guardado</div></div><button class="primary" type="button" data-open="'+esc(b.id)+'" data-chapter="'+(Number.isInteger(pos.chapter_index)?pos.chapter_index:0)+'">Abrir novela</button></article>'}).join(''):'<div class="empty">Todavía no hay novelas. Importá un EPUB o PDF para empezar.</div>'}catch(e){$('#books').textContent=e.message}}
+async function refresh(){try{const books=await api('/api/books');syncQueueBookOptions(books);$('#books').className=books.length?'':'empty';$('#books').innerHTML=books.length?books.map(b=>{let pos={};try{pos=JSON.parse(b.current_location||'{}')}catch{}return '<article class="book"><div class="bookinfo"><strong>'+esc(b.title)+'</strong><div class="sub small">'+b.chapter_count+' secciones · '+esc(b.source_format.toUpperCase())+' · Progreso guardado</div></div><button class="primary" type="button" data-open="'+esc(b.id)+'" data-chapter="'+(Number.isInteger(pos.chapter_index)?pos.chapter_index:0)+'">Abrir novela</button></article>'}).join(''):'<div class="empty">Todavía no hay novelas. Importá un EPUB o PDF para empezar.</div>';if(!queueBookId&&books.length){queueBookId=$('#queue-book-select').value||books[0].id;$('#queue-book-select').value=queueBookId;await loadLatestQueueForBook(queueBookId)}}catch(e){$('#books').textContent=e.message}}
 $('#books').addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(b)openBook(b.dataset.open,Number(b.dataset.chapter)||0)});
+
+function syncQueueBookOptions(books){
+  const select=$('#queue-book-select');const previous=select.value||queueBookId;
+  select.innerHTML=books.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.title)+'</option>').join('')||'<option value="">Importá una novela primero</option>';
+  if(previous&&books.some(b=>b.id===previous))select.value=previous;
+  else if(books.length)select.value=books[0].id;
+  $('#queue-create').disabled=!books.length;$('#queue-load').disabled=!books.length;
+}
+function queueStatusLabel(status){
+  return ({queued:'En cola',running:'Traduciendo',paused:'Pausada',failed:'Falló un fragmento',completed:'Lista para revisión',applied:'Aplicada a la biblioteca'})[status]||status||'Sin cola';
+}
+function queueButtons(job){
+  const active=queueWorkerActive;
+  $('#queue-run').disabled=active||!job||['applied','completed'].includes(job.status)||job.failed_chunks>0;
+  $('#queue-pause').disabled=!job||active===false&&job.status!=='queued'&&job.status!=='running';
+  $('#queue-retry').disabled=!job||!job.failed_chunks||active||job.status==='applied';
+  $('#queue-apply').disabled=!job||job.status!=='completed'||job.completed_chunks!==job.total_chunks||job.reviewed_chunks!==job.total_chunks||job.status==='applied'||active;
+  $('#queue-review-save').disabled=!job||active||job.status==='applied';
+}
+function clearQueueView(message){
+  currentTranslationJobId=null;currentQueueChunkId=null;
+  $('#queue-progress-label').textContent='Sin cola activa';$('#queue-status-label').textContent='';
+  $('#queue-progress-bar').value=0;$('#queue-progress-bar').max=100;
+  $('#queue-last-error').textContent='';$('#queue-chunk-select').innerHTML='';
+  $('#queue-review-panel').classList.add('hidden');$('#queue-status').textContent=message||'No hay un trabajo cargado.';
+  queueButtons(null);
+}
+async function showQueueState(job){
+  currentTranslationJobId=job.id;
+  $('#queue-progress-label').textContent=job.completed_chunks+' / '+job.total_chunks+' fragmentos traducidos · '+job.reviewed_chunks+' revisados';
+  $('#queue-status-label').textContent=queueStatusLabel(job.status)+' · '+job.chapter_count+' secciones';
+  $('#queue-progress-bar').max=Math.max(job.total_chunks,1);$('#queue-progress-bar').value=job.completed_chunks;
+  $('#queue-status').textContent='Progreso persistido localmente. Estado: '+queueStatusLabel(job.status)+'.';
+  $('#queue-last-error').textContent=job.last_error||'';
+  const chunks=job.chunks||[];
+  $('#queue-chunk-select').innerHTML=chunks.map(c=>'<option value="'+esc(c.id)+'">'+(c.status==='completed'?(c.reviewed?'✓ Revisado':'○ Revisar'):c.status==='failed'?'⚠ Falló':c.status==='running'?'… En curso':'· Pendiente')+' — sección '+(c.chapter_index+1)+', fragmento '+c.chunk_index+' ('+esc(c.chapter_title)+')</option>').join('');
+  $('#queue-review-panel').classList.toggle('hidden',!chunks.length);
+  let chosen=chunks.find(c=>c.id===currentQueueChunkId)||chunks.find(c=>c.status==='completed'&&!c.reviewed)||chunks.find(c=>c.status==='completed')||chunks[0];
+  if(chosen){currentQueueChunkId=chosen.id;$('#queue-chunk-select').value=chosen.id;await loadQueueChunk(chosen.id,job.id)}
+  queueButtons(job);
+  return job;
+}
+async function loadQueueChunk(chunkId,jobId=currentTranslationJobId){
+  if(!chunkId||!jobId)return;
+  currentQueueChunkId=chunkId;
+  try{
+    const c=await api('/api/translation-jobs/'+jobId+'/chunks/'+chunkId);
+    $('#queue-original').value=c.original_text||'';$('#queue-translation').value=c.translated_text||'';
+    $('#queue-chunk-state').textContent='Sección '+(c.chapter_index+1)+' · '+c.chapter_title+' · Fragmento '+c.chunk_index+' · '+queueStatusLabel(c.status)+' · Intentos: '+c.attempts+(c.reviewed?' · Revisado':'')+(c.error?' · Error: '+c.error:'');
+    const job=await api('/api/translation-jobs/'+jobId);
+    $('#queue-review-save').disabled=queueWorkerActive||job.status==='running'||job.status==='applied'||c.status!=='completed';
+  }catch(e){$('#queue-chunk-state').textContent='No se pudo cargar el fragmento: '+e.message}
+}
+async function loadQueueJob(jobId){
+  const job=await api('/api/translation-jobs/'+jobId);
+  return showQueueState(job);
+}
+async function loadLatestQueueForBook(bookId){
+  if(!bookId){clearQueueView('Elegí una novela.');return}
+  queueBookId=bookId;$('#queue-book-select').value=bookId;
+  try{
+    const jobs=await api('/api/books/'+bookId+'/translation-jobs');
+    if(!jobs.length){clearQueueView('No hay una cola previa para esta novela. Prepará una cola nueva para las secciones aún sin traducción.');return}
+    const latest=jobs[0];await loadQueueJob(latest.id);
+  }catch(e){clearQueueView(e.message)}
+}
+$('#queue-book-select').addEventListener('change',async e=>{queueBookId=e.target.value;await loadLatestQueueForBook(queueBookId)});
+$('#queue-create').addEventListener('click',async()=>{
+  queueBookId=$('#queue-book-select').value;if(!queueBookId)return;
+  $('#queue-status').textContent='Preparando la cola y guardando el manifiesto de fragmentos…';
+  try{
+    const job=await api('/api/books/'+queueBookId+'/translation-jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chunk_size:3500,context_chars:1200})});
+    await showQueueState(job);
+  }catch(e){
+    $('#queue-status').textContent=e.message;
+    try{const jobs=await api('/api/books/'+queueBookId+'/translation-jobs');if(jobs.length)await loadQueueJob(jobs[0].id)}catch(_){}
+  }
+});
+$('#queue-load').addEventListener('click',async()=>{queueBookId=$('#queue-book-select').value;await loadLatestQueueForBook(queueBookId)});
+$('#queue-run').addEventListener('click',async()=>{
+  if(!currentTranslationJobId||queueWorkerActive)return;
+  queueWorkerActive=true;queuePauseRequested=false;
+  $('#queue-status').textContent='Iniciando traducción neuronal local. Cada fragmento se guarda en la cola al terminar; no se guarda aún en los capítulos.';
+  try{
+    await api('/api/translation-jobs/'+currentTranslationJobId+'/resume',{method:'POST'});
+    let current=await loadQueueJob(currentTranslationJobId);
+    while(!queuePauseRequested&&current.status!=='completed'&&current.status!=='failed'&&current.status!=='applied'){
+      current=await api('/api/translation-jobs/'+currentTranslationJobId+'/run-next',{method:'POST'});
+      await showQueueState(current);
+    }
+    if(queuePauseRequested)$('#queue-status').textContent='Pausa solicitada. El resultado del fragmento en curso se conservó; la cola puede reanudarse.';
+    else if(current.status==='completed')$('#queue-status').textContent='Traducción completa. Ahora revisá cada fragmento y guardá la revisión antes de aplicarla a los capítulos.';
+    else if(current.status==='failed')$('#queue-status').textContent='Se detuvo por un fragmento fallido. El progreso previo quedó guardado; reintentá el fragmento fallido.';
+  }catch(e){
+    $('#queue-status').textContent=e.message;
+    try{await loadQueueJob(currentTranslationJobId)}catch(_){}
+  }finally{
+    queueWorkerActive=false;
+    try{const job=await loadQueueJob(currentTranslationJobId);queueButtons(job)}catch(_){queueButtons(null)}
+    if(queuePauseRequested)$('#queue-status').textContent='Pausada. Podés cerrar NovelTrad y reanudar esta cola más tarde.';
+  }
+});
+$('#queue-pause').addEventListener('click',async()=>{
+  if(!currentTranslationJobId)return;queuePauseRequested=true;
+  try{const job=await api('/api/translation-jobs/'+currentTranslationJobId+'/pause',{method:'POST'});await showQueueState(job);$('#queue-status').textContent='Pausa solicitada; se terminará como máximo el fragmento que ya estaba en curso.'}
+  catch(e){$('#queue-status').textContent=e.message}
+});
+$('#queue-retry').addEventListener('click',async()=>{
+  if(!currentTranslationJobId)return;
+  try{const job=await api('/api/translation-jobs/'+currentTranslationJobId+'/retry-failed',{method:'POST'});await showQueueState(job);$('#queue-status').textContent='Los fragmentos fallidos volvieron a la cola. Iniciá/reanudá cuando quieras.'}
+  catch(e){$('#queue-status').textContent=e.message}
+});
+$('#queue-chunk-select').addEventListener('change',e=>loadQueueChunk(e.target.value));
+$('#queue-review-save').addEventListener('click',async()=>{
+  if(!currentTranslationJobId||!currentQueueChunkId)return;
+  try{
+    const job=await api('/api/translation-jobs/'+currentTranslationJobId+'/chunks/'+currentQueueChunkId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({translated_text:$('#queue-translation').value})});
+    await showQueueState(job);$('#queue-status').textContent='Revisión del fragmento guardada en la cola local.';
+  }catch(e){$('#queue-status').textContent=e.message}
+});
+$('#queue-apply').addEventListener('click',async()=>{
+  if(!currentTranslationJobId)return;
+  if(!confirm('Se copiará la traducción revisada a las secciones que todavía no tienen traducción guardada. El original no se cambia y se mantiene el historial. ¿Aplicar?'))return;
+  try{
+    const result=await api('/api/translation-jobs/'+currentTranslationJobId+'/apply',{method:'POST'});
+    $('#queue-status').textContent='Traducciones aplicadas a '+result.chapter_count+' secciones. El original permanece intacto.';
+    await loadQueueJob(currentTranslationJobId);await refresh();
+  }catch(e){$('#queue-status').textContent=e.message;try{await loadQueueJob(currentTranslationJobId)}catch(_){}}
+});
+
 loadBackups();
 loadBackupSettings();
 async function loadBackupSettings(){try{const s=await api('/api/backups/settings');$('#backup-enabled').checked=s.enabled;$('#backup-interval').value=s.interval_hours;$('#backup-retention').value=s.retention_count;const status=[];status.push(s.enabled?'Copias automáticas activadas':'Copias automáticas desactivadas');status.push('Frecuencia: cada '+s.interval_hours+' h');status.push('Retención: '+s.retention_count+' copias');if(s.last_success_at)status.push('Última copia automática correcta: '+new Date(s.last_success_at).toLocaleString());if(s.last_error)status.push('Último error: '+s.last_error);$('#backup-settings-status').textContent=status.join(' · ')}catch(e){$('#backup-settings-status').textContent='No se pudo cargar la programación: '+e.message}}
