@@ -603,7 +603,10 @@ def recover_interrupted_restore() -> bool:
         safety_name = transaction.get("safety_backup")
         database_existed = transaction.get("database_existed")
         imports_snapshot_present = transaction.get("imports_snapshot_present")
-        if not isinstance(database_existed, bool) or not isinstance(imports_snapshot_present, bool):
+        imports_directory_existed = transaction.get("imports_directory_existed")
+        if (not isinstance(database_existed, bool)
+                or not isinstance(imports_snapshot_present, bool)
+                or not isinstance(imports_directory_existed, bool)):
             raise ValueError("El diario de restauración está incompleto.")
         previous_imports = data_dir() / previous_name
         imports_dir = data_dir() / "imports"
@@ -626,10 +629,14 @@ def recover_interrupted_restore() -> bool:
         elif not database_existed:
             database_path().unlink(missing_ok=True)
 
-        if imports_snapshot_present and previous_imports.exists():
-            if imports_dir.exists():
+        if imports_snapshot_present:
+            if previous_imports.exists():
+                if imports_dir.exists():
+                    shutil.rmtree(imports_dir)
+                os.replace(previous_imports, imports_dir)
+            elif not imports_directory_existed and imports_dir.exists():
+                # There was no prior originals directory to move aside.
                 shutil.rmtree(imports_dir)
-            os.replace(previous_imports, imports_dir)
         journal.unlink()
         if os.name != "nt":
             directory_fd = os.open(journal.parent, os.O_RDONLY)
@@ -679,15 +686,19 @@ def restore_backup(backup_name: str) -> dict[str, object]:
                 raise ValueError("La copia contiene archivos originales no válidos.")
             shutil.copytree(imports_snapshot, staged_imports)
         safety_copy = create_pre_restore_snapshot()
+        imports_dir = data_dir() / "imports"
+        database_existed = database_path().exists()
+        if database_existed and safety_copy is None:
+            raise OSError("No se pudo crear la copia de seguridad previa a la restauración.")
         _write_restore_transaction({
             "version": 1,
             "safety_backup": safety_copy.name if safety_copy else None,
-            "database_existed": database_path().exists(),
+            "database_existed": database_existed,
             "previous_imports": previous_imports.name,
             "imports_snapshot_present": imports_snapshot.exists(),
+            "imports_directory_existed": imports_dir.exists(),
         })
         transaction_written = True
-        imports_dir = data_dir() / "imports"
         if imports_snapshot.exists():
             if imports_dir.exists():
                 os.replace(imports_dir, previous_imports)
