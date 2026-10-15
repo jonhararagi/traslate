@@ -22,6 +22,7 @@ from ebooklib import epub, ITEM_DOCUMENT
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
+from noveltrad.narrative_rules import TermRule, apply_offline_rules, get_profile
 
 APP_NAME = "NovelTrad"
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
@@ -536,6 +537,75 @@ class BackupScheduler:
 
 
 backup_scheduler = BackupScheduler()
+
+
+class OfflineRulesInput(BaseModel):
+    profile_id: str = Field(default="light_novel_es", max_length=80)
+    phrase_map: dict[str, str] = Field(default_factory=dict)
+    normalize_typography: bool = True
+
+    @field_validator("phrase_map")
+    @classmethod
+    def validate_phrase_map(cls, value: dict[str, str]) -> dict[str, str]:
+        if len(value) > 1000:
+            raise ValueError("El mapa local admite hasta 1000 pares de frases.")
+        if any(not key.strip() or len(key) > 500 or len(target) > 500 for key, target in value.items()):
+            raise ValueError("Las frases deben tener entre 1 y 500 caracteres.")
+        return value
+
+
+@app.post("/api/chapters/{chapter_id}/offline-rules")
+def preview_offline_rules(chapter_id: str, payload: OfflineRulesInput) -> dict[str, object]:
+    """Preview deterministic, approved glossary rules; never save or overwrite the chapter."""
+    init_db()
+    try:
+        get_profile(payload.profile_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    with connection() as conn:
+        chapter = conn.execute(
+            "SELECT c.original_text, c.book_id FROM chapters c WHERE c.id = ?",
+            (chapter_id,),
+        ).fetchone()
+        if not chapter:
+            raise HTTPException(status_code=404, detail="No se encontró el capítulo.")
+        rows = conn.execute(
+            "SELECT source_term, preferred_term, rule, approved FROM glossary_entries "
+            "WHERE approved = 1 AND (book_id = ? OR book_id IS NULL) "
+            "ORDER BY length(source_term) DESC",
+            (chapter["book_id"],),
+        ).fetchall()
+
+    term_rules = [
+        TermRule(
+            source=row["source_term"],
+            target=row["preferred_term"],
+            mode=row["rule"] if row["rule"] in {"translate", "preserve", "protect"} else "preserve",
+            approved=bool(row["approved"]),
+        )
+        for row in rows
+        if row["rule"] in {"translate", "preserve", "protect"}
+    ]
+    report = apply_offline_rules(
+        chapter["original_text"],
+        profile_id=payload.profile_id,
+        term_rules=term_rules,
+        phrase_map=payload.phrase_map,
+        normalize_typography=payload.normalize_typography,
+    )
+    return {
+        "mode": "deterministic-offline-rules",
+        "profile": payload.profile_id,
+        "preview_only": True,
+        "saved": False,
+        "text": report.text,
+        "replacements": [
+            {"source": source, "target": target, "count": count}
+            for source, target, count in report.replacements
+        ],
+        "warnings": list(report.warnings),
+    }
 
 
 @asynccontextmanager
