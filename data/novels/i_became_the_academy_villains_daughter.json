@@ -158,13 +158,13 @@
       "notes": "Translate as 'robar' when it is the ordinary verb. If capitalized as a named skill/UI label, preserve pending confirmation."
     },
     {
-      "source": "Steal",
+      "source": "Steal skill",
       "target": "Steal",
-      "type": "possible skill name",
+      "type": "possible skill-name phrase",
       "status": "candidate",
       "approved": false,
       "evidence": "Candidate distinction based on capitalization only; no chapter evidence yet.",
-      "notes": "Do not assume capitalization alone proves a skill name. Verify against system formatting/context."
+      "notes": "Candidate phrase only; verify in the imported edition. A capitalization difference alone does not prove that a word is a skill name."
     },
     {
       "source": "skill",
@@ -210,6 +210,15 @@
       "approved": false,
       "evidence": "User's requested otaku terminology; not verified against a chapter yet.",
       "notes": "Usually retain 'tsundere' as a genre/archetype term; do not flatten it to 'fría' or 'antipática'."
+    },
+    {
+      "source": "farmed",
+      "target": "farmear",
+      "type": "context-sensitive gamer verb form",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "User-requested gamer terminology; not verified against a chapter yet.",
+      "notes": "Potential past-tense form when it means repeated resource/experience gathering. Do not use a global substitution without checking context."
     }
   ],
   "characters": [],
