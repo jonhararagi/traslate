@@ -554,6 +554,23 @@ class OfflineRulesInput(BaseModel):
         return value
 
 
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    recover_interrupted_restore()
+    init_db()
+    load_backup_settings()
+    backup_scheduler.start()
+    try:
+        yield
+    finally:
+        backup_scheduler.stop()
+
+
+app = FastAPI(title=APP_NAME, version="0.1.0", docs_url="/api/docs", lifespan=lifespan)
+
+
 @app.post("/api/chapters/{chapter_id}/offline-rules")
 def preview_offline_rules(chapter_id: str, payload: OfflineRulesInput) -> dict[str, object]:
     """Preview deterministic, approved glossary rules; never save or overwrite the chapter."""
@@ -607,20 +624,6 @@ def preview_offline_rules(chapter_id: str, payload: OfflineRulesInput) -> dict[s
         "warnings": list(report.warnings),
     }
 
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    recover_interrupted_restore()
-    init_db()
-    load_backup_settings()
-    backup_scheduler.start()
-    try:
-        yield
-    finally:
-        backup_scheduler.stop()
-
-
-app = FastAPI(title=APP_NAME, version="0.1.0", docs_url="/api/docs", lifespan=lifespan)
 
 
 @app.post("/api/backups")
