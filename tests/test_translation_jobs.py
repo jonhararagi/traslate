@@ -120,6 +120,9 @@ def test_book_queue_is_persistent_reviewable_and_never_changes_original(monkeypa
         assert saved[0]["translated_text"].startswith("ES: ")
         assert saved[1]["translated_text"].startswith("ES: ")
         assert saved[0]["status"] == "translated"
+        for chapter_id in chapter_ids:
+            versions = client.get(f"/api/chapters/{chapter_id}/translation/versions").json()
+            assert versions and versions[0]["translated_text"] == ""
         final_job = client.get(f"/api/translation-jobs/{job_id}").json()
         assert final_job["status"] == "applied"
 
