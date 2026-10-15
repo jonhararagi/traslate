@@ -66,3 +66,46 @@ def test_chunked_preview_is_sequential_reviewable_and_never_saves(monkeypatch, t
     assert row["original_text"] == source
     assert row["translated_text"] == ""
     assert row["status"] == "imported"
+
+
+def test_local_model_rejects_non_object_json_response(monkeypatch):
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return b"[]"
+
+    monkeypatch.setattr("urllib.request.urlopen", lambda *_args, **_kwargs: FakeResponse())
+    try:
+        main._translate_with_local_model("Hello.", [])
+    except main.HTTPException as exc:
+        assert exc.status_code == 502
+        assert "formato inválido" in exc.detail
+    else:
+        raise AssertionError("Expected malformed Ollama JSON to become an HTTP 502")
+
+
+def test_local_model_rejects_missing_or_empty_response(monkeypatch):
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return b'{"model":"qwen2.5:3b","done":true,"response":"   "}'
+
+    monkeypatch.setattr("urllib.request.urlopen", lambda *_args, **_kwargs: FakeResponse())
+    try:
+        main._translate_with_local_model("Hello.", [])
+    except main.HTTPException as exc:
+        assert exc.status_code == 502
+        assert "traducción válida" in exc.detail
+    else:
+        raise AssertionError("Expected empty model output to become an HTTP 502")
+

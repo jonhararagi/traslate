@@ -741,9 +741,13 @@ def _translate_with_local_model(
         ) from exc
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise HTTPException(status_code=502, detail="Ollama devolvió una respuesta inválida.") from exc
+    # Ollama may return valid JSON with an unexpected shape. Treat that as a
+    # provider error instead of leaking AttributeError/TypeError to the UI.
+    if not isinstance(result, dict):
+        raise HTTPException(status_code=502, detail="Ollama devolvió una respuesta con formato inválido.")
     translated = result.get("response")
     if not isinstance(translated, str) or not translated.strip():
-        raise HTTPException(status_code=502, detail="El modelo local no devolvió una traducción.")
+        raise HTTPException(status_code=502, detail="El modelo local no devolvió una traducción válida.")
     return translated.strip()
 
 

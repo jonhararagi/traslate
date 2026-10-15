@@ -21,7 +21,7 @@ Premium es un modo real de inferencia neuronal local, no una suscripción y no u
 ### Presupuesto conservador para Ryzen 5 5600G y 16 GB RAM
 
 - Premium no se ejecuta en segundo plano ni automáticamente al importar/abrir un libro.
-- Solo se permite una petición por acción; límite actual: 12.000 caracteres por vista previa.
+- La vista previa de capítulo usa fragmentos secuenciales de 3.500 caracteres por defecto, ajustables internamente entre 1.000 y 6.000, hasta 200.000 caracteres de origen por capítulo.
 - Se solicita `num_ctx=4096`, una salida máxima de 4096 tokens, temperatura 0,1 y `keep_alive=0` para pedir a Ollama que descargue el modelo de memoria al terminar. La traducción de capítulos usa peticiones secuenciales, no paralelas.
 - El uso real depende de la cuantización, el runtime, el tamaño del contexto y otras aplicaciones abiertas. Un modelo 3B cuantizado puede consumir varios GB entre pesos y memoria de ejecución; 16 GB no garantizan que no haya presión de RAM. Cerrar aplicaciones pesadas y preferir Local cuando no haga falta traducción neuronal.
 - La vista previa de capítulo trocea automáticamente hasta 200.000 caracteres de origen en fragmentos de 3.500 caracteres por defecto (configuración interna permitida: 1.000–6.000), priorizando límites de párrafo y oración. El final de la traducción anterior se pasa al modelo como referencia de continuidad; no debe repetirse como salida. Los capítulos mayores de 200.000 caracteres se rechazan explícitamente.
@@ -30,7 +30,7 @@ Premium es un modo real de inferencia neuronal local, no una suscripción y no u
 
 ## Límites actuales y tareas pendientes
 
-- Premium produce una traducción neuronal del texto del capítulo solo si cabe en el límite de 12.000 caracteres. No guarda el resultado por sí mismo.
+- Premium traduce capítulos mediante fragmentos secuenciales y muestra cada original junto a una traducción editable, con contexto secuencial y vista previa combinada. No guarda el resultado por sí mismo.
 - La experiencia de capítulo por fragmentos muestra cada original junto a una traducción editable, con contexto secuencial y vista previa combinada. Todavía faltan cola de traducción de libro completo y controles para reintentar/reanudar desde un fragmento fallido.
 - Falta una comprobación de calidad con capítulos reales de la edición que el usuario importe.
 - El modo Local no es traducción automática general; solo aplica reglas aprobadas.
