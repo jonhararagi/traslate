@@ -1168,6 +1168,73 @@ $('#glossary-list').addEventListener('click',async e=>{const edit=e.target.close
 $('#glossary-form').addEventListener('submit',async e=>{e.preventDefault();if(!currentBook)return;$('#glossary-status').textContent=editingGlossaryId?'Guardando cambios…':'Guardando término…';const payload={source_term:$('#glossary-source').value.trim(),preferred_term:$('#glossary-target').value.trim(),rule:$('#glossary-rule').value,notes:$('#glossary-notes').value.trim(),approved:$('#glossary-approved').checked};try{await api('/api/books/'+currentBook.id+'/glossary'+(editingGlossaryId?'/'+editingGlossaryId:''),{method:editingGlossaryId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});$('#glossary-status').textContent=editingGlossaryId?'Cambios guardados.':'Término guardado.';resetGlossaryForm();await loadGlossary()}catch(e){$('#glossary-status').textContent='Error: '+e.message}});
 $('#font-size').addEventListener('change',e=>{const size=Number(e.target.value);$('#original').style.fontSize=size+'px';$('#translation').style.fontSize=size+'px'});
 $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay cambios de traducción sin guardar. ¿Salir sin guardarlos?'))return;try{await persistProgressNow()}catch(e){$('#save-status').textContent='No se pudo guardar el progreso: '+e.message;return}translationDirty=false;$('#reader').style.display='none';$('#library').classList.remove('hidden');await refresh()});
+
+/* Manual narrative-assistance micro-window: no network calls or provider-session automation. */
+(function installNarrativeAssistant() {
+  if (document.getElementById('narrative-assistant-open')) return;
+  const button = document.createElement('button');
+  button.id = 'narrative-assistant-open';
+  button.type = 'button';
+  button.textContent = 'Asistencia narrativa';
+  button.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:9000;padding:11px 15px;border:1px solid #94a3b8;border-radius:999px;background:#24354b;color:#fff;box-shadow:0 4px 18px #0004;cursor:pointer';
+  document.body.appendChild(button);
+  const overlay = document.createElement('section');
+  overlay.id = 'narrative-assistant-dialog';
+  overlay.setAttribute('role','dialog'); overlay.setAttribute('aria-modal','true'); overlay.setAttribute('aria-labelledby','narrative-assistant-title');
+  overlay.style.cssText = 'display:none;position:fixed;inset:0;z-index:9001;background:#0b1220c9;padding:18px;align-items:center;justify-content:center';
+  overlay.innerHTML = '<div style="width:min(760px,100%);max-height:92vh;overflow:auto;background:#fff;color:#182333;border-radius:14px;padding:22px;box-shadow:0 20px 70px #0008;font:14px/1.5 system-ui,sans-serif"><h2 id="narrative-assistant-title" style="margin-top:0">Microventana de asistencia narrativa</h2><p>NovelTrad prepara el prompt localmente. No envía texto, no lee sesiones web y no automatiza ChatGPT/Gemini. El contenido solo sale si lo autorizás, lo copiás y lo pegás manualmente.</p><label for="na-task-nt" style="display:block;margin:12px 0 5px">Tarea</label><select id="na-task-nt" style="width:100%;padding:9px"><option value="translate">Proponer traducción al español</option><option value="context">Analizar contexto, personajes y relaciones</option><option value="continuity">Revisar continuidad sin inventar canon</option><option value="style">Revisar estilo y claridad</option><option value="terms">Extraer términos candidatos para el glosario</option></select><label for="na-context-nt" style="display:block;margin:12px 0 5px">Contexto opcional</label><textarea id="na-context-nt" rows="3" style="box-sizing:border-box;width:100%;padding:9px" placeholder="Glosario, nombres, época, reglas o instrucciones"></textarea><label for="na-source-nt" style="display:block;margin:12px 0 5px">Fragmento a compartir</label><textarea id="na-source-nt" rows="8" style="box-sizing:border-box;width:100%;padding:9px" placeholder="Pegá solo el fragmento que quieras compartir. Si hay una selección de texto, se copia únicamente dentro de esta ventana."></textarea><label style="display:flex;gap:9px;align-items:flex-start;margin:12px 0"><input id="na-consent-nt" type="checkbox" style="margin-top:4px"><span>Revisé el fragmento y autorizo copiar este contenido al portapapeles para pegarlo manualmente en un servicio externo. Entiendo que al pegarlo allí sale de NovelTrad.</span></label><p style="color:#4b5563">El texto no se guarda en el proyecto ni se envía automáticamente. No se garantiza uso gratuito o ilimitado de cuentas externas. Revisá toda respuesta antes de modificar la traducción.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button id="na-copy-nt" type="button" disabled>Copiar prompt autorizado</button><button id="na-chatgpt-nt" type="button" disabled>Abrir ChatGPT</button><button id="na-gemini-nt" type="button" disabled>Abrir Gemini</button><button id="na-close-nt" type="button">Cerrar</button></div><p id="na-status-nt" role="status" aria-live="polite"></p></div>';
+  document.body.appendChild(overlay);
+  const $ = id => overlay.querySelector('#' + id);
+  const task = $('na-task-nt'), context = $('na-context-nt'), source = $('na-source-nt'), consent = $('na-consent-nt');
+  const copy = $('na-copy-nt'), chatgpt = $('na-chatgpt-nt'), gemini = $('na-gemini-nt'), status = $('na-status-nt');
+  const taskLabels = {
+    translate: 'Proponer una traducción al español natural y fiel; conservar nombres propios y no añadir hechos.',
+    context: 'Analizar el contexto y separar hechos explícitos, inferencias y dudas; identificar personajes y relaciones sin inventar datos.',
+    continuity: 'Revisar continuidad; listar evidencia textual, contradicciones posibles y preguntas abiertas. No convertir hipótesis en canon.',
+    style: 'Revisar claridad, ritmo y estilo sin alterar hechos, voz ni intención narrativa.',
+    terms: 'Extraer términos candidatos en tabla con original, propuesta, contexto y confianza. No aprobar términos automáticamente.'
+  };
+  function sync() {
+    const enabled = consent.checked && Boolean(source.value.trim());
+    copy.disabled = chatgpt.disabled = gemini.disabled = !enabled;
+    status.textContent = !consent.checked ? 'Revisá el texto y marcá la autorización explícita.' : !source.value.trim() ? 'Agregá el fragmento que querés compartir.' : 'Autorización activa para copiar. No hay envío automático.';
+  }
+  function promptText() {
+    return ['Actuá como asistente editorial de novelas. No afirmes que verificaste fuentes que no recibiste.',
+      'TAREA: ' + taskLabels[task.value],
+      'REGLAS: separá hechos, inferencias y desconocidos; no inventes canon; señalá incertidumbres y conservá nombres y sentido.',
+      context.value.trim() ? 'CONTEXTO DEL AUTOR:\n' + context.value.trim() : '',
+      'FRAGMENTO DEL AUTOR:\n' + source.value.trim(),
+      'ENTREGA: respuesta estructurada y verificable. Las propuestas no son cambios aplicados.'
+    ].filter(Boolean).join('\n\n');
+  }
+  button.addEventListener('click', () => {
+    const selection = window.getSelection ? String(window.getSelection()).trim() : '';
+    if (selection && !source.value.trim()) source.value = selection;
+    overlay.style.display = 'flex'; status.textContent = 'Nada se ha compartido todavía.'; sync(); task.focus();
+  });
+  $('na-close-nt').addEventListener('click', () => { overlay.style.display = 'none'; consent.checked = false; sync(); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.style.display = 'none'; consent.checked = false; sync(); } });
+  consent.addEventListener('change', sync); source.addEventListener('input', sync);
+  copy.addEventListener('click', async () => {
+    if (!consent.checked || !source.value.trim()) return;
+    const value = promptText();
+    try { await navigator.clipboard.writeText(value); status.textContent = 'Prompt copiado. Pegalo manualmente en el servicio que elijas.'; }
+    catch (_) {
+      const temp = document.createElement('textarea'); temp.value = value; temp.setAttribute('readonly',''); temp.style.position = 'fixed'; temp.style.opacity = '0'; document.body.appendChild(temp); temp.select();
+      const ok = document.execCommand('copy'); temp.remove();
+      status.textContent = ok ? 'Prompt copiado. Pegalo manualmente en el servicio que elijas.' : 'No se pudo copiar. Revisá los permisos del navegador.';
+    }
+  });
+  function openProvider(url) {
+    if (!consent.checked || !source.value.trim()) return;
+    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    status.textContent = opened ? 'Servicio abierto. Pegá manualmente el prompt; NovelTrad no transmite datos.' : 'Ventana bloqueada por el navegador. Abrí el servicio manualmente.';
+  }
+  chatgpt.addEventListener('click', () => openProvider('https://chatgpt.com/'));
+  gemini.addEventListener('click', () => openProvider('https://gemini.google.com/app'));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.style.display === 'flex') { overlay.style.display = 'none'; consent.checked = false; sync(); } });
+})();
 </script></body></html>'''
 
 
