@@ -18,7 +18,7 @@ NovelTrad is a local-first Windows-friendly reader and translation workspace for
 
 - Python 3.11 or newer.
 - Internet is only needed to install dependencies initially. EPUB/PDF import and local storage run on the computer.
-- A translation engine is **not yet configured**. Offline translation of arbitrary new sentences is not provided by this foundation.
+- The reader now exposes two distinct modes: **Modo local** applies approved deterministic rules without a model; **Modo premium** can request an on-demand translation from a user-installed Ollama model running on loopback. Premium is optional, resource-intensive, limited to 12,000 characters per preview, and never saves automatically. See [the mode and hardware guide](docs/MODO_LOCAL_Y_MODO_PREMIUM.md).
 
 ## Run on Windows
 
@@ -38,6 +38,10 @@ python -m noveltrad.main
 ```
 
 On other platforms, create a virtual environment, install `.[test]`, and run `noveltrad`.
+
+## Recovery and project continuity
+
+Read [BRAIN.md](BRAIN.md) first when resuming work after a lost conversation. It defines the recovery protocol, product boundaries, hardware constraints, and priority queue. The first novel profile and unapproved terminology candidates live in `data/novels/i_became_the_academy_villains_daughter.json`.
 
 ## Local data
 
