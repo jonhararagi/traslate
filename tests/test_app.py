@@ -157,5 +157,39 @@ def test_home_contains_reader_entry_point(client):
     assert "Abrir novela" in response.text
     assert "Traducción" in response.text
     assert "Guardar traducción" in response.text
+    assert "Historial" in response.text
     assert "Glosario de esta novela" in response.text
     assert "Proteger nombre/término" in response.text
+
+
+
+def test_restore_translation_version_preserves_current_text_in_history(client):
+    imported_response = client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", pdf_bytes(), "application/pdf")},
+    )
+    book = imported_response.json()
+    chapter = client.get(f"/api/books/{book['id']}/chapters").json()[0]
+    chapter_id = chapter["id"]
+
+    client.put(
+        f"/api/chapters/{chapter_id}/translation",
+        json={"translated_text": "Versión A"},
+    )
+    client.put(
+        f"/api/chapters/{chapter_id}/translation",
+        json={"translated_text": "Versión B"},
+    )
+
+    restored = client.post(f"/api/chapters/{chapter_id}/translation/restore/2")
+    assert restored.status_code == 200, restored.text
+    assert restored.json()["translated_text"] == "Versión A"
+
+    current = client.get(f"/api/books/{book['id']}/chapters").json()[0]
+    assert current["translated_text"] == "Versión A"
+    history = client.get(f"/api/chapters/{chapter_id}/translation/versions").json()
+    assert history[0]["version_number"] == 3
+    assert history[0]["translated_text"] == "Versión B"
+
+    missing = client.post(f"/api/chapters/{chapter_id}/translation/restore/999")
+    assert missing.status_code == 404
