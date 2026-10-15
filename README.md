@@ -2,7 +2,7 @@
 
 NovelTrad is a local-first Windows-friendly reader and translation workspace for light novels, webnovels, and fanfiction. It is designed around a calm reading experience, persistent per-book terminology, protected names, and optional help from a chat website without paid API keys.
 
-> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor. It does not yet automatically translate text, implement OCR, or export translated books.
+> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor with CRUD controls. Fully translated books can now be exported as Spanish EPUB; automatic translation and OCR are not yet implemented.
 
 ## Product principles
 
@@ -52,6 +52,7 @@ Imported source files are stored under `imports/`; SQLite stores books, extracte
 - `GET /api/health` — local service status.
 - `GET /api/books` — imported library.
 - `POST /api/books/import` — import an EPUB or text-based PDF (100 MB limit).
+- `GET /api/books/{book_id}/export/epub` — export the saved Spanish translations as EPUB; export is blocked until every section has a translation.
 - `GET /api/books/{book_id}/chapters` — extracted sections.
 - `GET /api/books/{book_id}/glossary` — per-book and global glossary entries.
 - `POST /api/books/{book_id}/glossary` — add a glossary rule (`preserve`, `translate`, `contextual`, or `protect`).
@@ -78,6 +79,7 @@ The CI suite covers PDF and EPUB import (including EPUB spine reading order), un
 1. Harden import and persistence with content validation, backups, and recovery.
 2. Finish reader UX: broader accessibility checks, stronger typography/theme controls, and manual Windows verification.
 3. Add entity management and translation-memory workflows.
+4. Add export validation and a richer EPUB table of contents, then implement backups and recovery.
 4. Evaluate offline English→Spanish and Japanese→Spanish engines separately; keep rule-based mode distinct from local neural translation.
 5. Add contextual prompt generation for user-mediated chat-web assistance.
 6. Add versioned translation, quality checks, and TXT/EPUB/PDF export.
