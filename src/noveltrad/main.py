@@ -263,6 +263,45 @@ def list_glossary(book_id: str) -> list[dict[str, object]]:
         return [dict(row) for row in rows]
 
 
+@app.put("/api/books/{book_id}/glossary/{entry_id}")
+def update_glossary_entry(book_id: str, entry_id: str, entry: GlossaryInput) -> dict[str, object]:
+    init_db()
+    with connection() as conn:
+        if not conn.execute("SELECT 1 FROM books WHERE id = ?", (book_id,)).fetchone():
+            raise HTTPException(status_code=404, detail="No se encontró la novela.")
+        existing = conn.execute(
+            "SELECT id FROM glossary_entries WHERE id = ? AND book_id = ?", (entry_id, book_id)
+        ).fetchone()
+        if not existing:
+            raise HTTPException(status_code=404, detail="No se encontró el término en esta novela.")
+        duplicate = conn.execute(
+            "SELECT 1 FROM glossary_entries WHERE book_id = ? AND source_term = ? COLLATE NOCASE AND id != ?",
+            (book_id, entry.source_term, entry_id),
+        ).fetchone()
+        if duplicate:
+            raise HTTPException(status_code=409, detail="Ya existe otro término con ese nombre en esta novela.")
+        conn.execute(
+            "UPDATE glossary_entries SET source_term = ?, preferred_term = ?, rule = ?, notes = ?, approved = ? "
+            "WHERE id = ? AND book_id = ?",
+            (entry.source_term, entry.preferred_term, entry.rule, entry.notes, int(entry.approved), entry_id, book_id),
+        )
+    return {"id": entry_id, **entry.model_dump()}
+
+
+@app.delete("/api/books/{book_id}/glossary/{entry_id}")
+def delete_glossary_entry(book_id: str, entry_id: str) -> dict[str, object]:
+    init_db()
+    with connection() as conn:
+        if not conn.execute("SELECT 1 FROM books WHERE id = ?", (book_id,)).fetchone():
+            raise HTTPException(status_code=404, detail="No se encontró la novela.")
+        cursor = conn.execute(
+            "DELETE FROM glossary_entries WHERE id = ? AND book_id = ?", (entry_id, book_id)
+        )
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="No se encontró el término en esta novela.")
+    return {"id": entry_id, "deleted": True}
+
+
 @app.post("/api/books/{book_id}/glossary")
 def add_glossary_entry(book_id: str, entry: GlossaryInput) -> dict[str, object]:
     init_db()
