@@ -2,7 +2,7 @@
 
 NovelTrad is a local-first Windows-friendly reader and translation workspace for light novels, webnovels, and fanfiction. It is designed around a calm reading experience, persistent per-book terminology, protected names, and optional help from a chat website without paid API keys.
 
-> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor with CRUD controls. Fully translated books can be exported as Spanish EPUB. An on-demand local neural preview is available through Ollama; the persistent whole-book queue is now merged into `main` and has passed automated Ubuntu/Windows tests plus a portable Windows package build. Glossary extraction from source chapters, OCR, a real-chapter quality benchmark, and clean-Windows manual testing remain unfinished.
+> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor with CRUD controls. Fully translated books can be exported as Spanish EPUB. An on-demand local neural preview is available through Ollama; the persistent whole-book queue is merged into `main`. Evidence-based glossary candidate extraction is under validation in the current feature branch and never auto-approves rules. Glossary extraction from source chapters, OCR, a real-chapter quality benchmark, and clean-Windows manual testing remain unfinished.
 
 ## Product principles
 
@@ -113,7 +113,7 @@ To test the headless runner manually, run `python -m noveltrad.backup_cli` with 
 
 1. Run the portable build on a clean Windows profile and verify startup, EPUB/PDF import, backup/restore, queue creation, Ollama errors, queue resume after restart, review/apply and EPUB export.
 2. Evaluate translation quality on an authorized excerpt from the exact edition of *I Became the Academy Villain's Daughter*. Measure omissions, repeated text, protected names and contextual gamer terms such as `farm`, `level`, `Steal` and `tsundere`; the existing synthetic cases are not evidence of real-chapter quality.
-3. Add evidence-based glossary candidate extraction from imported source passages without auto-approving terms.
+3. Validate the evidence-based glossary candidate extraction feature from the current PR against varied imported chapters and large books; it must not approve or apply terms automatically.
 4. Add OCR as a separately scoped feature for scanned PDFs or comic images, with clear licensing and user-provided input boundaries.
 5. Keep EPUB export structure, reader accessibility and Windows recovery under regression testing.
 
@@ -125,4 +125,4 @@ The first portable Windows packaging path is documented in [docs/PRIMERA_ENTREGA
 
 ## First novel: Oknodie terminology pilot
 
-NovelTrad seeds unapproved terminology candidates when importing an EPUB/PDF whose title matches *I Became the Academy Villain's Daughter*. Source links, gamer/otaku terminology, synthetic diagnostic cases, and the honest validation procedure are documented in [the Oknodie pilot guide](docs/PILOTO_OKNODIE_Y_TERMINOLOGIA_GAMER.md). Candidate terms such as `farm`, `level`, `steal`/`Steal`, and `tsundere` are not approved global replacements because their meaning depends on context. The benchmark sentences are synthetic and are not excerpts from the novel. The official English Tapas release is a comic adaptation, not an EPUB/PDF prose novel; importing its image pages requires OCR, which is not yet implemented.
+NovelTrad seeds unapproved terminology candidates when importing an EPUB/PDF whose title matches *I Became the Academy Villain's Daughter*. The current feature branch adds a local scan of imported source text, showing repeated names/gamer terms alongside short source-evidence snippets before an explicit user approval. Source links, gamer/otaku terminology, synthetic diagnostic cases, and the honest validation procedure are documented in [the Oknodie pilot guide](docs/PILOTO_OKNODIE_Y_TERMINOLOGIA_GAMER.md). Candidate terms such as `farm`, `level`, `steal`/`Steal`, and `tsundere` are not approved global replacements because their meaning depends on context. The benchmark sentences are synthetic and are not excerpts from the novel. The official English Tapas release is a comic adaptation, not an EPUB/PDF prose novel; importing its image pages requires OCR, which is not yet implemented.
