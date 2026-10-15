@@ -45,13 +45,14 @@ On other platforms, create a virtual environment, install `.[test]`, and run `no
 - Linux/macOS: `$XDG_DATA_HOME/noveltrad`, or `~/.local/share/noveltrad`
 - Tests and development can override this using `NOVELTRAD_HOME`.
 
-Imported source files are stored under `imports/`; SQLite stores books, extracted sections, glossary entries, and corrections. The library includes user-facing backup creation, listing, and restore controls. Database snapshots use SQLite's online backup API and each snapshot includes a companion copy of the imported EPUB/PDF source files. Automatic backups run while NovelTrad is open, defaulting to every 24 hours with the newest 14 snapshots retained. Frequency (1–720 hours), retention (1–100 snapshots), and enable/disable controls are available in the library UI. The schedule is stored separately from the novel database, so restoring an older library snapshot does not roll back backup preferences. Snapshots include both the SQLite database and the imported EPUB/PDF originals. Before a restore, NovelTrad validates database integrity/schema and automatically creates a safety snapshot of the current database and imported files. Retention removes the database snapshot and its matching source-file bundle together.
+Imported source files are stored under `imports/`; SQLite stores books, extracted sections, glossary entries, and corrections. The library includes user-facing backup creation, listing, and restore controls. Database snapshots use SQLite's online backup API and each snapshot includes a companion copy of the imported EPUB/PDF source files. Automatic backups run while NovelTrad is open, defaulting to every 24 hours with the newest 14 snapshots retained. On Windows, an optional Task Scheduler task can invoke a headless CLI every hour while the app is closed; the CLI checks the same persisted schedule and retention policy, validates the existing database, and refuses to create a new empty database. Frequency (1–720 hours), retention (1–100 snapshots), and enable/disable controls are available in the library UI. The schedule is stored separately from the novel database, so restoring an older library snapshot does not roll back backup preferences. Snapshots include both the SQLite database and the imported EPUB/PDF originals. Before a restore, NovelTrad validates database integrity/schema and automatically creates a safety snapshot of the current database and imported files. Retention removes the database snapshot and its matching source-file bundle together.
 
 ## Current API
 
 - `GET /api/health` — local service status.
 - `GET /api/books` — imported library.
 - `POST /api/backups` — create a consistent SQLite snapshot and apply the configured retention limit.
+- `python -m noveltrad.backup_cli` — headless scheduled-backup check; validates an existing library and exits without launching the web server.
 - `GET /api/backups/settings` — inspect automatic-backup settings and the last successful run/error.
 - `PUT /api/backups/settings` — configure automatic backups, frequency (1–720 hours), and retention (1–100 snapshots).
 - `POST /api/backups/prune` — immediately remove snapshots beyond the configured retention limit.
@@ -78,7 +79,24 @@ Scanned PDFs currently return a clear error because OCR has not been integrated.
 pytest
 ```
 
-The CI suite covers PDF and EPUB import (including EPUB spine reading order), unsupported formats, glossary normalization, duplicate rejection, scoped glossary edit/delete, saved reading position, immutable source text, translation history/restore, reader controls, local-path privacy, and embedded JavaScript syntax. The CI suite also covers scheduled backup timing, retry behavior after a simulated disk-full error, retention and companion-file cleanup, configuration bounds, and rollback when a simulated filesystem failure interrupts restore.
+The CI suite covers PDF and EPUB import (including EPUB spine reading order), unsupported formats, glossary normalization, duplicate rejection, scoped glossary edit/delete, saved reading position, immutable source text, translation history/restore, reader controls, local-path privacy, and embedded JavaScript syntax. The CI suite also covers scheduled backup timing, retry behavior after a simulated disk-full error, retention and companion-file cleanup, configuration bounds, rollback when a simulated filesystem failure interrupts restore, full recovery of glossary/translation versions/reading progress/source files, and the headless CLI's refusal to create an empty database.
+
+### Optional Windows Task Scheduler integration
+
+Use an installed Python environment that has NovelTrad's project dependencies available. From PowerShell in the repository root, register a per-user task (admin rights are not normally required):
+
+```powershell
+.\\.venv\\Scripts\\python.exe -m pip install -e .
+.\\scripts\\install-windows-backup-task.ps1 -PythonExe (Resolve-Path .\\.venv\\Scripts\\python.exe).Path -ProjectRoot (Get-Location).Path
+```
+
+The task checks hourly; the app's saved frequency (1–720 hours), enabled flag, and retention count remain authoritative. It works with NovelTrad closed but uses the current user's interactive Windows session, so it does not run while that user is logged out. To remove only the task (not backups or library data):
+
+```powershell
+.\\scripts\\uninstall-windows-backup-task.ps1
+```
+
+To test the headless runner manually, run `python -m noveltrad.backup_cli` with the same Python environment and `NOVELTRAD_HOME` used by the app. A missing or corrupt database causes a non-zero exit and no backup is created. The task installation is opt-in; no task is registered automatically.
 
 ## Roadmap
 
