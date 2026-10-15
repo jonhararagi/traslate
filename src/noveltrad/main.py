@@ -70,6 +70,7 @@ def _default_backup_settings() -> dict[str, object]:
         "interval_hours": DEFAULT_BACKUP_INTERVAL_HOURS,
         "retention_count": DEFAULT_BACKUP_RETENTION_COUNT,
         "last_success_at": None,
+        "schedule_started_at": datetime.now(timezone.utc).isoformat(),
         "last_error": None,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -99,6 +100,7 @@ def load_backup_settings() -> dict[str, object]:
             "interval_hours": interval,
             "retention_count": retention,
             "last_success_at": value.get("last_success_at"),
+            "schedule_started_at": value.get("schedule_started_at") or value.get("updated_at"),
             "last_error": value.get("last_error"),
             "updated_at": value.get("updated_at"),
         }
@@ -142,7 +144,7 @@ def run_scheduled_backup_if_due(now: datetime | None = None) -> dict[str, object
         return {"status": "disabled", "created": None}
     current = now or datetime.now(timezone.utc)
     last_success = settings.get("last_success_at")
-    baseline = last_success or settings.get("updated_at")
+    baseline = last_success or settings.get("schedule_started_at") or settings.get("updated_at")
     if baseline:
         try:
             due_at = datetime.fromisoformat(str(baseline)) + timedelta(hours=int(settings["interval_hours"]))
@@ -455,6 +457,7 @@ def update_backup_settings(payload: BackupSettingsInput) -> dict[str, object]:
         "enabled": payload.enabled,
         "interval_hours": payload.interval_hours,
         "retention_count": payload.retention_count,
+        "schedule_started_at": current.get("schedule_started_at") or datetime.now(timezone.utc).isoformat(),
         "last_error": None,
     }
     save_backup_settings(updated)
