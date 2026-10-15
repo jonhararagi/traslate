@@ -1002,7 +1002,8 @@ def test_backup_file_lock_is_released_after_abrupt_process_exit(tmp_path, monkey
 
         contender_script = (
             'from noveltrad.main import _cross_process_backup_lock; '
-            'with _cross_process_backup_lock(): print("LOCK_REACQUIRED", flush=True)'
+            'lock = _cross_process_backup_lock(); lock.__enter__(); '
+            'print("LOCK_REACQUIRED", flush=True); lock.__exit__(None, None, None)'
         )
         contender = subprocess.Popen(
             [sys.executable, "-c", contender_script],
