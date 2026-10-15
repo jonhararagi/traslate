@@ -154,3 +154,62 @@ def test_unrelated_book_does_not_receive_first_novel_candidates(offline_client):
     glossary = offline_client.get(f"/api/books/{imported.json()['id']}/glossary")
     assert glossary.status_code == 200
     assert glossary.json() == []
+
+
+
+def test_premium_unavailable_runtime_returns_503_without_remote_fallback(offline_client, monkeypatch):
+    import urllib.error
+
+    imported = offline_client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", _pdf_with_text("Oknodie entered the academy."), "application/pdf")},
+    ).json()
+    chapter = offline_client.get(f"/api/books/{imported['id']}/chapters").json()[0]
+    requested_urls = []
+
+    def unavailable(request, timeout):
+        requested_urls.append(request.full_url)
+        raise urllib.error.URLError("connection refused")
+
+    monkeypatch.setattr("urllib.request.urlopen", unavailable)
+    response = offline_client.post(f"/api/chapters/{chapter['id']}/premium-translation-preview")
+    assert response.status_code == 503
+    assert "No se contactó ningún servicio remoto" in response.json()["detail"]
+    assert requested_urls == ["http://127.0.0.1:11434/api/generate"]
+
+
+def test_premium_timeout_returns_503_and_never_saves(offline_client, monkeypatch):
+    imported = offline_client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", _pdf_with_text("Oknodie entered the academy."), "application/pdf")},
+    ).json()
+    chapter = offline_client.get(f"/api/books/{imported['id']}/chapters").json()[0]
+
+    def timed_out(request, timeout):
+        raise TimeoutError("local model timeout")
+
+    monkeypatch.setattr("urllib.request.urlopen", timed_out)
+    response = offline_client.post(f"/api/chapters/{chapter['id']}/premium-translation-preview")
+    assert response.status_code == 503
+    assert "No se contactó ningún servicio remoto" in response.json()["detail"]
+    reread = offline_client.get(f"/api/books/{imported['id']}/chapters").json()[0]
+    assert reread["translated_text"] == ""
+
+
+def test_premium_oversized_chapter_is_rejected_before_model_call(offline_client, monkeypatch):
+    imported = offline_client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", _pdf_with_text("Oknodie entered the academy."), "application/pdf")},
+    ).json()
+    chapter = offline_client.get(f"/api/books/{imported['id']}/chapters").json()[0]
+    monkeypatch.setattr(main_module, "PREMIUM_PREVIEW_MAX_CHARS", 10)
+
+    def should_not_run(*args, **kwargs):
+        raise AssertionError("Premium model must not run for oversized input")
+
+    monkeypatch.setattr(main_module, "_translate_with_local_model", should_not_run)
+    response = offline_client.post(f"/api/chapters/{chapter['id']}/premium-translation-preview")
+    assert response.status_code == 413
+    assert "limitar RAM/contexto" in response.json()["detail"]
+    reread = offline_client.get(f"/api/books/{imported['id']}/chapters").json()[0]
+    assert reread["translated_text"] == ""
