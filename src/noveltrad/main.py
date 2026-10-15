@@ -22,6 +22,7 @@ from ebooklib import epub, ITEM_DOCUMENT
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
+from noveltrad.narrative_rules import TermRule, apply_offline_rules, get_profile
 
 APP_NAME = "NovelTrad"
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
@@ -538,6 +539,23 @@ class BackupScheduler:
 backup_scheduler = BackupScheduler()
 
 
+class OfflineRulesInput(BaseModel):
+    profile_id: str = Field(default="light_novel_es", max_length=80)
+    phrase_map: dict[str, str] = Field(default_factory=dict)
+    normalize_typography: bool = True
+
+    @field_validator("phrase_map")
+    @classmethod
+    def validate_phrase_map(cls, value: dict[str, str]) -> dict[str, str]:
+        if len(value) > 1000:
+            raise ValueError("El mapa local admite hasta 1000 pares de frases.")
+        if any(not key.strip() or len(key) > 500 or len(target) > 500 for key, target in value.items()):
+            raise ValueError("Las frases deben tener entre 1 y 500 caracteres.")
+        return value
+
+
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     recover_interrupted_restore()
@@ -551,6 +569,61 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=APP_NAME, version="0.1.0", docs_url="/api/docs", lifespan=lifespan)
+
+
+@app.post("/api/chapters/{chapter_id}/offline-rules")
+def preview_offline_rules(chapter_id: str, payload: OfflineRulesInput) -> dict[str, object]:
+    """Preview deterministic, approved glossary rules; never save or overwrite the chapter."""
+    init_db()
+    try:
+        get_profile(payload.profile_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    with connection() as conn:
+        chapter = conn.execute(
+            "SELECT c.original_text, c.book_id FROM chapters c WHERE c.id = ?",
+            (chapter_id,),
+        ).fetchone()
+        if not chapter:
+            raise HTTPException(status_code=404, detail="No se encontró el capítulo.")
+        rows = conn.execute(
+            "SELECT source_term, preferred_term, rule, approved FROM glossary_entries "
+            "WHERE approved = 1 AND (book_id = ? OR book_id IS NULL) "
+            "ORDER BY length(source_term) DESC",
+            (chapter["book_id"],),
+        ).fetchall()
+
+    term_rules = [
+        TermRule(
+            source=row["source_term"],
+            target=row["preferred_term"],
+            mode=row["rule"] if row["rule"] in {"translate", "preserve", "protect"} else "preserve",
+            approved=bool(row["approved"]),
+        )
+        for row in rows
+        if row["rule"] in {"translate", "preserve", "protect"}
+    ]
+    report = apply_offline_rules(
+        chapter["original_text"],
+        profile_id=payload.profile_id,
+        term_rules=term_rules,
+        phrase_map=payload.phrase_map,
+        normalize_typography=payload.normalize_typography,
+    )
+    return {
+        "mode": "deterministic-offline-rules",
+        "profile": payload.profile_id,
+        "preview_only": True,
+        "saved": False,
+        "text": report.text,
+        "replacements": [
+            {"source": source, "target": target, "count": count}
+            for source, target, count in report.replacements
+        ],
+        "warnings": list(report.warnings),
+    }
+
 
 
 @app.post("/api/backups")
@@ -1125,7 +1198,8 @@ def home() -> str:
 <section class="panel"><h2>Copias automáticas</h2><p class="sub">La aplicación crea copias en segundo plano mientras está abierta. La programación y la retención se guardan en este equipo.</p><label><input id="backup-enabled" type="checkbox" checked> Activar copias automáticas</label><div class="reader-actions"><label for="backup-interval">Frecuencia (horas)<input id="backup-interval" type="number" min="1" max="720" value="24" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></label><label for="backup-retention">Copias a conservar<input id="backup-retention" type="number" min="1" max="100" value="14" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></label></div><button id="save-backup-settings" class="secondary" type="button">Guardar programación</button><button id="prune-backups" class="quiet" type="button">Aplicar retención ahora</button><div id="backup-settings-status" role="status" aria-live="polite"></div></section></section>
 <section id="reader"><div class="reader-head"><button id="back" class="quiet" type="button">← Biblioteca</button><h2 id="book-title">Leyendo</h2><button id="toggle-glossary" class="secondary" type="button">Glosario</button><label class="small">Texto <select id="font-size" aria-label="Tamaño del texto"><option value="17">Pequeño</option><option value="19" selected>Mediano</option><option value="22">Grande</option><option value="26">Muy grande</option></select></label></div>
 <div class="chapter-nav"><button id="previous" class="secondary" type="button">← Anterior</button><select id="chapter-select" aria-label="Elegir capítulo"></select><button id="next" class="secondary" type="button">Siguiente →</button></div>
-<div class="reader-grid"><section class="reading-pane"><h3>Original</h3><div id="original" class="original-text" tabindex="0"></div></section><section class="reading-pane"><h3>Traducción</h3><p class="sub small">El original permanece intacto. Tus cambios se guardan aparte.</p><textarea id="translation" class="translation-text" aria-label="Texto de traducción" placeholder="Escribí o pegá aquí tu traducción…"></textarea><div class="reader-actions"><button id="save-translation" class="primary" type="button">Guardar traducción</button><button id="export-epub" class="secondary" type="button">Exportar EPUB</button><button id="show-history" class="secondary" type="button">Historial</button><span id="save-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">Cada guardado conserva una versión anterior.</p><div id="translation-history" class="hidden"><h4>Versiones guardadas</h4><div id="history-list"></div><p id="history-status" class="sub small" role="status" aria-live="polite"></p></div></section></div>
+<div class="reader-grid"><section class="reading-pane"><h3>Original</h3><div id="original" class="original-text" tabindex="0"></div></section><section class="reading-pane"><h3>Traducción</h3><p class="sub small">El original permanece intacto. Tus cambios se guardan aparte.</p><textarea id="translation" class="translation-text" aria-label="Texto de traducción" placeholder="Escribí o pegá aquí tu traducción…"></textarea><div class="reader-actions"><button id="save-translation" class="primary" type="button">Guardar traducción</button><button id="offline-rules-open" class="secondary" type="button">Reglas offline</button><button id="export-epub" class="secondary" type="button">Exportar EPUB</button><button id="show-history" class="secondary" type="button">Historial</button><span id="save-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">Cada guardado conserva una versión anterior.</p>
+<div id="offline-rules-panel" class="panel hidden"><h3>Vista previa de reglas offline (sin IA)</h3><p class="sub small">Solo aplica el glosario aprobado y las sustituciones que escribas. No traduce frases desconocidas, no guarda automáticamente y no llama a servicios externos.</p><label>Perfil editorial <select id="offline-profile" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="light_novel_es">Novela ligera en español</option><option value="faithful_literary_es">Traducción literaria fiel</option><option value="webnovel_es">Novela web en español</option></select></label><label>Mapa de frases, una por línea: original =&gt; traducción<textarea id="offline-phrase-map" rows="4" style="display:block;width:100%;padding:9px;margin:6px 0 12px" placeholder="reached =&gt; alcanzó&#10;magic stone =&gt; piedra mágica"></textarea></label><div class="reader-actions"><button id="offline-run" class="primary" type="button">Generar vista previa</button><button id="offline-apply" class="secondary" type="button" disabled>Pasar al editor</button><button id="offline-close" class="quiet" type="button">Cerrar</button></div><p id="offline-status" class="sub small" role="status" aria-live="polite"></p><pre id="offline-result" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:32rem;overflow:auto"></pre></div><div id="translation-history" class="hidden"><h4>Versiones guardadas</h4><div id="history-list"></div><p id="history-status" class="sub small" role="status" aria-live="polite"></p></div></section></div>
 <section id="glossary-panel" class="panel hidden"><div class="reader-head"><h2>Glosario de esta novela</h2><button id="close-glossary" class="quiet" type="button">Cerrar</button></div><p class="sub small">Protegé nombres y fijá términos para mantener la coherencia. Las reglas se guardan por novela.</p><form id="glossary-form"><div class="reader-grid"><label>Término original<input id="glossary-source" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label><label>Forma preferida<input id="glossary-target" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label></div><div class="reader-actions"><label>Regla <select id="glossary-rule" style="padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)"><option value="protect">Proteger nombre/término</option><option value="preserve">Conservar exactamente</option><option value="translate">Traducir siempre así</option><option value="contextual">Depende del contexto</option></select></label><label><input id="glossary-approved" type="checkbox"> Aprobado</label><button id="glossary-submit" class="primary" type="submit">Guardar término</button><button id="glossary-cancel" class="secondary hidden" type="button">Cancelar edición</button></div><label>Notas opcionales<textarea id="glossary-notes" rows="2" maxlength="2000" style="display:block;width:100%;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Nombre propio; no traducir."></textarea></label><p id="glossary-status" class="sub small" role="status" aria-live="polite"></p></form><div id="glossary-list"></div></section>
 </section><p class="sub small">El motor de traducción automática todavía no está configurado. Esta versión permite leer, guardar traducciones propias y retomar el progreso.</p></main>
 <script>
@@ -1154,6 +1228,18 @@ function saveProgress(){if(!currentBook)return;clearTimeout(saveTimer);saveTimer
 $('#original').addEventListener('scroll',saveProgress);
 $('#export-epub').addEventListener('click',async()=>{if(!currentBook)return;const button=$('#export-epub');button.disabled=true;$('#save-status').textContent='Preparando EPUB…';try{const response=await fetch('/api/books/'+currentBook.id+'/export/epub');let result={};if(!response.ok){try{result=await response.json()}catch{}throw new Error(result.detail||'No se pudo exportar el EPUB')}const blob=await response.blob();const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=(currentBook.title||'NovelTrad')+'-es.epub';document.body.appendChild(anchor);anchor.click();anchor.remove();URL.revokeObjectURL(url);$('#save-status').textContent='EPUB de traducción exportado.'}catch(e){$('#save-status').textContent='Exportación: '+e.message}finally{button.disabled=false}});
 $('#save-translation').addEventListener('click',async()=>{const c=chapters[chapterPos];$('#save-status').textContent='Guardando…';try{const result=await api('/api/chapters/'+c.id+'/translation',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({translated_text:$('#translation').value})});c.translated_text=result.translated_text;translationDirty=false;$('#save-status').textContent='Guardado en este equipo.'}catch(e){$('#save-status').textContent='Error: '+e.message}});
+let offlinePreviewText=null;
+$('#offline-rules-open').addEventListener('click',()=>{$('#offline-rules-panel').classList.remove('hidden');$('#offline-status').textContent='El original se mantiene intacto. Generá una vista previa para ver las sustituciones.'});
+$('#offline-close').addEventListener('click',()=>$('#offline-rules-panel').classList.add('hidden'));
+$('#offline-run').addEventListener('click',async()=>{
+ const c=chapters[chapterPos], map={};
+ for(const line of $('#offline-phrase-map').value.split(/\r?\n/)){const sep=line.indexOf('=>');if(sep<0)continue;const source=line.slice(0,sep).trim(),target=line.slice(sep+2).trim();if(source&&target)map[source]=target}
+ const button=$('#offline-run');button.disabled=true;$('#offline-status').textContent='Aplicando reglas locales…';$('#offline-apply').disabled=true;offlinePreviewText=null;
+ try{const report=await api('/api/chapters/'+c.id+'/offline-rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile_id:$('#offline-profile').value,phrase_map:map,normalize_typography:true})});offlinePreviewText=report.text;$('#offline-result').textContent=report.text;$('#offline-status').textContent='Vista previa · '+report.replacements.length+' tipos de sustitución · '+report.warnings.join(' ');$('#offline-apply').disabled=false}
+ catch(e){$('#offline-status').textContent='No se pudo generar la vista previa: '+e.message;$('#offline-result').textContent=''}
+ finally{button.disabled=false}
+});
+$('#offline-apply').addEventListener('click',()=>{if(offlinePreviewText===null)return;$('#translation').value=offlinePreviewText;translationDirty=true;$('#save-status').textContent='Vista previa copiada al editor; revisá y guardá manualmente.';$('#offline-status').textContent='Resultado transferido al editor, todavía sin guardar.'});
 async function loadHistory(){const c=chapters[chapterPos];try{const versions=await api('/api/chapters/'+c.id+'/translation/versions');$('#history-list').innerHTML=versions.length?versions.map(v=>'<article class="book"><div class="bookinfo"><strong>Versión '+v.version_number+'</strong><div class="sub small">'+esc(v.created_at)+'</div><div style="white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px">'+esc(v.translated_text||'(Traducción vacía)')+'</div></div><button class="secondary" type="button" data-restore="'+v.version_number+'">Restaurar</button></article>').join(''):'<p class="empty">Todavía no hay versiones anteriores.</p>'}catch(e){$('#history-status').textContent=e.message}}
 $('#show-history').addEventListener('click',async()=>{$('#translation-history').classList.toggle('hidden');if(!$('#translation-history').classList.contains('hidden'))await loadHistory()});
 $('#history-list').addEventListener('click',async e=>{const button=e.target.closest('[data-restore]');if(!button)return;if(translationDirty&&!confirm('Hay cambios sin guardar. ¿Descartarlos y restaurar la versión elegida?'))return;if(!confirm('¿Restaurar esta versión? La traducción actual guardada se conservará en el historial.'))return;const c=chapters[chapterPos];$('#history-status').textContent='Restaurando…';try{const result=await api('/api/chapters/'+c.id+'/translation/restore/'+button.dataset.restore,{method:'POST'});$('#translation').value=result.translated_text;c.translated_text=result.translated_text;translationDirty=false;$('#save-status').textContent='Versión restaurada.';$('#history-status').textContent='La versión se restauró y el texto anterior quedó guardado.';await loadHistory()}catch(err){$('#history-status').textContent='Error: '+err.message}});
