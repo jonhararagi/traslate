@@ -1189,11 +1189,12 @@ os._exit(0)
 
     backup_root = data_root / "backups"
     snapshots = list(backup_root.glob("noveltrad-*.sqlite3"))
-    assert snapshots, "the crash simulation must occur after the SQLite snapshot is written"
-    for snapshot in snapshots:
-        companion = backup_root / f"{snapshot.stem}-imports"
-        assert companion.is_dir(), f"published backup {snapshot.name} has no companion originals directory"
-        assert any(companion.iterdir()), f"published backup {snapshot.name} has no backed-up original files"
+    assert not snapshots, (
+        "an interrupted snapshot must never be published as a completed backup"
+    )
+    assert not list(backup_root.glob("noveltrad-*-imports")), (
+        "an interrupted snapshot must not leave a public companion directory"
+    )
 
 
 def test_interrupted_restore_from_corrupt_active_database_can_recover_valid_target(client, tmp_path, monkeypatch):
