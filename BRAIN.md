@@ -55,8 +55,8 @@ Novel profile: `data/novels/i_became_the_academy_villains_daughter.json`. Glossa
 - Added conservative matching of the imported filename against the first novel's display/alternate titles.
 - Matching imports seed the book glossary from the profile's terminology candidates as `approved=0`, with provisional `preserve` rules and notes requiring verification against the imported edition.
 - Unrelated book titles receive no candidates. The import response reports `unapproved_profile_candidates`.
-- Added API tests for matching and non-matching titles. The test suite must still complete in GitHub Actions before this work is called verified.
-- Updated the Local/Premium guide to document the behavior. This work is not merged yet; inspect the branch/PR/CI and then merge to main if checks pass.
+- Added API tests for matching and non-matching titles. GitHub Actions PR run [38732729383](https://github.com/jonhararagi/traslate/actions/runs/38732729383) passed on Ubuntu and Windows.
+- Updated the Local/Premium guide to document the behavior. PR #5 is merged; confirm the current `main` SHA and CI before the next change.
 - Important limitation: matching is based on the uploaded filename's title, not semantic recognition of the book. Use the exact novel title in the filename to seed candidates.
 
 ### Work added on main in this continuation (verify CI before calling it tested)
