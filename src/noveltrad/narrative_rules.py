@@ -139,7 +139,7 @@ def apply_offline_rules(
     rules.sort(key=lambda rule: len(rule.source), reverse=True)
     for index, rule in enumerate(rules):
         if rule.mode == "contextual":
-            pattern = re.compile(r"(?<!\\w)" + re.escape(rule.source) + r"(?!\\w)", re.IGNORECASE)
+            pattern = re.compile(r"(?<!\w)" + re.escape(rule.source) + r"(?!\w)", re.IGNORECASE)
             count = len(pattern.findall(result))
             if count:
                 warnings.append(
@@ -147,7 +147,7 @@ def apply_offline_rules(
                 )
         if rule.mode not in {"preserve", "protect", "contextual"}:
             continue
-        token = f"\\uE000NT{index}TOKEN\\uE001"
+        token = f"\uE000NT{index}TOKEN\uE001"
         result, count = _replace_literal(result, rule.source, token)
         if count:
             protected[token] = rule.source
