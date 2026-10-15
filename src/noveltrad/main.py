@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime, timezone
+from io import BytesIO
+from html import escape as html_escape
 from pathlib import Path
 from typing import Iterator
 from uuid import uuid4
@@ -13,7 +16,7 @@ import fitz
 from bs4 import BeautifulSoup
 from ebooklib import epub, ITEM_DOCUMENT
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 
 APP_NAME = "NovelTrad"
@@ -248,6 +251,62 @@ def list_chapters(book_id: str) -> list[dict[str, object]]:
             "FROM chapters WHERE book_id = ? ORDER BY chapter_index", (book_id,)
         ).fetchall()
         return [dict(row) for row in rows]
+
+
+@app.get("/api/books/{book_id}/export/epub")
+def export_translated_epub(book_id: str) -> StreamingResponse:
+    init_db()
+    with connection() as conn:
+        book = conn.execute("SELECT title FROM books WHERE id = ?", (book_id,)).fetchone()
+        if not book:
+            raise HTTPException(status_code=404, detail="No se encontró la novela.")
+        chapters = conn.execute(
+            "SELECT title, translated_text FROM chapters WHERE book_id = ? ORDER BY chapter_index",
+            (book_id,),
+        ).fetchall()
+        missing = sum(1 for chapter in chapters if not chapter["translated_text"].strip())
+        if not chapters:
+            raise HTTPException(status_code=422, detail="La novela no contiene capítulos exportables.")
+        if missing:
+            raise HTTPException(
+                status_code=409,
+                detail=f"No se puede exportar todavía: hay {missing} capítulo(s) sin traducir. Completa las traducciones para evitar omisiones.",
+            )
+
+    output_book = epub.EpubBook()
+    output_book.set_identifier(str(uuid4()))
+    output_book.set_title(book["title"])
+    output_book.set_language("es")
+    output_chapters = []
+    for index, chapter in enumerate(chapters, start=1):
+        document = epub.EpubHtml(
+            title=chapter["title"] or f"Capítulo {index}",
+            file_name=f"chapter_{index:04d}.xhtml",
+            lang="es",
+        )
+        paragraphs = "".join(
+            f"<p>{html_escape(paragraph)}</p>"
+            for paragraph in chapter["translated_text"].splitlines()
+            if paragraph.strip()
+        )
+        document.content = (
+            "<!DOCTYPE html><html xmlns='http://www.w3.org/1999/xhtml' lang='es'>"
+            f"<head><title>{html_escape(chapter['title'])}</title></head>"
+            f"<body><h1>{html_escape(chapter['title'])}</h1>{paragraphs}</body></html>"
+        )
+        output_book.add_item(document)
+        output_chapters.append(document)
+    output_book.add_item(epub.EpubNcx())
+    output_book.add_item(epub.EpubNav())
+    output_book.spine = ["nav", *output_chapters]
+    output_buffer = BytesIO()
+    epub.write_epub(output_buffer, output_book)
+    safe_title = re.sub(r"[^A-Za-z0-9._-]+", "_", book["title"]).strip("._") or "noveltrad"
+    return StreamingResponse(
+        iter([output_buffer.getvalue()]),
+        media_type="application/epub+zip",
+        headers={"Content-Disposition": f'attachment; filename="{safe_title}-es.epub"'},
+    )
 
 
 @app.get("/api/books/{book_id}/glossary")
