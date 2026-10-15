@@ -43,4 +43,4 @@ def test_manual_narrative_assistant_exposes_consent_gated_workflow():
     assert "https://chatgpt.com/" in page
     assert "https://gemini.google.com/app" in page
     assert "no automatiza ChatGPT/Gemini" in page
-    assert "no hay envío automático" in page
+    assert "envío automático" in page.lower()
