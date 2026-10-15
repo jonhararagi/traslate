@@ -142,9 +142,10 @@ def run_scheduled_backup_if_due(now: datetime | None = None) -> dict[str, object
         return {"status": "disabled", "created": None}
     current = now or datetime.now(timezone.utc)
     last_success = settings.get("last_success_at")
-    if last_success:
+    baseline = last_success or settings.get("updated_at")
+    if baseline:
         try:
-            due_at = datetime.fromisoformat(str(last_success)) + timedelta(hours=int(settings["interval_hours"]))
+            due_at = datetime.fromisoformat(str(baseline)) + timedelta(hours=int(settings["interval_hours"]))
             if current < due_at:
                 return {"status": "not_due", "created": None, "next_due_at": due_at.isoformat()}
         except ValueError:
