@@ -1164,7 +1164,22 @@ def _translation_job_snapshot(
         chunks = []
         for row in rows:
             item = dict(row)
-            warnings = _decode_quality_warnings(item.pop("quality_warnings_json", ""))
+            quality_raw = item.pop("quality_warnings_json", "")
+            warnings = _decode_quality_warnings(quality_raw)
+            if not quality_raw and row["status"] == "completed":
+                # Lazily backfill legacy queue entries created before QA fields existed.
+                legacy_text = conn.execute(
+                    "SELECT original_text, translated_text FROM translation_job_chunks WHERE id = ?",
+                    (row["id"],),
+                ).fetchone()
+                if legacy_text:
+                    warnings = _translation_quality_warnings(
+                        legacy_text["original_text"], legacy_text["translated_text"]
+                    )
+                    conn.execute(
+                        "UPDATE translation_job_chunks SET quality_warnings_json = ? WHERE id = ?",
+                        (json.dumps(warnings, ensure_ascii=False), row["id"]),
+                    )
             item["quality_warnings"] = warnings
             item["quality_warning_count"] = len(warnings)
             chunks.append(item)
