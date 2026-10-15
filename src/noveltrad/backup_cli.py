@@ -39,6 +39,9 @@ def main() -> int:
     if status == "disabled":
         print("NovelTrad: las copias automáticas están desactivadas en la configuración.")
         return 0
+    if status == "retry_wait":
+        print("NovelTrad: reintento aplazado hasta " + str(result.get("retry_after_at")) + "; último error: " + str(result.get("error")))
+        return 0
     print(f"NovelTrad: falló la copia programada: {result.get('error', 'error desconocido')}", file=sys.stderr)
     return 1
 
