@@ -159,6 +159,7 @@ def apply_offline_rules(
 
     if normalize_typography:
         result = re.sub(r"[ \t]+(?=\n)", "", result)
+        result = re.sub(r"[ \\t]+$", "", result, flags=re.MULTILINE)
         result = re.sub(r"(?<!\.)\.{3}(?!\.)", profile.ellipsis, result)
         result = re.sub(r"\n{3,}", "\n\n", result)
         if profile.dialogue_open == "—":
