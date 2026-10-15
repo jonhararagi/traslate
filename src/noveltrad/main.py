@@ -500,6 +500,7 @@ backup_scheduler = BackupScheduler()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    recover_interrupted_restore()
     init_db()
     load_backup_settings()
     backup_scheduler.start()
@@ -562,6 +563,91 @@ def list_backups() -> list[dict[str, object]]:
     return backups
 
 
+def _restore_transaction_path() -> Path:
+    return data_dir() / ".restore-transaction.json"
+
+
+def _write_restore_transaction(transaction: dict[str, object]) -> None:
+    """Persist a rollback journal before mutating the live database or imports."""
+    path = _restore_transaction_path()
+    temporary = path.with_name(f"{path.name}.{uuid4().hex}.tmp")
+    try:
+        with temporary.open("w", encoding="utf-8") as stream:
+            json.dump(transaction, stream, ensure_ascii=False)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+        if os.name != "nt":
+            directory_fd = os.open(path.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def recover_interrupted_restore() -> bool:
+    """Roll back an interrupted restore before the app opens its live database."""
+    journal = _restore_transaction_path()
+    if not journal.exists():
+        return False
+    try:
+        transaction = json.loads(journal.read_text(encoding="utf-8"))
+        if not isinstance(transaction, dict):
+            raise ValueError("El diario de restauración no es válido.")
+        previous_name = transaction.get("previous_imports")
+        if (not isinstance(previous_name, str)
+                or not re.fullmatch(r"imports-before-restore-[0-9a-f]{32}", previous_name)):
+            raise ValueError("La ruta de recuperación de archivos no es válida.")
+        safety_name = transaction.get("safety_backup")
+        database_existed = transaction.get("database_existed")
+        imports_snapshot_present = transaction.get("imports_snapshot_present")
+        if not isinstance(database_existed, bool) or not isinstance(imports_snapshot_present, bool):
+            raise ValueError("El diario de restauración está incompleto.")
+        previous_imports = data_dir() / previous_name
+        imports_dir = data_dir() / "imports"
+        if safety_name is not None:
+            if (not isinstance(safety_name, str)
+                    or not re.fullmatch(r"noveltrad-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}\.sqlite3", safety_name)):
+                raise ValueError("La copia de recuperación indicada no es válida.")
+            safety_path = backup_dir() / safety_name
+            if not safety_path.is_file():
+                raise ValueError("No se encuentra la copia previa necesaria para recuperar la restauración.")
+            validate_database_file(safety_path)
+            recovered_db = data_dir() / f"restore-recovery-{uuid4().hex}.sqlite3"
+            try:
+                with closing(sqlite3.connect(f"file:{safety_path.as_posix()}?mode=ro", uri=True)) as source, closing(sqlite3.connect(recovered_db)) as destination:
+                    source.backup(destination)
+                validate_database_file(recovered_db)
+                os.replace(recovered_db, database_path())
+            finally:
+                recovered_db.unlink(missing_ok=True)
+        elif not database_existed:
+            database_path().unlink(missing_ok=True)
+
+        if imports_snapshot_present and previous_imports.exists():
+            if imports_dir.exists():
+                shutil.rmtree(imports_dir)
+            os.replace(previous_imports, imports_dir)
+        journal.unlink()
+        if os.name != "nt":
+            directory_fd = os.open(journal.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+        for path in data_dir().glob("restore-imports-*"):
+            shutil.rmtree(path, ignore_errors=True)
+        for path in data_dir().glob("restore-*.sqlite3"):
+            path.unlink(missing_ok=True)
+        return True
+    except (OSError, ValueError, sqlite3.DatabaseError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            "No se pudo recuperar una restauración interrumpida; se conserva el diario para reintentar sin abrir la biblioteca."
+        ) from exc
+
+
 @app.post("/api/backups/{backup_name}/restore")
 @serialized_backup_operation
 def restore_backup(backup_name: str) -> dict[str, object]:
@@ -576,7 +662,10 @@ def restore_backup(backup_name: str) -> dict[str, object]:
     staged_imports = data_dir() / f"restore-imports-{uuid4().hex}"
     previous_imports = data_dir() / f"imports-before-restore-{uuid4().hex}"
     imports_snapshot = root / f"{Path(backup_name).stem}-imports"
+    journal = _restore_transaction_path()
     swapped_imports = False
+    transaction_written = False
+    safety_copy = None
     try:
         validate_database_file(source_path)
         with closing(sqlite3.connect(f"file:{source_path.as_posix()}?mode=ro", uri=True)) as source, closing(sqlite3.connect(staging)) as destination:
@@ -589,8 +678,15 @@ def restore_backup(backup_name: str) -> dict[str, object]:
             if any(path.is_symlink() or not path.is_file() for path in imports_snapshot.rglob("*")):
                 raise ValueError("La copia contiene archivos originales no válidos.")
             shutil.copytree(imports_snapshot, staged_imports)
-        # Preserve the current database and originals before replacing either.
         safety_copy = create_pre_restore_snapshot()
+        _write_restore_transaction({
+            "version": 1,
+            "safety_backup": safety_copy.name if safety_copy else None,
+            "database_existed": database_path().exists(),
+            "previous_imports": previous_imports.name,
+            "imports_snapshot_present": imports_snapshot.exists(),
+        })
+        transaction_written = True
         imports_dir = data_dir() / "imports"
         if imports_snapshot.exists():
             if imports_dir.exists():
@@ -610,6 +706,13 @@ def restore_backup(backup_name: str) -> dict[str, object]:
                 if previous_imports.exists():
                     os.replace(previous_imports, imports_dir)
             raise
+        journal.unlink(missing_ok=True)
+        if os.name != "nt":
+            directory_fd = os.open(journal.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
         if previous_imports.exists():
             shutil.rmtree(previous_imports, ignore_errors=True)
         return {"restored": True, "backup_name": backup_name, "safety_backup": safety_copy.name if safety_copy else None,
@@ -617,7 +720,12 @@ def restore_backup(backup_name: str) -> dict[str, object]:
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except (sqlite3.DatabaseError, OSError) as exc:
-        raise HTTPException(status_code=500, detail="No se pudo restaurar la copia. Se intentó conservar el estado anterior mediante la copia de seguridad automática.") from exc
+        if transaction_written:
+            try:
+                recover_interrupted_restore()
+            except RuntimeError:
+                pass
+        raise HTTPException(status_code=500, detail="No se pudo restaurar la copia. Se intentó recuperar el estado anterior mediante el diario transaccional y la copia de seguridad automática.") from exc
     finally:
         staging.unlink(missing_ok=True)
         shutil.rmtree(staged_imports, ignore_errors=True)
