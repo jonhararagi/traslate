@@ -44,3 +44,7 @@ def test_manual_narrative_assistant_exposes_consent_gated_workflow():
     assert "https://gemini.google.com/app" in page
     assert "no automatiza ChatGPT/Gemini" in page
     assert "envío automático" in page.lower()
+    assert "function revokeConsentOnEdit()" in page
+    assert "source.addEventListener('input', revokeConsentOnEdit)" in page
+    assert "context.addEventListener('input', revokeConsentOnEdit)" in page
+    assert "task.addEventListener('change', revokeConsentOnEdit)" in page
