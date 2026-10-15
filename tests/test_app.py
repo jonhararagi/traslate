@@ -305,3 +305,43 @@ def test_glossary_rejects_whitespace_only_terms(client):
         },
     )
     assert response.status_code == 422
+
+
+
+def test_glossary_entry_can_be_edited_and_deleted_only_within_its_book(client):
+    first_book = client.post(
+        "/api/books/import",
+        files={"file": ("first.pdf", pdf_bytes(), "application/pdf")},
+    ).json()
+    second_book = client.post(
+        "/api/books/import",
+        files={"file": ("second.pdf", pdf_bytes(), "application/pdf")},
+    ).json()
+    entry = client.post(
+        f"/api/books/{first_book['id']}/glossary",
+        json={"source_term": "level", "preferred_term": "nivel", "rule": "translate"},
+    ).json()
+    entry_id = entry["id"]
+
+    updated = client.put(
+        f"/api/books/{first_book['id']}/glossary/{entry_id}",
+        json={
+            "source_term": "level",
+            "preferred_term": "level",
+            "rule": "preserve",
+            "notes": "Término del sistema; conservar en esta novela.",
+            "approved": True,
+        },
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["rule"] == "preserve"
+    assert updated.json()["approved"] is True
+
+    cross_book_delete = client.delete(f"/api/books/{second_book['id']}/glossary/{entry_id}")
+    assert cross_book_delete.status_code == 404
+    assert any(x["id"] == entry_id for x in client.get(f"/api/books/{first_book['id']}/glossary").json())
+
+    deleted = client.delete(f"/api/books/{first_book['id']}/glossary/{entry_id}")
+    assert deleted.status_code == 200
+    assert deleted.json()["deleted"] is True
+    assert not any(x["id"] == entry_id for x in client.get(f"/api/books/{first_book['id']}/glossary").json())
