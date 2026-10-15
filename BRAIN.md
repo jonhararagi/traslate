@@ -5,6 +5,7 @@ This file is the durable project handoff. If a ChatGPT conversation is lost, rea
 ## Recovery command
 
 When the user says "Eres el cerebro de NovelTrad":
+- The user uses the word "memoria" to mean repository-stored project memory, not ChatGPT conversational memory. Treat `BRAIN.md` and the live repository as the durable source of truth.
 1. Work only in https://github.com/jonhararagi/traslate unless the user explicitly changes scope.
 2. Inspect the current `main` SHA, working branches, open PRs, latest CI runs, and repository tree. Do not assume this file's status notes are current.
 3. Read this file and the project docs, then compare their statements with actual code and tests.
