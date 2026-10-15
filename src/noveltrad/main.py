@@ -333,7 +333,7 @@ async def import_book(file: UploadFile = File(...)) -> dict[str, object]:
         raise HTTPException(status_code=413, detail="El límite de importación es 100 MB por archivo.")
 
     if suffix == ".pdf":
-        if not raw.startswith(b"%PDF-"):
+        if b"%PDF-" not in raw[:1024]:
             raise HTTPException(status_code=415, detail="La extensión es PDF, pero el contenido no tiene una cabecera PDF válida.")
     else:
         try:
