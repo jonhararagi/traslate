@@ -81,7 +81,7 @@ The last known main integration included:
 ## Priority order
 
 1. Re-check current `main`, the latest CI runs, and this file before each continuation; the glossary-seeding PR #5 is merged and its PR and main-merge workflows passed on Ubuntu and Windows.
-2. Expand negative-path tests for Premium: Ollama missing/unavailable, request timeout, oversized chapter, malformed response, no cloud fallback, and preview-only/no-save behavior. Fix issues found.
+2. Premium negative-path tests were added for unavailable Ollama, timeout, oversized input, no cloud fallback, and no-save behavior in commit `eacbfbf2e6b752c799638f44b937f5f9966d534b`. Verify the resulting GitHub Actions run; malformed-response coverage remains to add.
 3. Build chapter chunking and side-by-side review with explicit context carryover, retry controls, and per-fragment preview; never save automatically.
 4. Add glossary extraction suggestions from imported chapters with evidence snippets and candidate status; never auto-approve names, titles, or translations.
 5. Add consistency checks for protected names, honorifics, terms, and character spellings using the per-novel profile.
