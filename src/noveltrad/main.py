@@ -257,7 +257,7 @@ def list_glossary(book_id: str) -> list[dict[str, object]]:
         if not conn.execute("SELECT 1 FROM books WHERE id = ?", (book_id,)).fetchone():
             raise HTTPException(status_code=404, detail="No se encontró la novela.")
         rows = conn.execute(
-            "SELECT id, source_term, preferred_term, rule, notes, approved FROM glossary_entries "
+            "SELECT id, book_id, source_term, preferred_term, rule, notes, approved FROM glossary_entries "
             "WHERE book_id = ? OR book_id IS NULL ORDER BY source_term COLLATE NOCASE", (book_id,)
         ).fetchall()
         return [dict(row) for row in rows]
