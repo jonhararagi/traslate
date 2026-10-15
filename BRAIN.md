@@ -49,6 +49,15 @@ Novel profile: `data/novels/i_became_the_academy_villains_daughter.json`. Glossa
 
 ## Current known project state (verify before relying on it)
 
+### Work added on main in this continuation (verify CI before calling it tested)
+
+- Added this recovery file: `BRAIN.md`.
+- Added the first novel candidate profile at `data/novels/i_became_the_academy_villains_daughter.json`; candidates are intentionally unapproved and must be verified against the user's exact imported edition.
+- Added the Local/Premium selector to the reader UI. Local remains default and uses the deterministic rules engine.
+- Added `POST /api/chapters/{chapter_id}/premium-translation-preview`: calls only `http://127.0.0.1:11434/api/generate`, default model `qwen2.5:3b` configurable via `NOVELTRAD_PREMIUM_MODEL`, 12,000-character cap, conservative context, and `keep_alive=0`. It does not save output. Model installation is manual; no cloud fallback.
+- Added docs `docs/MODO_LOCAL_Y_MODO_PREMIUM.md` and tests for the UI, local preview behavior, and missing chapter.
+- The implementation is committed directly to main; CI status for these latest commits must be inspected before calling it tested. Full-book batch translation, automatic chunking, and actual glossary extraction from imported chapters remain incomplete.
+
 The last known main integration included:
 - Local FastAPI/SQLite reader/editor for EPUB/PDF.
 - Per-book glossary and versioned translation editor.
@@ -62,8 +71,8 @@ The last known main integration included:
 ## Priority order
 
 1. Verify this file and all documented behavior against the current repository and CI.
-2. Implement the Local/Premium selector as real modes, with Local default and Premium calling only a user-configured local model, safe limits, clear errors, and no persistence.
-3. Add the novel-specific profile and candidate glossary without inventing unsupported canon.
+2. Run and repair CI for the Local/Premium selector and local model endpoint; test unavailable runtime, oversize chapters, timeout, and no-cloud/no-save guarantees.
+3. Wire the novel-specific profile and candidate glossary into the app for user review without auto-approving or inventing canon.
 4. Add tests for mode selection, model unavailable/timeout/oversize responses, privacy boundaries, and preview-only behavior.
 5. Build chapter chunking, side-by-side review, glossary extraction suggestions, and consistency checks; never auto-approve generated terms.
 6. Keep backups, recovery, import validation, original preservation, and translation history covered by regression tests.
