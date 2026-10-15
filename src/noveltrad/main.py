@@ -53,12 +53,31 @@ def backup_dir() -> Path:
     return path
 
 
+def snapshot_imports_for_backup(backup_path: Path) -> Path:
+    """Copy imported source files alongside the database snapshot."""
+    source_dir = data_dir() / "imports"
+    target_dir = backup_dir() / f"{backup_path.stem}-imports"
+    if target_dir.exists():
+        shutil.rmtree(target_dir)
+    if source_dir.is_dir():
+        shutil.copytree(source_dir, target_dir)
+    else:
+        target_dir.mkdir(parents=True, exist_ok=True)
+    return target_dir
+
+
 def create_database_backup() -> Path:
-    """Create a transactionally consistent SQLite snapshot using SQLite's backup API."""
+    """Create a consistent SQLite snapshot and preserve the imported source files."""
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     target = backup_dir() / f"noveltrad-{stamp}-{uuid4().hex[:8]}.sqlite3"
-    with closing(sqlite3.connect(database_path())) as source, closing(sqlite3.connect(target)) as destination:
-        source.backup(destination)
+    try:
+        with closing(sqlite3.connect(database_path())) as source, closing(sqlite3.connect(target)) as destination:
+            source.backup(destination)
+        snapshot_imports_for_backup(target)
+    except Exception:
+        target.unlink(missing_ok=True)
+        shutil.rmtree(backup_dir() / f"{target.stem}-imports", ignore_errors=True)
+        raise
     return target
 
 
@@ -74,6 +93,7 @@ def create_pre_restore_snapshot() -> Path | None:
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         target = backup_dir() / f"noveltrad-{stamp}-{uuid4().hex[:8]}.sqlite3"
         shutil.copy2(active, target)
+        snapshot_imports_for_backup(target)
         return target
 
 
@@ -285,21 +305,53 @@ def restore_backup(backup_name: str) -> dict[str, object]:
         raise HTTPException(status_code=404, detail="No se encontró la copia de seguridad.")
 
     staging = data_dir() / f"restore-{uuid4().hex}.sqlite3"
+    staged_imports = data_dir() / f"restore-imports-{uuid4().hex}"
+    previous_imports = data_dir() / f"imports-before-restore-{uuid4().hex}"
+    imports_snapshot = root / f"{Path(backup_name).stem}-imports"
+    swapped_imports = False
     try:
         validate_database_file(source_path)
         with closing(sqlite3.connect(f"file:{source_path.as_posix()}?mode=ro", uri=True)) as source, closing(sqlite3.connect(staging)) as destination:
             source.backup(destination)
         validate_database_file(staging)
-        # Preserve the current state before replacing the live database.
+        if imports_snapshot.exists():
+            if not imports_snapshot.is_dir() or imports_snapshot.resolve().parent != root:
+                raise ValueError("La copia de archivos originales tiene una estructura no válida.")
+            shutil.copytree(imports_snapshot, staged_imports)
+            if any(path.is_symlink() or not path.is_file() for path in staged_imports.rglob("*")):
+                raise ValueError("La copia contiene archivos originales no válidos.")
+        # Preserve the current database and originals before replacing either.
         safety_copy = create_pre_restore_snapshot()
-        os.replace(staging, database_path())
-        return {"restored": True, "backup_name": backup_name, "safety_backup": safety_copy.name if safety_copy else None}
+        imports_dir = data_dir() / "imports"
+        if imports_snapshot.exists():
+            if imports_dir.exists():
+                os.replace(imports_dir, previous_imports)
+            try:
+                os.replace(staged_imports, imports_dir)
+                swapped_imports = True
+            except OSError:
+                if previous_imports.exists() and not imports_dir.exists():
+                    os.replace(previous_imports, imports_dir)
+                raise
+        try:
+            os.replace(staging, database_path())
+        except OSError:
+            if swapped_imports:
+                shutil.rmtree(imports_dir, ignore_errors=True)
+                if previous_imports.exists():
+                    os.replace(previous_imports, imports_dir)
+            raise
+        if previous_imports.exists():
+            shutil.rmtree(previous_imports, ignore_errors=True)
+        return {"restored": True, "backup_name": backup_name, "safety_backup": safety_copy.name if safety_copy else None,
+                "source_files_restored": bool(imports_snapshot.exists())}
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except (sqlite3.DatabaseError, OSError) as exc:
-        raise HTTPException(status_code=500, detail="No se pudo restaurar la copia. La base activa no se reemplazó si falló antes de la operación atómica.") from exc
+        raise HTTPException(status_code=500, detail="No se pudo restaurar la copia. Se intentó conservar el estado anterior mediante la copia de seguridad automática.") from exc
     finally:
         staging.unlink(missing_ok=True)
+        shutil.rmtree(staged_imports, ignore_errors=True)
 
 
 @app.get("/api/health")
