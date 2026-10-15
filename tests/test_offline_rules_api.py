@@ -79,7 +79,9 @@ def test_reader_exposes_offline_preview_and_keeps_manual_assistance_options(offl
     assert 'value="local"' in page
     assert 'value="premium"' in page
     assert "Ollama" in page
-    assert "12.000 caracteres" in page
+    assert "3.500 caracteres" in page
+    assert 'id="offline-chunks"' in page
+    assert "fragmentos secuenciales" in page
     assert "Proponer traducción al español" in page
     assert "Analizar contexto, personajes y relaciones" in page
     assert "Revisar continuidad sin inventar canon" in page
