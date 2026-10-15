@@ -92,3 +92,68 @@ def test_scanned_or_empty_pdf_returns_actionable_error(client):
     )
     assert response.status_code == 422
     assert "OCR" in response.json()["detail"]
+
+
+
+def test_reading_progress_persists_and_validates_chapter(client):
+    imported_response = client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", pdf_bytes(), "application/pdf")},
+    )
+    book = imported_response.json()
+    saved = client.put(
+        f"/api/books/{book['id']}/progress",
+        json={"chapter_index": 0, "scroll_top": 430.5},
+    )
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["saved"] is True
+
+    listed = client.get("/api/books").json()[0]
+    assert '"scroll_top":430.5' in listed["current_location"]
+
+    invalid = client.put(
+        f"/api/books/{book['id']}/progress",
+        json={"chapter_index": 4, "scroll_top": 0},
+    )
+    assert invalid.status_code == 422
+
+
+def test_translation_saves_separate_from_original_and_keeps_versions(client):
+    imported_response = client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", pdf_bytes(), "application/pdf")},
+    )
+    book = imported_response.json()
+    chapter = client.get(f"/api/books/{book['id']}/chapters").json()[0]
+    original = chapter["original_text"]
+
+    first = client.put(
+        f"/api/chapters/{chapter['id']}/translation",
+        json={"translated_text": "Oknodie alcanzó el nivel 10."},
+    )
+    assert first.status_code == 200, first.text
+
+    second = client.put(
+        f"/api/chapters/{chapter['id']}/translation",
+        json={"translated_text": "Oknodie llegó al nivel 10."},
+    )
+    assert second.status_code == 200, second.text
+
+    reread = client.get(f"/api/books/{book['id']}/chapters").json()[0]
+    assert reread["original_text"] == original
+    assert reread["translated_text"] == "Oknodie llegó al nivel 10."
+
+    versions = client.get(f"/api/chapters/{chapter['id']}/translation/versions")
+    assert versions.status_code == 200
+    assert [v["translated_text"] for v in versions.json()] == [
+        "Oknodie alcanzó el nivel 10.",
+        "",
+    ]
+
+
+def test_home_contains_reader_entry_point(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "Abrir novela" in response.text
+    assert "Traducción" in response.text
+    assert "Guardar traducción" in response.text
