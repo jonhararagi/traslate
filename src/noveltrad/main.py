@@ -1230,7 +1230,7 @@ $('#offline-rules-open').addEventListener('click',()=>{$('#offline-rules-panel')
 $('#offline-close').addEventListener('click',()=>$('#offline-rules-panel').classList.add('hidden'));
 $('#offline-run').addEventListener('click',async()=>{
  const c=chapters[chapterPos], map={};
- for(const line of $('#offline-phrase-map').value.split(/\\r?\\n/)){const sep=line.indexOf('=>');if(sep<0)continue;const source=line.slice(0,sep).trim(),target=line.slice(sep+2).trim();if(source&&target)map[source]=target}
+ for(const line of $('#offline-phrase-map').value.split(/\r?\n/)){const sep=line.indexOf('=>');if(sep<0)continue;const source=line.slice(0,sep).trim(),target=line.slice(sep+2).trim();if(source&&target)map[source]=target}
  const button=$('#offline-run');button.disabled=true;$('#offline-status').textContent='Aplicando reglas locales…';$('#offline-apply').disabled=true;offlinePreviewText=null;
  try{const report=await api('/api/chapters/'+c.id+'/offline-rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile_id:$('#offline-profile').value,phrase_map:map,normalize_typography:true})});offlinePreviewText=report.text;$('#offline-result').textContent=report.text;$('#offline-status').textContent='Vista previa · '+report.replacements.length+' tipos de sustitución · '+report.warnings.join(' ');$('#offline-apply').disabled=false}
  catch(e){$('#offline-status').textContent='No se pudo generar la vista previa: '+e.message;$('#offline-result').textContent=''}
