@@ -648,11 +648,11 @@ def preview_offline_rules(chapter_id: str, payload: OfflineRulesInput) -> dict[s
         TermRule(
             source=row["source_term"],
             target=row["preferred_term"],
-            mode=row["rule"] if row["rule"] in {"translate", "preserve", "protect"} else "preserve",
+            mode=row["rule"] if row["rule"] in {"translate", "preserve", "protect", "contextual"} else "preserve",
             approved=bool(row["approved"]),
         )
         for row in rows
-        if row["rule"] in {"translate", "preserve", "protect"}
+        if row["rule"] in {"translate", "preserve", "protect", "contextual"}
     ]
     report = apply_offline_rules(
         chapter["original_text"],
