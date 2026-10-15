@@ -550,6 +550,7 @@ def init_db() -> None:
                 attempts INTEGER NOT NULL DEFAULT 0,
                 reviewed INTEGER NOT NULL DEFAULT 0,
                 error TEXT NOT NULL DEFAULT '',
+                quality_warnings_json TEXT NOT NULL DEFAULT '',
                 updated_at TEXT NOT NULL,
                 UNIQUE(job_id, chapter_id, chunk_index)
             );
@@ -573,6 +574,13 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_translation_job_chunks_order ON translation_job_chunks(job_id, chapter_index, chunk_index);
             """
         )
+        chunk_columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(translation_job_chunks)").fetchall()
+        }
+        if "quality_warnings_json" not in chunk_columns:
+            conn.execute(
+                "ALTER TABLE translation_job_chunks ADD COLUMN quality_warnings_json TEXT NOT NULL DEFAULT ''"
+            )
 
 
 def recover_interrupted_translation_jobs() -> None:
@@ -1029,6 +1037,77 @@ def preview_chunked_premium_translation(
 
 
 
+
+def _translation_quality_warnings(original_text: str, translated_text: str) -> list[str]:
+    """Return conservative review prompts; these heuristics never certify correctness."""
+    source = original_text.strip()
+    target = translated_text.strip()
+    warnings: list[str] = []
+    if not target:
+        return ["La traducción está vacía."]
+    source_normalized = re.sub(r"\s+", " ", source).casefold()
+    target_normalized = re.sub(r"\s+", " ", target).casefold()
+    if len(source_normalized) >= 25 and source_normalized == target_normalized:
+        warnings.append("La salida coincide con el original; puede ser un nombre o contenido no traducible, pero revisa que no se haya omitido la traducción.")
+    source_visible = len(re.sub(r"\s+", "", source))
+    target_visible = len(re.sub(r"\s+", "", target))
+    if source_visible >= 120:
+        ratio = target_visible / max(source_visible, 1)
+        if ratio < 0.32:
+            warnings.append(f"La salida es mucho más corta que el original ({ratio:.0%} de su longitud visible); comprueba posibles omisiones.")
+        elif ratio > 3.5:
+            warnings.append(f"La salida es mucho más larga que el original ({ratio:.1f}×); comprueba repeticiones o explicaciones añadidas.")
+
+    source_paragraphs = [part.strip() for part in re.split(r"\n\s*\n", source) if part.strip()]
+    target_paragraphs = [part.strip() for part in re.split(r"\n\s*\n", target) if part.strip()]
+    if len(source_paragraphs) >= 4 and len(target_paragraphs) < max(1, len(source_paragraphs) // 2):
+        warnings.append(f"Se conservaron {len(target_paragraphs)} párrafos frente a {len(source_paragraphs)} en el original; verifica la estructura y los posibles párrafos omitidos.")
+    elif len(source_paragraphs) >= 4 and len(target_paragraphs) > len(source_paragraphs) * 2:
+        warnings.append(f"La salida contiene {len(target_paragraphs)} párrafos frente a {len(source_paragraphs)} en el original; verifica si se fragmentó o duplicó el contenido.")
+
+    placeholder_pattern = re.compile(
+        r"\[(?:translation omitted|unable to translate|text omitted|insert translation|"
+        r"traducci[oó]n omitida|texto omitido)\]|"
+        r"\b(?:as an ai language model|i cannot translate this text|i am unable to translate this)\b",
+        re.IGNORECASE,
+    )
+    if placeholder_pattern.search(target):
+        warnings.append("La salida contiene una marca de omisión o una respuesta genérica del modelo.")
+
+    sentence_splitter = re.compile(r"(?<=[.!?。！？])\s+|\n+")
+    source_counts: dict[str, int] = {}
+    for sentence in sentence_splitter.split(source):
+        key = re.sub(r"\W+", " ", sentence.casefold()).strip()
+        if len(re.sub(r"\W+", "", sentence)) >= 40:
+            source_counts[key] = source_counts.get(key, 0) + 1
+    max_source_repeat = max(source_counts.values(), default=1)
+    target_counts: dict[str, int] = {}
+    for sentence in sentence_splitter.split(target):
+        key = re.sub(r"\W+", " ", sentence.casefold()).strip()
+        if len(re.sub(r"\W+", "", sentence)) >= 40:
+            target_counts[key] = target_counts.get(key, 0) + 1
+    repeated = next(
+        (
+            sentence for sentence, count in target_counts.items()
+            if count > max(1, max_source_repeat) and sentence not in source_counts
+        ),
+        None,
+    )
+    if repeated is not None:
+        warnings.append("Se detectó una oración larga repetida en la salida que no aparece repetida en el original; comprueba si el modelo duplicó texto.")
+    return warnings[:5]
+
+
+def _decode_quality_warnings(value: object) -> list[str]:
+    if not isinstance(value, str) or not value.strip():
+        return []
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return []
+    return [item for item in parsed if isinstance(item, str)] if isinstance(parsed, list) else []
+
+
 def _translation_job_snapshot(
     conn: sqlite3.Connection, job_id: str, include_chunks: bool = True
 ) -> dict[str, object]:
@@ -1049,6 +1128,11 @@ def _translation_job_snapshot(
     chapter_count = conn.execute(
         "SELECT COUNT(DISTINCT chapter_id) FROM translation_job_chunks WHERE job_id = ?", (job_id,)
     ).fetchone()[0]
+    quality_warning_chunks = int(conn.execute(
+        "SELECT COUNT(*) FROM translation_job_chunks WHERE job_id = ? "
+        "AND quality_warnings_json NOT IN ('', '[]')",
+        (job_id,),
+    ).fetchone()[0])
     result: dict[str, object] = {
         "id": job["id"],
         "book_id": job["book_id"],
@@ -1062,6 +1146,7 @@ def _translation_job_snapshot(
         "failed_chunks": counts["failed"],
         "pending_chunks": counts["pending"],
         "running_chunks": counts["running"],
+        "quality_warning_chunks": quality_warning_chunks,
         "progress_percent": round(100 * counts["completed"] / counts["total"]) if counts["total"] else 0,
         "created_at": job["created_at"],
         "updated_at": job["updated_at"],
@@ -1071,12 +1156,35 @@ def _translation_job_snapshot(
     if include_chunks:
         rows = conn.execute(
             "SELECT id, chapter_id, chapter_index, chapter_title, chunk_index, status, attempts, reviewed, error, "
-            "length(original_text) AS original_chars, length(translated_text) AS translated_chars, "
+            "quality_warnings_json, length(original_text) AS original_chars, length(translated_text) AS translated_chars, "
             "substr(original_text, 1, 180) AS original_preview, substr(translated_text, 1, 180) AS translated_preview "
             "FROM translation_job_chunks WHERE job_id = ? ORDER BY chapter_index, chunk_index",
             (job_id,),
         ).fetchall()
-        result["chunks"] = [dict(row) for row in rows]
+        chunks = []
+        for row in rows:
+            item = dict(row)
+            quality_raw = item.pop("quality_warnings_json", "")
+            warnings = _decode_quality_warnings(quality_raw)
+            if not quality_raw and row["status"] == "completed":
+                # Lazily backfill legacy queue entries created before QA fields existed.
+                legacy_text = conn.execute(
+                    "SELECT original_text, translated_text FROM translation_job_chunks WHERE id = ?",
+                    (row["id"],),
+                ).fetchone()
+                if legacy_text:
+                    warnings = _translation_quality_warnings(
+                        legacy_text["original_text"], legacy_text["translated_text"]
+                    )
+                    conn.execute(
+                        "UPDATE translation_job_chunks SET quality_warnings_json = ? WHERE id = ?",
+                        (json.dumps(warnings, ensure_ascii=False), row["id"]),
+                    )
+            item["quality_warnings"] = warnings
+            item["quality_warning_count"] = len(warnings)
+            chunks.append(item)
+        result["chunks"] = chunks
+        result["quality_warning_chunks"] = sum(1 for item in chunks if item["quality_warning_count"])
     return result
 
 
@@ -1232,7 +1340,7 @@ def retry_failed_translation_chunks(job_id: str) -> dict[str, object]:
         if job["status"] == "applied":
             raise HTTPException(status_code=409, detail="El trabajo ya se aplicó a la biblioteca.")
         changed = conn.execute(
-            "UPDATE translation_job_chunks SET status = 'pending', translated_text = '', reviewed = 0, error = '', updated_at = ? "
+            "UPDATE translation_job_chunks SET status = 'pending', translated_text = '', reviewed = 0, error = '', quality_warnings_json = '', updated_at = ? "
             "WHERE job_id = ? AND status = 'failed'",
             (now, job_id),
         ).rowcount
@@ -1332,10 +1440,11 @@ def run_next_translation_chunk(job_id: str) -> dict[str, object]:
                 detail=f"Falló el fragmento {chunk_index} de la sección {chapter_index + 1}. El avance anterior se conservó y puedes reintentar este fragmento. {detail}",
             ) from exc
         completed_at = datetime.now(timezone.utc).isoformat()
+        quality_warnings = _translation_quality_warnings(source_text, translated.strip())
         with connection() as conn:
             conn.execute(
-                "UPDATE translation_job_chunks SET status = 'completed', translated_text = ?, reviewed = 0, error = '', updated_at = ? WHERE id = ?",
-                (translated.strip(), completed_at, chunk_id),
+                "UPDATE translation_job_chunks SET status = 'completed', translated_text = ?, reviewed = 0, error = '', quality_warnings_json = ?, updated_at = ? WHERE id = ?",
+                (translated.strip(), json.dumps(quality_warnings, ensure_ascii=False), completed_at, chunk_id),
             )
             state = conn.execute("SELECT status FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
             counts = conn.execute(
@@ -1368,12 +1477,22 @@ def get_translation_job_chunk(job_id: str, chunk_id: str) -> dict[str, object]:
     with connection() as conn:
         row = conn.execute(
             "SELECT id, job_id, chapter_id, chapter_index, chapter_title, chunk_index, original_text, translated_text, "
-            "status, attempts, reviewed, error, updated_at FROM translation_job_chunks WHERE id = ? AND job_id = ?",
+            "status, attempts, reviewed, error, quality_warnings_json, updated_at FROM translation_job_chunks WHERE id = ? AND job_id = ?",
             (chunk_id, job_id),
         ).fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="No se encontró el fragmento.")
-        return dict(row)
+        item = dict(row)
+        warnings = _decode_quality_warnings(item.pop("quality_warnings_json", ""))
+        if not warnings and not row["quality_warnings_json"] and row["status"] == "completed":
+            warnings = _translation_quality_warnings(row["original_text"], row["translated_text"])
+            conn.execute(
+                "UPDATE translation_job_chunks SET quality_warnings_json = ? WHERE id = ? AND job_id = ?",
+                (json.dumps(warnings, ensure_ascii=False), chunk_id, job_id),
+            )
+        item["quality_warnings"] = warnings
+        item["quality_warning_count"] = len(warnings)
+        return item
 
 
 @app.put("/api/translation-jobs/{job_id}/chunks/{chunk_id}")
@@ -1389,15 +1508,16 @@ def review_translation_job_chunk(
         if job["status"] in ("running", "applied"):
             raise HTTPException(status_code=409, detail="Pausa o termina el trabajo antes de revisar fragmentos.")
         row = conn.execute(
-            "SELECT status FROM translation_job_chunks WHERE id = ? AND job_id = ?", (chunk_id, job_id)
+            "SELECT status, original_text FROM translation_job_chunks WHERE id = ? AND job_id = ?", (chunk_id, job_id)
         ).fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="No se encontró el fragmento.")
         if row["status"] != "completed":
             raise HTTPException(status_code=409, detail="Solo se pueden revisar fragmentos traducidos correctamente.")
+        quality_warnings = _translation_quality_warnings(row["original_text"], payload.translated_text)
         conn.execute(
-            "UPDATE translation_job_chunks SET translated_text = ?, reviewed = 1, updated_at = ? WHERE id = ? AND job_id = ?",
-            (payload.translated_text, now, chunk_id, job_id),
+            "UPDATE translation_job_chunks SET translated_text = ?, reviewed = 1, quality_warnings_json = ?, updated_at = ? WHERE id = ? AND job_id = ?",
+            (payload.translated_text, json.dumps(quality_warnings, ensure_ascii=False), now, chunk_id, job_id),
         )
         return _translation_job_snapshot(conn, job_id)
 
@@ -2346,13 +2466,13 @@ function clearQueueView(message){
 }
 async function showQueueState(job){
   currentTranslationJobId=job.id;
-  $('#queue-progress-label').textContent=job.completed_chunks+' / '+job.total_chunks+' fragmentos traducidos · '+job.reviewed_chunks+' revisados';
+  $('#queue-progress-label').textContent=job.completed_chunks+' / '+job.total_chunks+' fragmentos traducidos · '+job.reviewed_chunks+' revisados · '+(job.quality_warning_chunks||0)+' con alertas de calidad';
   $('#queue-status-label').textContent=queueStatusLabel(job.status)+' · '+job.chapter_count+' secciones';
   $('#queue-progress-bar').max=Math.max(job.total_chunks,1);$('#queue-progress-bar').value=job.completed_chunks;
   $('#queue-status').textContent='Progreso persistido localmente. Estado: '+queueStatusLabel(job.status)+'.';
   $('#queue-last-error').textContent=job.last_error||'';
   const chunks=job.chunks||[];
-  $('#queue-chunk-select').innerHTML=chunks.map(c=>'<option value="'+esc(c.id)+'">'+(c.status==='completed'?(c.reviewed?'✓ Revisado':'○ Revisar'):c.status==='failed'?'⚠ Falló':c.status==='running'?'… En curso':'· Pendiente')+' — sección '+(c.chapter_index+1)+', fragmento '+c.chunk_index+' ('+esc(c.chapter_title)+')</option>').join('');
+  $('#queue-chunk-select').innerHTML=chunks.map(c=>'<option value="'+esc(c.id)+'">'+(c.status==='completed'?(c.reviewed?'✓ Revisado':'○ Revisar'):c.status==='failed'?'⚠ Falló':c.status==='running'?'… En curso':'· Pendiente')+(c.quality_warning_count?' ⚠ QA '+c.quality_warning_count:'')+' — sección '+(c.chapter_index+1)+', fragmento '+c.chunk_index+' ('+esc(c.chapter_title)+')</option>').join('');
   $('#queue-review-panel').classList.toggle('hidden',!chunks.length);
   let chosen=chunks.find(c=>c.id===currentQueueChunkId)||chunks.find(c=>c.status==='completed'&&!c.reviewed)||chunks.find(c=>c.status==='completed')||chunks[0];
   if(chosen){currentQueueChunkId=chosen.id;$('#queue-chunk-select').value=chosen.id;await loadQueueChunk(chosen.id,job.id)}
@@ -2365,7 +2485,8 @@ async function loadQueueChunk(chunkId,jobId=currentTranslationJobId){
   try{
     const c=await api('/api/translation-jobs/'+jobId+'/chunks/'+chunkId);
     $('#queue-original').value=c.original_text||'';$('#queue-translation').value=c.translated_text||'';
-    $('#queue-chunk-state').textContent='Sección '+(c.chapter_index+1)+' · '+c.chapter_title+' · Fragmento '+c.chunk_index+' · '+queueStatusLabel(c.status)+' · Intentos: '+c.attempts+(c.reviewed?' · Revisado':'')+(c.error?' · Error: '+c.error:'');
+    const qualityWarnings=c.quality_warnings||[];
+    $('#queue-chunk-state').textContent='Sección '+(c.chapter_index+1)+' · '+c.chapter_title+' · Fragmento '+c.chunk_index+' · '+queueStatusLabel(c.status)+' · Intentos: '+c.attempts+(c.reviewed?' · Revisado':'')+(c.error?' · Error: '+c.error:'')+(qualityWarnings.length?' · ALERTAS DE REVISIÓN: '+qualityWarnings.join(' | '):' · Sin alertas heurísticas detectadas (esto no certifica la traducción).');
     const job=await api('/api/translation-jobs/'+jobId);
     $('#queue-review-save').disabled=queueWorkerActive||job.status==='running'||job.status==='applied'||c.status!=='completed';
   }catch(e){$('#queue-chunk-state').textContent='No se pudo cargar el fragmento: '+e.message}

@@ -179,3 +179,13 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Fixes the profile resource path for PyInstaller onedir: try source-checkout data path, then the `_internal/data` path used by portable Windows package. Test helper verifies both path layouts.
 - `tests/test_glossary_candidates.py` tests profile path resolution, evidence-backed detection of Oknodie/Steal skill/farm/tsundere, no model invocation, no auto-approval or source mutation, explicit approval, ignored-state persistence across re-scan, and duplicate approval protection.
 - Candidate heuristics may have false positives and only read imported searchable text; OCR remains unsupported. Real-chapter quality and clean-Windows manual testing remain open.
+
+
+## Continuation — translation quality review prompts (2026-10-15; PR in progress)
+
+- Branch: `feat/translation-quality-warnings`, based on main after PR #10.
+- Added migrated `translation_job_chunks.quality_warnings_json` with a schema migration for existing SQLite databases and lazy backfill for completed queue items created before the field existed.
+- `_translation_quality_warnings` flags outputs that are empty/identical, suspiciously short/long, have severe paragraph-structure changes, contain common omission/model placeholders, or repeat long sentences beyond repetition seen in source. These are limited warnings, not a translation score, and never certify output correctness. Warnings are recomputed after manual review edits.
+- Queue UI shows warning counts in the progress line and per-chunk warning detail in the review surface. Warning-free chunks still require explicit human review before application.
+- Added `tests/test_translation_quality.py` for helper behavior, conservative repetition handling, end-to-end persistence and warning clearance after editing. Do not claim pass until branch CI has completed.
+- Real authorized-chapter quality benchmark and clean-Windows manual smoke test remain not performed.
