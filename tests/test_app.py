@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import fitz
 import pytest
+from ebooklib import epub
 from fastapi.testclient import TestClient
 
 from noveltrad.main import app
@@ -194,3 +195,37 @@ def test_restore_translation_version_preserves_current_text_in_history(client):
 
     missing = client.post(f"/api/chapters/{chapter_id}/translation/restore/999")
     assert missing.status_code == 404
+
+
+
+def test_import_epub_preserves_original_text_and_chapter_title(client, tmp_path):
+    book_file = epub.EpubBook()
+    book_file.set_identifier("noveltrad-test")
+    book_file.set_title("Test Novel")
+    book_file.set_language("en")
+    chapter = epub.EpubHtml(title="Chapter One", file_name="chapter01.xhtml", lang="en")
+    chapter.content = (
+        "<html><head><title>Chapter One</title></head><body>"
+        "<h1>Chapter One</h1><p>Oknodie reached level 10.</p>"
+        "</body></html>"
+    )
+    book_file.add_item(chapter)
+    book_file.add_item(epub.EpubNcx())
+    book_file.add_item(epub.EpubNav())
+    book_file.spine = ["nav", chapter]
+    epub_path = tmp_path / "sample.epub"
+    epub.write_epub(str(epub_path), book_file)
+
+    response = client.post(
+        "/api/books/import",
+        files={"file": ("sample.epub", epub_path.read_bytes(), "application/epub+zip")},
+    )
+    assert response.status_code == 200, response.text
+    imported = response.json()
+    assert imported["format"] == "epub"
+    assert imported["title"] == "sample"
+
+    chapters = client.get(f"/api/books/{imported['id']}/chapters").json()
+    assert len(chapters) == 1
+    assert chapters[0]["title"] == "Chapter One"
+    assert "Oknodie reached level 10." in chapters[0]["original_text"]
