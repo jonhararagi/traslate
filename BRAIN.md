@@ -169,12 +169,13 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Do not call the product 100% complete until the clean-Windows manual smoke test and the authorized real-chapter quality benchmark are done. Modo local remains deterministic rules/glossary processing, not general translation.
 
 
-## Continuation — evidence-based glossary candidate extraction (2026-10-15; PR in progress)
+## Continuation — evidence-based glossary candidate extraction (2026-10-15; PR #10 merged)
 
-- New branch: `feat/evidence-based-glossary-candidates`, based on the merged full-book queue in `main`. PR #10 is planned once the tests/docs are committed.
+- PR [#10](https://github.com/jonhararagi/traslate/pull/10) was squash-merged into `main` at `4c8589dd21de71ec888f48cf9dccb15818105d69`.
+- [Tests on Ubuntu and Windows](https://github.com/jonhararagi/traslate/actions/runs/38773399044) passed. [Windows portable build and upload](https://github.com/jonhararagi/traslate/actions/runs/38773399114) passed. Artifact ID `11992213276`, name `NovelTrad-Windows-x64`, 40,722,885 bytes.
 - Adds SQLite `glossary_candidates` storage keyed by normalized term + book, with occurrence counts, up to three local evidence snippets, chapter/title references, candidate notes, pending/approved/ignored state and a linked glossary entry identifier.
 - A local-only scan detects terms from `data/novels/i_became_the_academy_villains_daughter.json`, a conservative gamer/otaku vocabulary, and recurring title-case names/entities. Scan is limited to 25,000,000 source chars and 500 candidates per pass. It does not invoke a model or mutate source text.
 - UI: `Buscar candidatos en el texto original`; inspect chapter snippets, edit preferred spelling, select preserve/protect/contextual/translate rule, then explicitly approve or ignore. Approval updates an existing unapproved seeded glossary entry when applicable; a scan never approves automatically. Rescans preserve candidate status.
-- Fixes the profile resource path for PyInstaller onedir: try the source-checkout data path, then the `_internal/data` path used by the portable Windows package. Test helper added to verify both path layouts.
-- Added `tests/test_glossary_candidates.py` for profile path resolution, source-backed detection of Oknodie/Steal skill/farm/tsundere, no model invocation, no auto-approval or source mutation, explicit approval, ignored-state persistence across re-scan, and duplicate approval protection. Do not state these tests pass until CI completes.
+- Fixes the profile resource path for PyInstaller onedir: try source-checkout data path, then the `_internal/data` path used by portable Windows package. Test helper verifies both path layouts.
+- `tests/test_glossary_candidates.py` tests profile path resolution, evidence-backed detection of Oknodie/Steal skill/farm/tsundere, no model invocation, no auto-approval or source mutation, explicit approval, ignored-state persistence across re-scan, and duplicate approval protection.
 - Candidate heuristics may have false positives and only read imported searchable text; OCR remains unsupported. Real-chapter quality and clean-Windows manual testing remain open.
