@@ -49,9 +49,9 @@ Novel profile: `data/novels/i_became_the_academy_villains_daughter.json`. Glossa
 
 ## Current known project state (verify before relying on it)
 
-### Latest continuation — candidate glossary seeding (in progress on branch)
+### Latest continuation — candidate glossary seeding (merged to main)
 
-- Branch: `feat/academy-villain-glossary-seeding`.
+- Branch: `feat/academy-villain-glossary-seeding`; PR [#5](https://github.com/jonhararagi/traslate/pull/5) merged to `main` in commit `38e00d66d136a23d393d50f2c4e59364080072fe`.
 - Added conservative matching of the imported filename against the first novel's display/alternate titles.
 - Matching imports seed the book glossary from the profile's terminology candidates as `approved=0`, with provisional `preserve` rules and notes requiring verification against the imported edition.
 - Unrelated book titles receive no candidates. The import response reports `unapproved_profile_candidates`.
