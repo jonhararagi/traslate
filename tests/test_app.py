@@ -635,3 +635,24 @@ def test_restore_filesystem_failure_rolls_back_imports_and_keeps_live_database(c
     assert len(client.get("/api/books").json()) == 2
     assert {p.name: p.read_bytes() for p in imports_dir.iterdir()} == original_sources
     assert any(book["id"] == imported["id"] for book in client.get("/api/books").json())
+
+
+def test_backup_preferences_survive_restoring_an_older_library_snapshot(client):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("preferences.pdf", pdf_bytes("Preferences remain"), "application/pdf")},
+    ).json()
+    backup = client.post("/api/backups").json()
+    changed = client.put(
+        "/api/backups/settings",
+        json={"enabled": False, "interval_hours": 8, "retention_count": 7},
+    )
+    assert changed.status_code == 200
+
+    restored = client.post(f"/api/backups/{backup['name']}/restore")
+    assert restored.status_code == 200, restored.text
+    settings = client.get("/api/backups/settings").json()
+    assert settings["enabled"] is False
+    assert settings["interval_hours"] == 8
+    assert settings["retention_count"] == 7
+    assert [book["id"] for book in client.get("/api/books").json()] == [imported["id"]]
