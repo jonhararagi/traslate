@@ -1228,8 +1228,8 @@ $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay
   });
   function openProvider(url) {
     if (!consent.checked || !source.value.trim()) return;
-    const opened = window.open(url, '_blank', 'noopener,noreferrer');
-    status.textContent = opened ? 'Servicio abierto. Pegá manualmente el prompt; NovelTrad no transmite datos.' : 'Ventana bloqueada por el navegador. Abrí el servicio manualmente.';
+    window.open(url, '_blank', 'noopener,noreferrer');
+    status.textContent = 'Se solicitó abrir el servicio en otra pestaña. Si todavía no copiaste el prompt, volvé aquí y usá Copiar prompt autorizado. Pegá y enviá manualmente; NovelTrad no transmite datos.';
   }
   chatgpt.addEventListener('click', () => openProvider('https://chatgpt.com/'));
   gemini.addEventListener('click', () => openProvider('https://gemini.google.com/app'));
