@@ -37,15 +37,58 @@ MAX_BACKUP_RETENTION_COUNT = 100
 BACKUP_RETRY_BASE_SECONDS = 300
 BACKUP_RETRY_MAX_SECONDS = 21600
 BACKUP_OPERATION_LOCK = threading.RLock()
+_BACKUP_LOCK_LOCAL = threading.local()
+
+
+@contextmanager
+def _cross_process_backup_lock():
+    """Acquire an OS-managed lock released automatically if the process exits."""
+    lock_path = data_dir() / ".backup-operation.lock"
+    with lock_path.open("a+b") as lock_file:
+        if os.name == "nt":
+            import msvcrt
+
+            lock_file.seek(0, os.SEEK_END)
+            if lock_file.tell() == 0:
+                lock_file.write(b"0")
+                lock_file.flush()
+            lock_file.seek(0)
+            msvcrt.locking(lock_file.fileno(), msvcrt.LK_LOCK, 1)
+            try:
+                yield
+            finally:
+                lock_file.seek(0)
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 
 def serialized_backup_operation(function):
-    """Serialize backup, pruning, and restore operations within this process."""
+    """Serialize backup, pruning, and restore operations across threads and processes."""
     @wraps(function)
     def wrapped(*args, **kwargs):
         with BACKUP_OPERATION_LOCK:
-            return function(*args, **kwargs)
+            depth = getattr(_BACKUP_LOCK_LOCAL, "depth", 0)
+            if depth:
+                _BACKUP_LOCK_LOCAL.depth = depth + 1
+                try:
+                    return function(*args, **kwargs)
+                finally:
+                    _BACKUP_LOCK_LOCAL.depth = depth
+            with _cross_process_backup_lock():
+                _BACKUP_LOCK_LOCAL.depth = 1
+                try:
+                    return function(*args, **kwargs)
+                finally:
+                    del _BACKUP_LOCK_LOCAL.depth
     return wrapped
+
 REQUIRED_BACKUP_TABLES = {"books", "chapters", "glossary_entries", "translation_versions", "corrections"}
 ALLOWED_SUFFIXES = {".epub", ".pdf"}
 
