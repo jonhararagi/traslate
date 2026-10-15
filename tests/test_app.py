@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import fitz
 import pytest
+import zipfile
+from io import BytesIO
 from bs4 import BeautifulSoup
 import ebooklib
 from ebooklib import epub
@@ -388,3 +390,89 @@ def test_epub_export_contains_only_saved_spanish_translation_and_escapes_markup(
     exported_text = "\n".join(BeautifulSoup(item.get_content(), "html.parser").get_text(" ", strip=True) for item in docs)
     assert "Oknodie & <nivel 10>." in exported_text
     assert "Original source text." not in exported_text
+
+
+def test_import_rejects_fake_pdf_and_malformed_epub(client):
+    fake_pdf = client.post(
+        "/api/books/import",
+        files={"file": ("fake.pdf", b"this is not a PDF", "application/pdf")},
+    )
+    assert fake_pdf.status_code == 415
+    assert "cabecera PDF" in fake_pdf.json()["detail"]
+
+    malformed_epub = client.post(
+        "/api/books/import",
+        files={"file": ("fake.epub", b"not a ZIP archive", "application/epub+zip")},
+    )
+    assert malformed_epub.status_code == 422
+    assert "EPUB" in malformed_epub.json()["detail"]
+    assert client.get("/api/books").json() == []
+
+
+def test_import_rejects_zip_that_is_not_structurally_an_epub(client):
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("notes.txt", "not an EPUB package")
+    response = client.post(
+        "/api/books/import",
+        files={"file": ("fake.epub", buffer.getvalue(), "application/epub+zip")},
+    )
+    assert response.status_code == 422
+    assert "estructura obligatoria" in response.json()["detail"]
+
+
+def test_database_backup_and_restore_preserve_library_and_create_safety_copy(client):
+    first = client.post(
+        "/api/books/import",
+        files={"file": ("first.pdf", pdf_bytes("First novel"), "application/pdf")},
+    )
+    assert first.status_code == 200, first.text
+    first_id = first.json()["id"]
+    backup = client.post("/api/backups")
+    assert backup.status_code == 200, backup.text
+    backup_name = backup.json()["name"]
+    assert backup_name.startswith("noveltrad-")
+    assert backup.json()["size_bytes"] > 0
+
+    second = client.post(
+        "/api/books/import",
+        files={"file": ("second.pdf", pdf_bytes("Second novel"), "application/pdf")},
+    )
+    assert second.status_code == 200
+    assert len(client.get("/api/books").json()) == 2
+
+    restored = client.post(f"/api/backups/{backup_name}/restore")
+    assert restored.status_code == 200, restored.text
+    assert restored.json()["restored"] is True
+    assert restored.json()["safety_backup"] != backup_name
+    books = client.get("/api/books").json()
+    assert len(books) == 1
+    assert books[0]["id"] == first_id
+
+    listed = client.get("/api/backups")
+    assert listed.status_code == 200
+    names = {item["name"] for item in listed.json()}
+    assert backup_name in names
+    assert restored.json()["safety_backup"] in names
+
+
+def test_restore_rejects_path_traversal_and_unknown_backup(client):
+    traversal = client.post("/api/backups/..%2Fnoveltrad.sqlite3/restore")
+    assert traversal.status_code in {400, 404}
+    unknown = client.post("/api/backups/noveltrad-20261015T000000Z-deadbeef.sqlite3/restore")
+    assert unknown.status_code == 404
+
+
+def test_restore_rejects_corrupt_backup_without_changing_active_library(client, tmp_path, monkeypatch):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("kept.pdf", pdf_bytes("Keep this book"), "application/pdf")},
+    ).json()
+    backup = client.post("/api/backups").json()
+    data_root = tmp_path / "noveltrad-data"
+    (data_root / "backups" / backup["name"]).write_bytes(b"not sqlite")
+
+    restored = client.post(f"/api/backups/{backup['name']}/restore")
+    assert restored.status_code == 422
+    books = client.get("/api/books").json()
+    assert [book["id"] for book in books] == [imported["id"]]
