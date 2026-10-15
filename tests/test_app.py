@@ -863,3 +863,99 @@ def test_backup_lock_serializes_independent_processes(tmp_path, monkeypatch):
             child.stdout.close()
         if child.stderr:
             child.stderr.close()
+
+
+
+def test_restore_imports_swap_failure_preserves_live_library_and_sources(client, tmp_path, monkeypatch):
+    imported = client.post(
+        "/api/books/import",
+        files={"file": ("stable-before-swap.pdf", pdf_bytes("Stable before swap"), "application/pdf")},
+    ).json()
+    backup = client.post("/api/backups").json()
+    client.post(
+        "/api/books/import",
+        files={"file": ("later-before-swap.pdf", pdf_bytes("Later before swap"), "application/pdf")},
+    )
+    data_root = tmp_path / "noveltrad-data"
+    imports_dir = data_root / "imports"
+    original_sources = {p.name: p.read_bytes() for p in imports_dir.iterdir()}
+    real_replace = noveltrad_main.os.replace
+    failed = {"value": False}
+
+    def fail_staged_imports_swap(source, destination):
+        if (
+            not failed["value"]
+            and str(destination) == str(imports_dir)
+            and str(source).startswith(str(data_root / "restore-imports-"))
+        ):
+            failed["value"] = True
+            raise OSError("simulated failure swapping restored source files")
+        return real_replace(source, destination)
+
+    monkeypatch.setattr(noveltrad_main.os, "replace", fail_staged_imports_swap)
+    response = client.post(f"/api/backups/{backup['name']}/restore")
+    assert response.status_code == 500
+    assert failed["value"] is True
+    assert {p.name: p.read_bytes() for p in imports_dir.iterdir()} == original_sources
+    assert {book["id"] for book in client.get("/api/books").json()} == {
+        imported["id"],
+        next(book["id"] for book in client.get("/api/books").json() if book["id"] != imported["id"]),
+    }
+
+
+def test_backup_prune_and_restore_operations_are_serialized_together(client, tmp_path, monkeypatch):
+    import threading
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+
+    first = client.post(
+        "/api/books/import",
+        files={"file": ("first-concurrent.pdf", pdf_bytes("First concurrent book"), "application/pdf")},
+    )
+    assert first.status_code == 200, first.text
+    stale = client.post("/api/backups")
+    assert stale.status_code == 200, stale.text
+    target = client.post("/api/backups")
+    assert target.status_code == 200, target.text
+    target_name = target.json()["name"]
+
+    second = client.post(
+        "/api/books/import",
+        files={"file": ("second-concurrent.pdf", pdf_bytes("Second concurrent book"), "application/pdf")},
+    )
+    assert second.status_code == 200, second.text
+
+    entered_snapshot = threading.Event()
+    release_snapshot = threading.Event()
+    real_snapshot = noveltrad_main.snapshot_imports_for_backup
+
+    def pause_snapshot(path):
+        if threading.current_thread().name.startswith("backup-race"):
+            entered_snapshot.set()
+            if not release_snapshot.wait(timeout=5):
+                raise TimeoutError("test did not release the backup snapshot")
+        return real_snapshot(path)
+
+    monkeypatch.setattr(noveltrad_main, "snapshot_imports_for_backup", pause_snapshot)
+    with ThreadPoolExecutor(max_workers=3, thread_name_prefix="backup-race") as pool:
+        backup_future = pool.submit(noveltrad_main.create_database_backup)
+        assert entered_snapshot.wait(timeout=5), "backup did not enter its critical section"
+        prune_future = pool.submit(noveltrad_main.prune_backups, 2)
+        restore_future = pool.submit(noveltrad_main.restore_backup, target_name)
+        time.sleep(0.1)
+        release_snapshot.set()
+        new_backup = backup_future.result(timeout=10)
+        removed = prune_future.result(timeout=10)
+        restored = restore_future.result(timeout=10)
+
+    assert new_backup.is_file()
+    assert stale.json()["name"] in removed
+    assert restored["restored"] is True
+    assert restored["backup_name"] == target_name
+    assert noveltrad_main.validate_database_file(new_backup) is None
+    remaining = {item["name"] for item in client.get("/api/backups").json()}
+    assert target_name in remaining
+    assert new_backup.name in remaining
+    assert len(remaining) == 2
+    assert len(client.get("/api/books").json()) == 1
+    assert not list((tmp_path / "noveltrad-data").glob("restore-*.sqlite3"))
