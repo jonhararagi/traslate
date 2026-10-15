@@ -95,7 +95,7 @@ At the end of each significant task, update status, commit/PR links, tested plat
 
 ## Continuation — first Windows packaging path (2026-10-15)
 
-- Branch: `feat/windows-first-release`.
+- Branch: `feat/windows-first-release`; PR [#6](https://github.com/jonhararagi/traslate/pull/6) is open and unmerged.
 - Added optional `build` extra with PyInstaller, a desktop launcher that opens the local UI in the default browser, a PowerShell build script, Windows CI packaging workflow, and release instructions in `docs/PRIMERA_ENTREGA_WINDOWS.md`.
 - The Windows workflow is intended to run the full pytest suite before producing a portable `dist/NovelTrad/` artifact. The launcher binds only to `127.0.0.1:8765`; user data remains in `%LOCALAPPDATA%\\NovelTrad`. It does not bundle models or change the default Local mode.
 - External implementation research: Argos Translate is a potential offline translation engine with Japanese, Korean, English, and Spanish listed among supported languages; package/model availability and quality must be validated per direction before adoption. PyInstaller supports bundling Python apps for Windows. References: https://github.com/argosopentech/argos-translate and https://pyinstaller.org/en/stable/operating-mode.html.
