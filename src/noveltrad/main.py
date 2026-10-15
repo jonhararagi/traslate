@@ -1213,8 +1213,14 @@ $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay
     if (selection && !source.value.trim()) source.value = selection;
     overlay.style.display = 'flex'; status.textContent = 'Nada se ha compartido todavía.'; sync(); task.focus();
   });
-  $('na-close-nt').addEventListener('click', () => { overlay.style.display = 'none'; consent.checked = false; sync(); });
-  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.style.display = 'none'; consent.checked = false; sync(); } });
+  function closeDialog() {
+    overlay.style.display = 'none';
+    consent.checked = false;
+    sync();
+    button.focus();
+  }
+  $('na-close-nt').addEventListener('click', closeDialog);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeDialog(); });
   function revokeConsentOnEdit() {
     if (consent.checked) consent.checked = false;
     sync();
@@ -1240,7 +1246,20 @@ $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay
   }
   chatgpt.addEventListener('click', () => openProvider('https://chatgpt.com/'));
   gemini.addEventListener('click', () => openProvider('https://gemini.google.com/app'));
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.style.display === 'flex') { overlay.style.display = 'none'; consent.checked = false; sync(); } });
+  document.addEventListener('keydown', e => {
+    if (overlay.style.display !== 'flex') return;
+    if (e.key === 'Escape') { e.preventDefault(); closeDialog(); return; }
+    if (e.key !== 'Tab') return;
+    const focusable = Array.from(overlay.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [href], [tabindex]:not([tabindex="-1"])'))
+      .filter(element => element.getAttribute('aria-hidden') !== 'true');
+    if (!focusable.length) { e.preventDefault(); return; }
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && (document.activeElement === first || !overlay.contains(document.activeElement))) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && (document.activeElement === last || !overlay.contains(document.activeElement))) {
+      e.preventDefault(); first.focus();
+    }
+  });
 })();
 </script></body></html>'''
 
