@@ -590,19 +590,24 @@ def test_scheduler_failure_is_recorded_and_retried_without_advancing_schedule(cl
     saved["interval_hours"] = 1
     saved["schedule_started_at"] = "2020-01-01T00:00:00+00:00"
     saved["last_success_at"] = None
+    saved["retry_after_at"] = None
+    saved["failure_count"] = 0
     settings_path.write_text(__import__("json").dumps(saved), encoding="utf-8")
+
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc) + timedelta(seconds=1)
 
     def fail_backup():
         raise OSError("simulated disk full")
 
     monkeypatch.setattr(noveltrad_main, "create_database_backup", fail_backup)
-    first = noveltrad_main.run_scheduled_backup_if_due()
+    first = noveltrad_main.run_scheduled_backup_if_due(now=now)
     assert first["status"] == "error"
     assert "simulated disk full" in first["error"]
     persisted = noveltrad_main.load_backup_settings()
     assert persisted["last_success_at"] is None
     assert "simulated disk full" in persisted["last_error"]
-    second = noveltrad_main.run_scheduled_backup_if_due()
+    second = noveltrad_main.run_scheduled_backup_if_due(now=now)
     assert second["status"] == "retry_wait"
     assert second["retry_after_at"] == first["retry_after_at"]
     assert noveltrad_main.load_backup_settings()["failure_count"] == 1
@@ -798,7 +803,8 @@ def test_scheduler_backoff_resets_after_success(client, tmp_path):
     saved = __import__("json").loads(settings_path.read_text(encoding="utf-8"))
     saved.update({"enabled": True, "interval_hours": 1, "schedule_started_at": "2020-01-01T00:00:00+00:00", "last_success_at": None, "failure_count": 2, "retry_after_at": "2020-01-01T00:10:00+00:00"})
     settings_path.write_text(__import__("json").dumps(saved), encoding="utf-8")
-    result = noveltrad_main.run_scheduled_backup_if_due(now=datetime(2026, 1, 1, tzinfo=timezone.utc))
+    from datetime import timedelta
+    result = noveltrad_main.run_scheduled_backup_if_due(now=datetime.now(timezone.utc) + timedelta(days=2))
     assert result["status"] == "created"
     persisted = noveltrad_main.load_backup_settings()
     assert persisted["failure_count"] == 0
