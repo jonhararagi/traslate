@@ -47,7 +47,6 @@ def database_path() -> Path:
     return data_dir() / "noveltrad.sqlite3"
 
 
-@contextmanager
 def backup_dir() -> Path:
     path = data_dir() / "backups"
     path.mkdir(parents=True, exist_ok=True)
@@ -122,6 +121,7 @@ def validate_epub_bytes(raw: bytes) -> None:
         raise ValueError("El archivo no es un EPUB ZIP válido o está dañado.") from exc
 
 
+@contextmanager
 def connection() -> Iterator[sqlite3.Connection]:
     conn = sqlite3.connect(database_path())
     conn.row_factory = sqlite3.Row
