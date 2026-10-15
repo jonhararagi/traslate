@@ -115,6 +115,11 @@ def main() -> None:
             port=8765,
             reload=False,
             log_level="warning",
+            # PyInstaller --windowed sets sys.stderr to None. Uvicorn's default
+            # logging config installs a stderr color formatter that calls
+            # isatty(), which crashes before the ASGI server can start.
+            # The launcher already configured a persistent file logger above.
+            log_config=None,
         )
     except Exception as exc:
         logging.exception("NovelTrad failed during startup or server launch.")
