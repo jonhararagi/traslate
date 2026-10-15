@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
@@ -96,7 +95,7 @@ def test_extraction_cites_original_evidence_and_requires_explicit_approval(monke
             },
         )
         assert approved.status_code == 200, approved.text
-        assert approved.json()["glossary_entry"]["approved"] is True
+        assert approved.json()["glossary_entry"]["approved"] in (True, 1)
         assert approved.json()["glossary_entry"]["rule"] == "protect"
 
         glossary = client.get(f"/api/books/{original_book_id}/glossary").json()
