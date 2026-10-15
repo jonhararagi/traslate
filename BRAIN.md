@@ -181,11 +181,13 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Candidate heuristics may have false positives and only read imported searchable text; OCR remains unsupported. Real-chapter quality and clean-Windows manual testing remain open.
 
 
-## Continuation — translation quality review prompts (2026-10-15; PR in progress)
+## Continuation — translation quality review prompts (2026-10-15; PR #11 merged)
 
-- Branch: `feat/translation-quality-warnings`, based on main after PR #10.
+- PR [#11](https://github.com/jonhararagi/traslate/pull/11) was squash-merged into `main` at `11bf953c86520f10bd738edbdbb5e6b10cb7a855`.
+- [Ubuntu and Windows tests](https://github.com/jonhararagi/traslate/actions/runs/38774466075) passed; [portable Windows build and artifact upload](https://github.com/jonhararagi/traslate/actions/runs/38774466093) passed on the exact application code before merge.
+- Current Windows artifact ID: `11992279247`, `NovelTrad-Windows-x64`, 40,727,383 bytes. Verified ZIP SHA-256: `708a6a4e6a3461fc91bc81527f66faffc7c50545409dc6b39bbb14cb09fdea00`; it contains `NovelTrad.exe` and `_internal/data/novels/i_became_the_academy_villains_daughter.json`.
 - Added migrated `translation_job_chunks.quality_warnings_json` with a schema migration for existing SQLite databases and lazy backfill for completed queue items created before the field existed.
 - `_translation_quality_warnings` flags outputs that are empty/identical, suspiciously short/long, have severe paragraph-structure changes, contain common omission/model placeholders, or repeat long sentences beyond repetition seen in source. These are limited warnings, not a translation score, and never certify output correctness. Warnings are recomputed after manual review edits.
 - Queue UI shows warning counts in the progress line and per-chunk warning detail in the review surface. Warning-free chunks still require explicit human review before application.
-- Added `tests/test_translation_quality.py` for helper behavior, conservative repetition handling, end-to-end persistence and warning clearance after editing. Do not claim pass until branch CI has completed.
-- Real authorized-chapter quality benchmark and clean-Windows manual smoke test remain not performed.
+- Added `tests/test_translation_quality.py` for helper behavior, conservative repetition handling, end-to-end persistence and warning clearance after editing. Tests passed on Ubuntu and Windows.
+- Real authorized-chapter quality benchmark and clean-Windows manual smoke test remain not performed. Do not claim 100% completion until those are actually tested.
