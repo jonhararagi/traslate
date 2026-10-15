@@ -49,7 +49,7 @@ def test_quality_diagnostics_detect_repeated_output_not_repeated_in_source():
         "She then returns to the academy and prepares for the next lesson."
     ) * 2
     repeated_sentence = "The generated translation repeats this complete sentence without adding new information."
-    translated = repeated_sentence + " " + repeated_sentence
+    translated = " ".join([repeated_sentence] * 3)
 
     warnings = main._translation_quality_warnings(original, translated)
     assert any("oración larga repetida" in warning for warning in warnings)
