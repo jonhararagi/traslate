@@ -65,3 +65,18 @@ def test_api_offline_rules_rejects_unknown_profile_and_missing_chapter(offline_c
         json={"profile_id": "webnovel_es"},
     )
     assert missing.status_code == 404
+
+
+def test_reader_exposes_offline_preview_and_keeps_manual_assistance_options(offline_client):
+    page = offline_client.get("/").text
+    assert 'id="offline-rules-open"' in page
+    assert 'id="offline-profile"' in page
+    assert 'value="light_novel_es"' in page
+    assert 'value="faithful_literary_es"' in page
+    assert 'value="webnovel_es"' in page
+    assert "No traduce frases desconocidas" in page
+    assert "Proponer traducción al español" in page
+    assert "Analizar contexto, personajes y relaciones" in page
+    assert "Revisar continuidad sin inventar canon" in page
+    assert "Revisar estilo y claridad" in page
+    assert "Extraer términos candidatos para el glosario" in page
