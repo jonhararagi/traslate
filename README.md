@@ -2,7 +2,7 @@
 
 NovelTrad is a local-first Windows-friendly reader and translation workspace for light novels, webnovels, and fanfiction. It is designed around a calm reading experience, persistent per-book terminology, protected names, and optional help from a chat website without paid API keys.
 
-> **Development status:** early foundation, not a finished translator. The current branch implements a local web shell, SQLite persistence, EPUB/PDF text import, a book list, and basic per-book glossary endpoints. It does not yet translate text, provide the full reading/editor experience, implement OCR, or export translated books.
+> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor. It does not yet automatically translate text, implement OCR, or export translated books.
 
 ## Product principles
 
@@ -55,6 +55,9 @@ Imported source files are stored under `imports/`; SQLite stores books, extracte
 - `GET /api/books/{book_id}/chapters` — extracted sections.
 - `GET /api/books/{book_id}/glossary` — per-book and global glossary entries.
 - `POST /api/books/{book_id}/glossary` — add a glossary rule (`preserve`, `translate`, `contextual`, or `protect`).
+- `PUT /api/books/{book_id}/progress` — persist the current chapter and reading scroll position.
+- `PUT /api/chapters/{chapter_id}/translation` — save a chapter translation separately from immutable imported text.
+- `GET /api/chapters/{chapter_id}/translation/versions` — inspect saved prior translation snapshots.
 - `GET /api/docs` — local API documentation.
 
 Scanned PDFs currently return a clear error because OCR has not been integrated. EPUB import extracts document sections in EPUB reading order where provided by the library; complex books may require later refinement of navigation and metadata handling.
@@ -68,8 +71,8 @@ pytest
 ## Roadmap
 
 1. Harden import and persistence with tests, file validation, backups, and recovery.
-2. Complete reader UX: chapter navigation, saved position, typography, themes, and safe editing/undo.
-3. Build glossary/entity management and translation-memory workflows.
+2. Finish reader UX: robust unsaved-change protection, restore controls, accessibility checks, and more theme/typography settings.
+3. Add translation-history restore, stronger glossary validation, entity management, and translation-memory workflows.
 4. Evaluate offline English→Spanish and Japanese→Spanish engines separately; keep rule-based mode distinct from local neural translation.
 5. Add contextual prompt generation for user-mediated chat-web assistance.
 6. Add versioned translation, quality checks, and TXT/EPUB/PDF export.
