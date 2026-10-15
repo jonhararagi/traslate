@@ -5,7 +5,7 @@ import os
 import re
 import sqlite3
 import zipfile
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager, closing, contextmanager
 from datetime import datetime, timezone
 from io import BytesIO
 from html import escape as html_escape
@@ -57,14 +57,14 @@ def create_database_backup() -> Path:
     """Create a transactionally consistent SQLite snapshot using SQLite's backup API."""
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     target = backup_dir() / f"noveltrad-{stamp}-{uuid4().hex[:8]}.sqlite3"
-    with sqlite3.connect(database_path()) as source, sqlite3.connect(target) as destination:
+    with closing(sqlite3.connect(database_path())) as source, closing(sqlite3.connect(target)) as destination:
         source.backup(destination)
     return target
 
 
 def validate_database_file(path: Path) -> None:
     try:
-        with sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True) as conn:
+        with closing(sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)) as conn:
             integrity = conn.execute("PRAGMA integrity_check").fetchone()
             if not integrity or integrity[0] != "ok":
                 raise ValueError("La copia de seguridad está dañada.")
@@ -273,7 +273,7 @@ def restore_backup(backup_name: str) -> dict[str, object]:
     staging = data_dir() / f"restore-{uuid4().hex}.sqlite3"
     try:
         validate_database_file(source_path)
-        with sqlite3.connect(f"file:{source_path.as_posix()}?mode=ro", uri=True) as source, sqlite3.connect(staging) as destination:
+        with closing(sqlite3.connect(f"file:{source_path.as_posix()}?mode=ro", uri=True)) as source, closing(sqlite3.connect(staging)) as destination:
             source.backup(destination)
         validate_database_file(staging)
         # Preserve the current state before replacing the live database.
