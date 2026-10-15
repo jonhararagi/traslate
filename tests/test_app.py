@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import fitz
 import pytest
-import zipfile
-from io import BytesIO
 from bs4 import BeautifulSoup
 import ebooklib
 from ebooklib import epub
@@ -168,6 +166,7 @@ def test_home_contains_reader_entry_point(client):
     assert "Proteger nombre/término" in response.text
     assert "Editar" in response.text
     assert "Eliminar" in response.text
+    assert "Exportar EPUB" in response.text
 
 
 
