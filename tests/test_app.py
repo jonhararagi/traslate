@@ -584,6 +584,8 @@ def test_scheduler_waits_for_interval_then_creates_backup(client, tmp_path):
 
 
 def test_scheduler_failure_is_recorded_and_retried_without_advancing_schedule(client, tmp_path, monkeypatch):
+    # Prevent the lifespan worker from racing the deterministic scheduler assertions.
+    noveltrad_main.backup_scheduler.stop()
     settings_path = tmp_path / "noveltrad-data" / "backup-settings.json"
     saved = __import__("json").loads(settings_path.read_text(encoding="utf-8"))
     saved["enabled"] = True
