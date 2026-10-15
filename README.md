@@ -69,6 +69,8 @@ Scanned PDFs currently return a clear error because OCR has not been integrated.
 pytest
 ```
 
+The CI suite currently covers PDF and EPUB import (including EPUB spine reading order), unsupported formats, glossary persistence, saved reading position, immutable source text, translation history/restore, the reader entry point, local-path privacy, and embedded JavaScript syntax. The latest pull-request run passed all 12 tests.
+
 ## Roadmap
 
 1. Harden import and persistence with tests, file validation, backups, and recovery.
