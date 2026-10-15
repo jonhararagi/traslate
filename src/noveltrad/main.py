@@ -791,14 +791,14 @@ def _split_translation_chunks(text: str, max_chars: int) -> list[str]:
     """Split on paragraph/sentence boundaries where possible, preserving all source text."""
     import re
 
-    paragraphs = text.split("\\n\\n")
+    paragraphs = text.split("\n\n")
     units: list[str] = []
     for paragraph in paragraphs:
         if len(paragraph) <= max_chars:
             units.append(paragraph)
             continue
         # A very long paragraph is split on sentence boundaries first.
-        sentences = re.split(r"(?<=[.!?…])\\s+", paragraph)
+        sentences = re.split(r"(?<=[.!?…])\s+", paragraph)
         current = ""
         for sentence in sentences:
             while len(sentence) > max_chars:
@@ -819,7 +819,7 @@ def _split_translation_chunks(text: str, max_chars: int) -> list[str]:
     chunks: list[str] = []
     current = ""
     for unit in units:
-        candidate = unit if not current else current + "\\n\\n" + unit
+        candidate = unit if not current else current + "\n\n" + unit
         if len(candidate) > max_chars and current:
             chunks.append(current)
             current = unit
@@ -875,7 +875,7 @@ def preview_chunked_premium_translation(
             "source_chars": len(source_chunk),
             "translated_chars": len(translated),
         })
-        previous_translation += ("\\n\\n" if previous_translation else "") + translated
+        previous_translation += ("\n\n" if previous_translation else "") + translated
     return {
         "mode": "premium-local-neural-chunked",
         "model": os.environ.get("NOVELTRAD_PREMIUM_MODEL", PREMIUM_MODEL_DEFAULT),
@@ -883,7 +883,7 @@ def preview_chunked_premium_translation(
         "saved": False,
         "chunk_count": len(translated_chunks),
         "source_chars": len(source_text),
-        "text": "\\n\\n".join(str(item["translated"]) for item in translated_chunks),
+        "text": "\n\n".join(str(item["translated"]) for item in translated_chunks),
         "chunks": translated_chunks,
         "warnings": [
             "Traducción neuronal local por fragmentos secuenciales; el contexto de continuidad usa el final de la traducción anterior como referencia, no como texto a repetir.",
@@ -1515,7 +1515,7 @@ $('#offline-run').addEventListener('click',async()=>{
    report=await api('/api/chapters/'+c.id+'/offline-rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile_id:$('#offline-profile').value,phrase_map:map,normalize_typography:true})});
    $('#offline-status').textContent='Modo local · '+report.replacements.length+' tipos de sustitución. '+report.warnings.join(' ');
   }
-  offlinePreviewText=report.text;$('#offline-result').textContent=report.text;const review=$('#offline-chunks');review.replaceChildren();if(Array.isArray(report.chunks)){for(const part of report.chunks){const card=document.createElement('article');card.className='reading-pane';const heading=document.createElement('h4');heading.textContent='Fragmento '+part.index+' · '+part.source_chars+' caracteres';const source=document.createElement('div');source.className='original-text';source.style.maxHeight='22rem';source.textContent=part.original;const target=document.createElement('textarea');target.className='translation-text';target.style.minHeight='12rem';target.value=part.translated;target.setAttribute('aria-label','Traducción del fragmento '+part.index);target.addEventListener('input',()=>{const all=Array.from(review.querySelectorAll('textarea')).map(el=>el.value);offlinePreviewText=all.join('\\n\\n');$('#offline-result').textContent=offlinePreviewText;translationDirty=true;});card.append(heading);const label1=document.createElement('strong');label1.textContent='Original';const label2=document.createElement('strong');label2.textContent='Traducción revisable';card.append(label1,source,label2,target);review.append(card)}}else{review.replaceChildren()}$('#offline-apply').disabled=false;
+  offlinePreviewText=report.text;$('#offline-result').textContent=report.text;const review=$('#offline-chunks');review.replaceChildren();if(Array.isArray(report.chunks)){for(const part of report.chunks){const card=document.createElement('article');card.className='reading-pane';const heading=document.createElement('h4');heading.textContent='Fragmento '+part.index+' · '+part.source_chars+' caracteres';const source=document.createElement('div');source.className='original-text';source.style.maxHeight='22rem';source.textContent=part.original;const target=document.createElement('textarea');target.className='translation-text';target.style.minHeight='12rem';target.value=part.translated;target.setAttribute('aria-label','Traducción del fragmento '+part.index);target.addEventListener('input',()=>{const all=Array.from(review.querySelectorAll('textarea')).map(el=>el.value);offlinePreviewText=all.join('\n\n');$('#offline-result').textContent=offlinePreviewText;translationDirty=true;});card.append(heading);const label1=document.createElement('strong');label1.textContent='Original';const label2=document.createElement('strong');label2.textContent='Traducción revisable';card.append(label1,source,label2,target);review.append(card)}}else{review.replaceChildren()}$('#offline-apply').disabled=false;
  }
  catch(e){$('#offline-status').textContent='No se pudo generar la vista previa: '+e.message;$('#offline-result').textContent=''}
  finally{button.disabled=false}
