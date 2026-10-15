@@ -45,13 +45,16 @@ On other platforms, create a virtual environment, install `.[test]`, and run `no
 - Linux/macOS: `$XDG_DATA_HOME/noveltrad`, or `~/.local/share/noveltrad`
 - Tests and development can override this using `NOVELTRAD_HOME`.
 
-Imported source files are stored under `imports/`; SQLite stores books, extracted sections, glossary entries, and corrections. The library includes user-facing backup creation, listing, and restore controls. Database snapshots use SQLite's online backup API and each snapshot includes a companion copy of the imported EPUB/PDF source files. Before a restore, NovelTrad validates database integrity/schema and automatically creates a safety snapshot of the current database and imported files. Restore replaces the database and imports directory from that snapshot; source files are not silently omitted.
+Imported source files are stored under `imports/`; SQLite stores books, extracted sections, glossary entries, and corrections. The library includes user-facing backup creation, listing, and restore controls. Database snapshots use SQLite's online backup API and each snapshot includes a companion copy of the imported EPUB/PDF source files. Automatic backups run while NovelTrad is open, defaulting to every 24 hours with the newest 14 snapshots retained. Frequency (1–720 hours), retention (1–100 snapshots), and enable/disable controls are available in the library UI. The schedule is stored separately from the novel database, so restoring an older library snapshot does not roll back backup preferences. Snapshots include both the SQLite database and the imported EPUB/PDF originals. Before a restore, NovelTrad validates database integrity/schema and automatically creates a safety snapshot of the current database and imported files. Retention removes the database snapshot and its matching source-file bundle together.
 
 ## Current API
 
 - `GET /api/health` — local service status.
 - `GET /api/books` — imported library.
-- `POST /api/backups` — create a consistent SQLite snapshot.
+- `POST /api/backups` — create a consistent SQLite snapshot and apply the configured retention limit.
+- `GET /api/backups/settings` — inspect automatic-backup settings and the last successful run/error.
+- `PUT /api/backups/settings` — configure automatic backups, frequency (1–720 hours), and retention (1–100 snapshots).
+- `POST /api/backups/prune` — immediately remove snapshots beyond the configured retention limit.
 - `GET /api/backups` — list local snapshots without exposing absolute filesystem paths.
 - `POST /api/backups/{backup_name}/restore` — validate and restore a named snapshot after automatically preserving the current database as a safety copy.
 - `POST /api/books/import` — import an EPUB or text-based PDF (100 MB limit). PDF imports must have a PDF signature; EPUB imports must be valid ZIP packages with the required EPUB structure, no encrypted entries, at most 5,000 archive entries, no more than 500 MB uncompressed content, and a maximum 200:1 compression ratio.
@@ -75,15 +78,15 @@ Scanned PDFs currently return a clear error because OCR has not been integrated.
 pytest
 ```
 
-The CI suite covers PDF and EPUB import (including EPUB spine reading order), unsupported formats, glossary normalization, duplicate rejection, scoped glossary edit/delete, saved reading position, immutable source text, translation history/restore, reader controls, local-path privacy, and embedded JavaScript syntax. The test count is expected to grow as this branch develops.
+The CI suite covers PDF and EPUB import (including EPUB spine reading order), unsupported formats, glossary normalization, duplicate rejection, scoped glossary edit/delete, saved reading position, immutable source text, translation history/restore, reader controls, local-path privacy, and embedded JavaScript syntax. The CI suite also covers scheduled backup timing, retry behavior after a simulated disk-full error, retention and companion-file cleanup, configuration bounds, and rollback when a simulated filesystem failure interrupts restore.
 
 ## Roadmap
 
-1. Harden import and persistence with content validation, backups, and recovery (initial backup/restore and archive validation are implemented; continue testing edge cases).
+1. Harden import and persistence with content validation, scheduled backups, retention, and tested recovery.
 2. Finish reader UX: broader accessibility checks, stronger typography/theme controls, and manual Windows verification.
 3. Add entity management and translation-memory workflows.
-4. Add export validation and a richer EPUB table of contents, then implement backups and recovery.
-4. Evaluate offline English→Spanish and Japanese→Spanish engines separately; keep rule-based mode distinct from local neural translation.
-5. Add contextual prompt generation for user-mediated chat-web assistance.
-6. Add versioned translation, quality checks, and TXT/EPUB/PDF export.
-7. Package and test the Windows application on a clean machine.
+4. Add export validation and a richer EPUB table of contents.
+5. Evaluate offline English→Spanish and Japanese→Spanish engines separately; keep rule-based mode distinct from local neural translation.
+6. Add contextual prompt generation for user-mediated chat-web assistance.
+7. Add versioned translation, quality checks, and TXT/EPUB/PDF export.
+8. Package and test the Windows application on a clean machine.
