@@ -1269,7 +1269,7 @@ def create_translation_job(book_id: str, payload: TranslationJobInput) -> dict[s
                 detail=f"El libro produciría {total_chunks} fragmentos; el límite seguro por trabajo es {MAX_TRANSLATION_JOB_CHUNKS}.",
             )
         glossary_rows = conn.execute(
-            "SELECT source_term, preferred_term FROM glossary_entries "
+            "SELECT source_term, preferred_term, rule FROM glossary_entries "
             "WHERE approved = 1 AND (book_id = ? OR book_id IS NULL) "
             "ORDER BY length(source_term) DESC LIMIT 200",
             (book_id,),
