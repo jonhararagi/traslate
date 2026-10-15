@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from ebooklib import epub, ITEM_DOCUMENT
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 APP_NAME = "NovelTrad"
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
@@ -160,6 +160,11 @@ class GlossaryInput(BaseModel):
     notes: str = Field(default="", max_length=2000)
     approved: bool = False
 
+    @field_validator("source_term", "preferred_term", "notes", mode="before")
+    @classmethod
+    def strip_text_fields(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -264,6 +269,15 @@ def add_glossary_entry(book_id: str, entry: GlossaryInput) -> dict[str, object]:
     with connection() as conn:
         if not conn.execute("SELECT 1 FROM books WHERE id = ?", (book_id,)).fetchone():
             raise HTTPException(status_code=404, detail="No se encontró la novela.")
+        duplicate = conn.execute(
+            "SELECT 1 FROM glossary_entries WHERE book_id = ? AND source_term = ? COLLATE NOCASE",
+            (book_id, entry.source_term),
+        ).fetchone()
+        if duplicate:
+            raise HTTPException(
+                status_code=409,
+                detail="Ese término ya existe en el glosario de esta novela. Edita la entrada existente para cambiar su regla.",
+            )
         entry_id = str(uuid4())
         conn.execute(
             "INSERT INTO glossary_entries(id,book_id,source_term,preferred_term,rule,notes,approved,created_at) "
