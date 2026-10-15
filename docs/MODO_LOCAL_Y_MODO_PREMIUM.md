@@ -60,7 +60,7 @@ La función ya integrada añade «Buscar candidatos en el texto original» al pa
 Los candidatos se guardan en SQLite con estado pendiente, aprobado o ignorado. Volver a escanear actualiza la frecuencia/evidencia sin restablecer una decisión previa. Aprobar exige que el usuario revise forma preferida, regla y notas. El botón «Ignorar» solo oculta ese candidato de la lista pendiente. Los nombres que se infieren solo por mayúsculas pueden ser falsos positivos; no se deben aprobar sin leer la evidencia. El escaneo está limitado a 25 millones de caracteres y 500 candidatos por pasada. Estos límites son protección de recursos, no una promesa de exhaustividad.
 
 
-## Advertencias heurísticas de calidad por fragmento (rama de trabajo)
+## Advertencias heurísticas de calidad por fragmento (función integrada)
 
 La cola registra hasta cinco advertencias por fragmento completado: salida vacía o idéntica al original, longitud desproporcionadamente corta/larga, estructura de párrafos muy distinta, marcadores de omisión/respuesta genérica y posible repetición extensa en la salida. Las advertencias se guardan junto a cada fragmento y se vuelven a calcular al guardar una revisión manual. En la lista de fragmentos se indica cuáles requieren atención.
 
