@@ -68,7 +68,7 @@ PROFILES: dict[str, StyleProfile] = {
 class TermRule:
     source: str
     target: str
-    mode: str = "translate"  # translate, preserve, protect
+    mode: str = "translate"  # translate, preserve, protect, contextual
     approved: bool = True
 
     def __post_init__(self) -> None:
