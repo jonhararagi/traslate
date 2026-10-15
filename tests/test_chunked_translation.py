@@ -28,7 +28,7 @@ def test_chunked_preview_is_sequential_reviewable_and_never_saves(monkeypatch, t
     monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path))
     main.init_db()
     book_id, chapter_id = str(uuid4()), str(uuid4())
-    source = "Oknodie starts farming.\n\nHer level rises.\n\nShe uses Steal skill."
+    source = ("Oknodie starts farming and gaining level. " * 45) + "\n\nShe uses Steal skill."
     with main.connection() as conn:
         conn.execute(
             "INSERT INTO books(id,title,source_format,source_name,source_path,created_at) VALUES(?,?,?,?,?,?)",
