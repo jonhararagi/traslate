@@ -431,6 +431,9 @@ def test_database_backup_and_restore_preserve_library_and_create_safety_copy(cli
     )
     assert first.status_code == 200, first.text
     first_id = first.json()["id"]
+    imports_dir = tmp_path / "noveltrad-data" / "imports"
+    first_source = next(imports_dir.iterdir())
+    first_source_bytes = first_source.read_bytes()
     backup = client.post("/api/backups")
     assert backup.status_code == 200, backup.text
     backup_name = backup.json()["name"]
@@ -447,7 +450,12 @@ def test_database_backup_and_restore_preserve_library_and_create_safety_copy(cli
     restored = client.post(f"/api/backups/{backup_name}/restore")
     assert restored.status_code == 200, restored.text
     assert restored.json()["restored"] is True
+    assert restored.json()["source_files_restored"] is True
     assert restored.json()["safety_backup"] != backup_name
+    restored_sources = list(imports_dir.iterdir())
+    assert len(restored_sources) == 1
+    assert restored_sources[0].name == first_source.name
+    assert restored_sources[0].read_bytes() == first_source_bytes
     books = client.get("/api/books").json()
     assert len(books) == 1
     assert books[0]["id"] == first_id
