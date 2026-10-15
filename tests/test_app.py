@@ -424,7 +424,7 @@ def test_import_rejects_zip_that_is_not_structurally_an_epub(client):
     assert "estructura obligatoria" in response.json()["detail"]
 
 
-def test_database_backup_and_restore_preserve_library_and_create_safety_copy(client):
+def test_database_backup_and_restore_preserve_library_and_create_safety_copy(client, tmp_path):
     first = client.post(
         "/api/books/import",
         files={"file": ("first.pdf", pdf_bytes("First novel"), "application/pdf")},
