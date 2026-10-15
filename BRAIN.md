@@ -137,3 +137,13 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Added `tests/test_chunked_translation.py` for chunk boundaries, preservation, sequential context carryover, and no-save behavior. These tests are authored but must not be called passing until GitHub Actions completes.
 - Important limits: this is chapter-level sequential chunking, not a whole-book batch queue; there is no resume-from-failed-chunk button yet; translation quality still requires a user-provided authorized chapter and actual local Ollama model. Local mode remains deterministic glossary/rule processing, not general neural translation. Full-book queueing, retry/resume controls, evidence-based glossary extraction, OCR and real-chapter quality evaluation remain incomplete.
 - Next: inspect PR CI, fix any failures, then test the package on clean Windows with Ollama installed manually and a user-authorized excerpt. Do not merge or release on the basis of authored tests alone.
+
+## Continuation — chapter chunking merged and response validation hardening (2026-10-15)
+
+- PR [#7](https://github.com/jonhararagi/traslate/pull/7) was squash-merged into `main` after GitHub Actions passed on both Ubuntu and Windows and the portable Windows package job passed. Merge commit: `3125f621eac83ec38b41a8817872f5410433d4da`.
+- Verified CI runs: [Tests, Ubuntu + Windows](https://github.com/jonhararagi/traslate/actions/runs/38769066936) and [Windows portable build](https://github.com/jonhararagi/traslate/actions/runs/38769067357). These prove automated tests and packaging succeeded; they do not prove real-model translation quality or a clean-machine manual smoke test.
+- Merged functionality: sequential chapter chunking (3,500 chars default, 1,000–6,000 configurable; max 200,000 source chars), reference-only previous translation context, editable original/translation pairs, and preview-only output. No automatic save.
+- New hardening branch: `fix/premium-response-validation`. It converts valid JSON with an unexpected shape and empty model output into explicit HTTP 502 errors instead of leaking runtime exceptions; regression tests and documentation corrections are added. PR/CI status must be updated after Actions completes.
+- Still incomplete: durable whole-book queue, restart-safe progress and retry/resume, actual authorized chapter benchmark, evidence-based glossary extraction, OCR, and clean Windows manual verification with Ollama installed by the user.
+- Do not state that the app is a complete automatic translator. Modo local is rules/glossary only; Premium is local neural translation with human review and has not yet been benchmarked on the user's actual novel edition.
+
