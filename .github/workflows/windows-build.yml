@@ -38,7 +38,7 @@ jobs:
       - name: Build portable Windows application
         run: >-
           python -m PyInstaller --noconfirm --clean --onedir --windowed
-          --name NovelTrad --collect-all uvicorn --collect-all fitz
+          --name NovelTrad --paths src --collect-all uvicorn --collect-all fitz
           --add-data "data;data" scripts/noveltrad_launcher.py
 
       - name: Upload portable application folder
