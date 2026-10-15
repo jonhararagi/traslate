@@ -41,6 +41,66 @@ jobs:
           --name NovelTrad --paths src --collect-all uvicorn --collect-all fitz
           --add-data "data;data" scripts/noveltrad_launcher.py
 
+      - name: Smoke-test packaged Windows executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $testRoot = Join-Path $env:RUNNER_TEMP ("noveltrad-smoke-" + [guid]::NewGuid().ToString("N"))
+          New-Item -ItemType Directory -Path $testRoot | Out-Null
+          $env:NOVELTRAD_HOME = Join-Path $testRoot "app-data"
+          $env:NOVELTRAD_STARTUP_LOG = Join-Path $testRoot "startup.log"
+          $env:NOVELTRAD_NO_BROWSER = "1"
+          $env:NOVELTRAD_NO_ERROR_DIALOG = "1"
+          $exe = Join-Path $PWD "dist\NovelTrad\NovelTrad.exe"
+          if (-not (Test-Path $exe)) {
+            throw "Expected packaged executable was not found: $exe"
+          }
+
+          $process = Start-Process -FilePath $exe -WorkingDirectory (Split-Path $exe -Parent) -PassThru
+          $healthy = $false
+          try {
+            $deadline = (Get-Date).AddSeconds(45)
+            while ((Get-Date) -lt $deadline) {
+              $process.Refresh()
+              if ($process.HasExited) {
+                break
+              }
+
+              try {
+                $response = Invoke-RestMethod -Uri "http://127.0.0.1:8765/api/health" -TimeoutSec 2
+                if ($response.status -eq "ok" -and $response.mode -eq "local-first") {
+                  $healthy = $true
+                  break
+                }
+              } catch {
+                # The service may need a few seconds to load frozen dependencies.
+              }
+              Start-Sleep -Milliseconds 500
+            }
+
+            if (-not $healthy) {
+              $process.Refresh()
+              if (Test-Path $env:NOVELTRAD_STARTUP_LOG) {
+                Write-Output "=== NovelTrad startup diagnostic log ==="
+                Get-Content $env:NOVELTRAD_STARTUP_LOG
+              } else {
+                Write-Output "No startup log was created."
+              }
+              if ($process.HasExited) {
+                throw "Portable executable exited before /api/health became ready (exit code $($process.ExitCode))."
+              }
+              throw "Portable executable stayed running but /api/health did not become ready within 45 seconds."
+            }
+
+            Write-Host "Portable executable started successfully; /api/health returned status=ok and mode=local-first."
+          } finally {
+            $process.Refresh()
+            if (-not $process.HasExited) {
+              Stop-Process -Id $process.Id -Force
+              $process.WaitForExit(5000)
+            }
+          }
+
       - name: Upload portable application folder
         uses: actions/upload-artifact@v4
         with:
