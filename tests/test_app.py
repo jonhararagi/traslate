@@ -1060,3 +1060,66 @@ def test_backup_settings_atomic_write_preserves_previous_file_on_replace_failure
     assert json.loads(settings_path.read_text(encoding="utf-8"))["retention_count"] == 14
     assert not list(settings_path.parent.glob("backup-settings.json.*.tmp"))
 
+
+
+
+@pytest.mark.parametrize("crash_stage", ["imports", "database"])
+def test_interrupted_restore_process_exit_recovers_database_and_originals(client, tmp_path, monkeypatch, crash_stage):
+    import os
+    import subprocess
+    import sys
+
+    old = client.post(
+        "/api/books/import",
+        files={"file": ("before-crash.pdf", pdf_bytes("Original snapshot"), "application/pdf")},
+    )
+    assert old.status_code == 200, old.text
+    backup = client.post("/api/backups")
+    assert backup.status_code == 200, backup.text
+    backup_name = backup.json()["name"]
+
+    newer = client.post(
+        "/api/books/import",
+        files={"file": ("after-snapshot.pdf", pdf_bytes("Must remain before rollback"), "application/pdf")},
+    )
+    assert newer.status_code == 200, newer.text
+    data_root = tmp_path / "noveltrad-data"
+    imports_dir = data_root / "imports"
+    before_sources = {path.name: path.read_bytes() for path in imports_dir.iterdir()}
+
+    script = r'''
+import os
+from pathlib import Path
+import sys
+from noveltrad import main
+stage, backup_name = sys.argv[1], sys.argv[2]
+real_replace = main.os.replace
+def crash_after_replace(source, destination):
+    result = real_replace(source, destination)
+    source_path, destination_path = Path(source), Path(destination)
+    if stage == "imports" and destination_path == main.data_dir() / "imports" and source_path.name.startswith("restore-imports-"):
+        os._exit(71)
+    if stage == "database" and destination_path == main.database_path() and source_path.name.startswith("restore-"):
+        os._exit(72)
+    return result
+main.os.replace = crash_after_replace
+main.restore_backup(backup_name)
+os._exit(0)
+'''
+    child = subprocess.run(
+        [sys.executable, "-c", script, crash_stage, backup_name],
+        env=os.environ.copy(),
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    expected_exit = 71 if crash_stage == "imports" else 72
+    assert child.returncode == expected_exit, child.stderr
+
+    assert noveltrad_main.recover_interrupted_restore() is True
+    assert not (data_root / ".restore-transaction.json").exists()
+    assert {path.name: path.read_bytes() for path in imports_dir.iterdir()} == before_sources
+    book_ids = {book["id"] for book in client.get("/api/books").json()}
+    assert book_ids == {old.json()["id"], newer.json()["id"]}
+    assert not list(data_root.glob("restore-*.sqlite3"))
+    assert not list(data_root.glob("restore-imports-*"))
