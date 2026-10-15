@@ -58,3 +58,10 @@ La cola limita cada sección a 200.000 caracteres, usa 3.500 caracteres por frag
 La función ya integrada añade «Buscar candidatos en el texto original» al panel del glosario. Examina el texto local importado; combina los términos del perfil de Oknodie con una lista heurística gamer/otaku y nombres potenciales detectados por mayúsculas repetidas. Cada candidato incluye frecuencia y hasta tres fragmentos breves con capítulo y ubicación. El escaneo no llama a Ollama, a la nube ni a ningún servicio externo.
 
 Los candidatos se guardan en SQLite con estado pendiente, aprobado o ignorado. Volver a escanear actualiza la frecuencia/evidencia sin restablecer una decisión previa. Aprobar exige que el usuario revise forma preferida, regla y notas. El botón «Ignorar» solo oculta ese candidato de la lista pendiente. Los nombres que se infieren solo por mayúsculas pueden ser falsos positivos; no se deben aprobar sin leer la evidencia. El escaneo está limitado a 25 millones de caracteres y 500 candidatos por pasada. Estos límites son protección de recursos, no una promesa de exhaustividad.
+
+
+## Advertencias heurísticas de calidad por fragmento (rama de trabajo)
+
+La cola registra hasta cinco advertencias por fragmento completado: salida vacía o idéntica al original, longitud desproporcionadamente corta/larga, estructura de párrafos muy distinta, marcadores de omisión/respuesta genérica y posible repetición extensa en la salida. Las advertencias se guardan junto a cada fragmento y se vuelven a calcular al guardar una revisión manual. En la lista de fragmentos se indica cuáles requieren atención.
+
+Estas verificaciones son heurísticas y deliberadamente no bloquean una revisión por sí solas. Las traducciones pueden expandirse o contraerse según el idioma, una frase repetida puede ser intencional y algunos fragmentos (nombres, interfaz, terminología) pueden coincidir con el original. La ausencia de alertas **no** certifica la calidad. La cola sigue exigiendo la revisión explícita de todos los fragmentos antes de aplicar el resultado final.
