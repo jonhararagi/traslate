@@ -172,7 +172,8 @@ def list_books() -> list[dict[str, object]]:
     init_db()
     with connection() as conn:
         rows = conn.execute(
-            "SELECT b.*, COUNT(c.id) AS chapter_count FROM books b "
+            "SELECT b.id, b.title, b.source_format, b.source_name, b.source_language, "
+            "b.target_language, b.current_location, b.created_at, COUNT(c.id) AS chapter_count FROM books b "
             "LEFT JOIN chapters c ON c.book_id = b.id GROUP BY b.id ORDER BY b.created_at DESC"
         ).fetchall()
         return [dict(row) for row in rows]
