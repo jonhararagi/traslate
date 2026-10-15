@@ -1295,6 +1295,8 @@ def run_next_translation_chunk(job_id: str) -> dict[str, object]:
                 (next_status, completed_at, job_id),
             )
             return _translation_job_snapshot(conn, job_id)
+    finally:
+        TRANSLATION_JOB_LOCK.release()
 
 
 @app.get("/api/translation-jobs/{job_id}/chunks/{chunk_id}")
