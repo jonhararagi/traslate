@@ -126,3 +126,14 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - The product is not a full automatic translator yet. Local mode is deterministic glossary/phrase processing, not neural sentence translation. Premium local inference is an optional preview path, not a validated full-book translation pipeline. Chunking, context carryover, side-by-side chapter review, OCR, and real-chapter benchmark remain incomplete.
 - First-novel pilot: 18 unapproved candidate terms and synthetic diagnostics are present. Do not claim actual novel chapter translation or semantic disambiguation until an authorized excerpt/EPUB/PDF is imported and evaluated.
 - Next priority: run a clean Windows smoke test using the artifact and record results; then implement chunked preview + side-by-side review with explicit carryover, retry controls, and no auto-save. Add malformed Ollama response tests and evidence-based glossary extraction afterward.
+
+
+## Continuation — chunked chapter translation implementation (2026-10-15)
+
+- Working branch: `feat/chunked-premium-translation`; not merged into `main` yet.
+- Added `POST /api/chapters/{chapter_id}/premium-translation-preview/chunked`. It processes one chapter sequentially in bounded source chunks (default 3,500 chars; configurable 1,000–6,000), up to 200,000 source characters per chapter. It splits at paragraph/sentence boundaries where possible and passes the tail of the previous translated chunk as reference-only continuity context.
+- Response includes each chunk's original and translated text, index and character counts, plus a combined preview. It is preview-only; it does not update `translated_text`, translation history, or the immutable original. If a chunk fails, the endpoint returns an explicit chunk index and publishes no partial saved translation.
+- Reader UI now uses the chunked endpoint in Premium mode and displays editable original/translation pairs. Edits are combined into the preview; “Pasar al editor” remains explicit, and the user must still press “Guardar traducción”.
+- Added `tests/test_chunked_translation.py` for chunk boundaries, preservation, sequential context carryover, and no-save behavior. These tests are authored but must not be called passing until GitHub Actions completes.
+- Important limits: this is chapter-level sequential chunking, not a whole-book batch queue; there is no resume-from-failed-chunk button yet; translation quality still requires a user-provided authorized chapter and actual local Ollama model. Local mode remains deterministic glossary/rule processing, not general neural translation. Full-book queueing, retry/resume controls, evidence-based glossary extraction, OCR and real-chapter quality evaluation remain incomplete.
+- Next: inspect PR CI, fix any failures, then test the package on clean Windows with Ollama installed manually and a user-authorized excerpt. Do not merge or release on the basis of authored tests alone.
