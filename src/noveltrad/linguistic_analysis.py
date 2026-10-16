@@ -160,7 +160,16 @@ def analyze_text(text: str, aliases: Mapping[str, Iterable[str]] | None = None) 
                 raise TypeError("los alias de cada entidad deben ser iterables de cadenas") from exc
             if not all(isinstance(name, str) for name in supplied_names):
                 raise TypeError("cada alias debe ser una cadena")
-            alias_names = tuple(name for name in supplied_names if name.strip())
+            nonempty_names = tuple(name for name in supplied_names if name.strip())
+            if isinstance(names, (set, frozenset)):
+                # Unordered collections have no declared first alias: choose the
+                # canonical name by an explicit, stable value-based ordering.
+                alias_names = tuple(sorted(
+                    nonempty_names, key=lambda value: (value.casefold(), value)
+                ))
+            else:
+                # Lists, tuples and other ordered iterables retain declaration order.
+                alias_names = nonempty_names
             canonical_name = alias_names[0] if alias_names else entity_id
             for name in sorted(set(alias_names), key=lambda value: (value.casefold(), value)):
                 patterns.append((len(name), entity_id, canonical_name, name,
