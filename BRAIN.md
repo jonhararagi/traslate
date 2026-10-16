@@ -15,14 +15,13 @@ When the user says "Eres el cerebro de NovelTrad":
 
 ## Active implementation status — 2026-10-16 (supersedes older status notes below)
 
-- Working branch: `feat/chromium-account-premium`; draft PR #14 targets `main`. Do not merge or build a user-facing release until the user explicitly approves and current CI/build/manual checks pass.
+- PR #14 was merged into main with squash merge commit eff2c628d2af98fe3db9c9d18a6bf239161755bf. Main now contains the account-based Chromium Premium chapter flow and the migrated persistent whole-book queue.
 - Product constraint: Local mode remains deterministic and lightweight. Account-based Premium uses the user's own ChatGPT/Gemini account in a visible, persistent Chromium-family profile. NovelTrad must not auto-submit source text or read/store provider credentials/cookies.
-- The chapter-level manual prompt flow is implemented on this branch.
-- The persistent whole-book queue has now been changed from automatic Ollama inference to a manual handoff flow: jobs store provider; `next-prompt` reserves one pending chunk and returns a bounded prompt; the user copies it to the provider and pastes the answer back; `submit` persists it as completed but unreviewed. Review and apply remain separate; apply must still require every chunk to be completed and reviewed.
-- Queue schema migration adds a `provider` column with `chatgpt` default for existing databases. Queue startup recovery returns interrupted running chunks to pending and pauses their job. Pause/resume/retry behavior needs integration-test confirmation after this migration.
-- SQLite-backed route tests now cover prompt construction, provider validation, chunk reservation, response persistence as unreviewed, pause/resume, retry-failed, restart recovery, and refusal to apply unreviewed output. GitHub Actions passed Windows and Ubuntu tests on code SHA `bc599d2010f07696bdd9cbf768ed93dd8261391a`; the portable build was still running at the last check. Because this status-note edit creates a new branch SHA, recheck CI/build against the new exact head before claiming package readiness.
-- Docs were updated in README.md, docs/MODO_LOCAL_Y_MODO_PREMIUM.md, and docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md. Keep older notes below as project history, not current implementation status.
-- Still required before a PC package: inspect latest CI; fix failures; run Windows portable build from the exact approved branch SHA; verify artifact/source SHA; then manual smoke test on the user's Windows PC. Do not merge PR #14 or provide a stale ZIP as final.
+- The persistent whole-book queue stores the selected provider; reserves one chunk at a time; generates a bounded prompt; and persists manually pasted output as completed but unreviewed. Review and apply remain separate; apply requires every chunk completed and reviewed.
+- Queue schema migration adds a provider column with chatgpt default for existing databases. Startup recovery returns interrupted running chunks to pending and pauses their job. Pause/resume/retry/restart behavior is covered by SQLite-backed tests.
+- Tests passed on Windows and Ubuntu for the final implementation branch SHA cdfbd8f87b3082bdd370fd4294eec354512b8ff0. The portable Windows executable built and its packaged smoke test passed on that branch SHA. A new Windows build is configured to run on main pushes and includes BRAIN.md in its path filter; verify the final main artifact's run metadata before distributing it.
+- README.md, docs/MODO_LOCAL_Y_MODO_PREMIUM.md, and docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md were updated after the merge. Older notes below are project history, not current implementation status.
+- Still required: confirm the portable build artifact is built from the exact current main SHA; then the user must perform real ChatGPT/Gemini login and a quality review of an authorized translation excerpt on their Windows PC. Chromium consumes RAM; disabling images does not guarantee fixed savings.
 
 ## Product goal
 
