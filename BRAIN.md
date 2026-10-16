@@ -209,3 +209,29 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Añadidos `tests/test_linguistic_analysis.py` y `docs/ANALIZADOR_LINGUISTICO_LOCAL.md`.
 - Límite explícito: esta es infraestructura determinista, no traducción general, resolución de correferencias ni razonamiento narrativo completo. No extrae canon automáticamente.
 - Pendiente de verificación: ejecutar toda la suite, comprobar CI y build/smoke test de Windows en la rama. No integrar si hay fallos.
+
+## Protocolo de dirección, ejecución y continuidad (2026-10-16)
+
+### Roles obligatorios
+- **CEREBRO:** define fases, alcance, prioridades y criterios verificables antes de ejecutar; revisa evidencia y decide estado. No declara una tarea terminada por la existencia de archivos, fichas, commits o PR.
+- **BOT OBRERO:** inspecciona el repositorio real, trabaja solo en una rama autorizada, implementa, ejecuta pruebas y registra cambios, resultados, errores y bloqueos en GitHub. Nunca declara una prueba pasada sin resultado comprobable.
+- **REGISTRO DE CONTINUIDAD:** este BRAIN.md debe permitir retomar el trabajo desde otro chat. Registrar rama, SHA, enlaces, estado, pruebas reales, limitaciones y siguiente acción concreta.
+
+### Estados de trabajo
+- PENDIENTE: sin implementación verificada.
+- EN CURSO: trabajo iniciado, falta ejecución o comprobación.
+- IMPLEMENTADA: existe código, aún sin demostrar todos los criterios.
+- VERIFICADA: criterios de aceptación cumplidos y evidencia reproducible disponible.
+- INTEGRADA: cambio verificado incorporado en la rama objetivo autorizada.
+- BLOQUEADA: impedimento concreto documentado con evidencia y próxima acción.
+
+No confundir CI verde con calidad lingüística, ni build portable exitoso con prueba manual en el PC del usuario. Si una prueba manual o con texto autorizado no se realizó, mantenerla pendiente. No hacer merge en main sin autorización explícita.
+
+### Incidencia de continuidad — PR #16
+- PR: https://github.com/jonhararagi/traslate/pull/16
+- Rama: feat/offline-linguistic-narrative-core
+- SHA inspeccionado: 34a4525b66553f4bcbfab0f6e978a3c3f5b53d07
+- Workflow Tests: https://github.com/jonhararagi/traslate/actions/runs/38932299149 — conclusión FAILURE en Ubuntu y Windows, paso «Run tests».
+- Workflow Windows Portable Build: https://github.com/jonhararagi/traslate/actions/runs/38932299159 — conclusión FAILURE, paso «Run automated tests».
+- Estado correcto: IMPLEMENTADA, NO VERIFICADA; no integrar ni hacer merge.
+- Siguiente acción obligatoria: recuperar logs de los jobs fallidos, identificar error raíz, corregir en la misma rama autorizada, volver a ejecutar tests y build, revisar todos los checks sobre el nuevo SHA y actualizar este registro. No inferir causa antes de leer logs.
