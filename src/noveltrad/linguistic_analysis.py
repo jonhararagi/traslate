@@ -150,12 +150,22 @@ def analyze_text(text: str, aliases: Mapping[str, Iterable[str]] | None = None) 
     if aliases:
         patterns: list[tuple[int, str, str, str, re.Pattern[str]]] = []
         for entity_id, names in aliases.items():
-            alias_names = tuple(name for name in names if name.strip())
+            if not isinstance(entity_id, str) or not entity_id.strip():
+                raise ValueError("cada entity_id debe ser una cadena no vacía")
+            if isinstance(names, str):
+                names = (names,)
+            try:
+                supplied_names = tuple(names)
+            except TypeError as exc:
+                raise TypeError("los alias de cada entidad deben ser iterables de cadenas") from exc
+            if not all(isinstance(name, str) for name in supplied_names):
+                raise TypeError("cada alias debe ser una cadena")
+            alias_names = tuple(name for name in supplied_names if name.strip())
             canonical_name = alias_names[0] if alias_names else entity_id
-            for name in set(alias_names):
+            for name in sorted(set(alias_names), key=lambda value: (value.casefold(), value)):
                 patterns.append((len(name), entity_id, canonical_name, name,
-                                 re.compile(r"(?<!\w)" + re.escape(name) + r"(?!\w)", re.IGNORECASE)))
-        patterns.sort(key=lambda item: item[0], reverse=True)
+                                 re.compile(r"(?<!\\w)" + re.escape(name) + r"(?!\\w)", re.IGNORECASE)))
+        patterns.sort(key=lambda item: (-item[0], item[3].casefold(), item[1], item[3]))
         occupied: list[tuple[int, int]] = []
         for _, entity_id, canonical, alias, pattern in patterns:
             for match in pattern.finditer(text):
