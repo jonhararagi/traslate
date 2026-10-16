@@ -19,9 +19,10 @@ When the user says "Eres el cerebro de NovelTrad":
 - Product constraint: Local mode remains deterministic and lightweight. Account-based Premium uses the user's own ChatGPT/Gemini account in a visible, persistent Chromium-family profile. NovelTrad must not auto-submit source text or read/store provider credentials/cookies.
 - The persistent whole-book queue stores the selected provider; reserves one chunk at a time; generates a bounded prompt; and persists manually pasted output as completed but unreviewed. Review and apply remain separate; apply requires every chunk completed and reviewed.
 - Queue schema migration adds a provider column with chatgpt default for existing databases. Startup recovery returns interrupted running chunks to pending and pauses their job. Pause/resume/retry/restart behavior is covered by SQLite-backed tests.
-- Tests passed on Windows and Ubuntu for the final implementation branch SHA cdfbd8f87b3082bdd370fd4294eec354512b8ff0. The portable Windows executable built and its packaged smoke test passed on that branch SHA. A new Windows build is configured to run on main pushes and includes BRAIN.md in its path filter; verify the final main artifact's run metadata before distributing it.
-- README.md, docs/MODO_LOCAL_Y_MODO_PREMIUM.md, and docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md were updated after the merge. Older notes below are project history, not current implementation status.
-- Still required: confirm the portable build artifact is built from the exact current main SHA; then the user must perform real ChatGPT/Gemini login and a quality review of an authorized translation excerpt on their Windows PC. Chromium consumes RAM; disabling images does not guarantee fixed savings.
+- The exact `main` SHA `ca7eadf7c1847a64d95997c0ad98f6e062ca45d0` passed Ubuntu/Windows tests in [run 38896672388](https://github.com/jonhararagi/traslate/actions/runs/38896672388). Its Windows portable build and packaged `/api/health` smoke test passed in [run 38896672374](https://github.com/jonhararagi/traslate/actions/runs/38896672374); artifact `NovelTrad-Windows-x64`, SHA-256 `695d5c45bbc34d7a8437fa28b8076329635de086ab7a5ac88fb0095522b98633`.
+- This is CI evidence, not a manual test on the user's PC. Actual sign-in and a quality review using an authorized excerpt remain pending. Chromium consumes RAM; image blocking does not guarantee a fixed saving.
+- A follow-up branch `fix/provider-isolation-and-project-closeout` isolates legacy Ollama queue execution from ChatGPT/Gemini queues, adds regression coverage, corrects stale documentation, and records the branch audit. Treat that work as pending until its PR and CI status are verified.
+- Sections labelled historical below are archival notes. Their old statements about open PRs, pending features, or CI are superseded by this active status.
 
 ## Product goal
 
@@ -55,58 +56,29 @@ Novel profile: `data/novels/i_became_the_academy_villains_daughter.json`. Glossa
 
 - **Modo local**: deterministic approved glossary/phrase rules and typography normalization; no neural inference, no network, minimal RAM. It cannot translate unknown sentences.
 - **Modo premium (objetivo de producto)**: translation through a visible Chromium window signed into the user's ChatGPT or Gemini account. NovelTrad constructs the prompt from approved glossary rules, the novel's style guide, relevant continuity context, and a bounded source chunk. Initial delivery must support a transparent manual handoff; browser automation must not be assumed implemented.
-- Ollama-backed inference currently exists in main under the old Premium label and is an architecture mismatch to migrate. It must either be moved to a separately named optional local-neural mode or removed after equivalent account-based flow is tested.
+- The legacy chapter-preview endpoint still calls Ollama on loopback, and `/api/translation-jobs/{job_id}/run-next` is a legacy local-neural route. It must never process a ChatGPT/Gemini job. The provider-isolation follow-up makes Ollama an explicit API-only `provider: "ollama"` choice and rejects crossing between Ollama and manual account endpoints; do not present it as account Premium or expose it in the normal UI.
 - Both modes must keep source text immutable, persist provisional chunk results, and require review before applying. Never label account-based Premium ready until its UI, prompt generation, handoff, queue recovery, privacy boundaries, and tests work end-to-end.
 
-## Latest continuation — Chromium Premium first implementation (draft PR #14)
+## Historical note — Chromium Premium implementation (PR #14, merged 2026-10-16)
 
-- Branch: `feat/chromium-account-premium`; PR [#14](https://github.com/jonhararagi/traslate/pull/14) remains draft/open/unmerged. `main` is not modified.
-- Commit `753a0f48ea1fdfff1f375dbc05441eccb41caeab` adds the first functional chapter-level account handoff in `src/noveltrad/main.py`.
-- UI: Premium provider selector (ChatGPT/Gemini), button to open a dedicated persistent browser profile, and per-fragment copy-prompt + paste-result fields. Editor transfer stays disabled until every fragment has a non-empty result.
-- Browser launcher finds an already installed Chrome/Chromium/Edge and does not download a browser. It uses a provider-specific profile under NovelTrad's local data directory and starts with image loading disabled plus reduced background activity. The user signs in directly on the provider site. NovelTrad does not collect credentials or cookies and does not auto-submit source text.
-- Prompts contain the approved glossary with rule hints, editorial style selection, source delimiters, bounded chunks, and a limited prior-source context excerpt. Source chapters remain unchanged; preview is not saved automatically.
-- Limitations: focused tests and manual Windows validation are not yet confirmed. The persistent whole-book queue still uses the old Ollama endpoint and is not migrated. Do not describe Premium as release-ready until queue integration, tests, and Windows/translation-quality checks pass.
-- GitHub Actions were triggered for commit `753a0f48ea1fdfff1f375dbc05441eccb41caeab`; check their final conclusions before the next status report.
+PR #14 delivered the visible persistent Chromium profile, manual ChatGPT/Gemini prompt/response handoff for chapter previews, and the persistent whole-book queue. It merged as `eff2c628d2af98fe3db9c9d18a6bf239161755bf`. Its initial branch SHA and pre-merge test status are historical; use the active implementation status above and the audit document, not the initial draft notes below.
 
-## Current known project state (verify before relying on it)
+## Current verified project state — branch audit baseline 2026-10-16
 
-### Latest continuation — candidate glossary seeding (merged to main)
-
-- Branch: `feat/academy-villain-glossary-seeding`; PR [#5](https://github.com/jonhararagi/traslate/pull/5) merged to `main` in commit `38e00d66d136a23d393d50f2c4e59364080072fe`.
-- Added conservative matching of the imported filename against the first novel's display/alternate titles.
-- Matching imports seed the book glossary from the profile's terminology candidates as `approved=0`, with provisional `preserve` rules and notes requiring verification against the imported edition.
-- Unrelated book titles receive no candidates. The import response reports `unapproved_profile_candidates`.
-- Added API tests for matching and non-matching titles. GitHub Actions PR run [38732729383](https://github.com/jonhararagi/traslate/actions/runs/38732729383) passed on Ubuntu and Windows.
-- Updated the Local/Premium guide to document the behavior. PR #5 is merged; confirm the current `main` SHA and CI before the next change.
-- Important limitation: matching is based on the uploaded filename's title, not semantic recognition of the book. Use the exact novel title in the filename to seed candidates.
-
-### Work added on main in this continuation (verify CI before calling it tested)
-
-- Added this recovery file: `BRAIN.md`.
-- Added the first novel candidate profile at `data/novels/i_became_the_academy_villains_daughter.json`; candidates are intentionally unapproved and must be verified against the user's exact imported edition.
-- Added the Local/Premium selector to the reader UI. Local remains default and uses the deterministic rules engine.
-- Added `POST /api/chapters/{chapter_id}/premium-translation-preview`: calls only `http://127.0.0.1:11434/api/generate`, default model `qwen2.5:3b` configurable via `NOVELTRAD_PREMIUM_MODEL`, 12,000-character cap, conservative context, and `keep_alive=0`. It does not save output. Model installation is manual; no cloud fallback.
-- Added docs `docs/MODO_LOCAL_Y_MODO_PREMIUM.md` and tests for the UI, local preview behavior, and missing chapter.
-- The implementation is committed directly to main; CI status for these latest commits must be inspected before calling it tested. Full-book batch translation, automatic chunking, and actual glossary extraction from imported chapters remain incomplete.
-
-The last known main integration included:
-- Local FastAPI/SQLite reader/editor for EPUB/PDF.
-- Per-book glossary and versioned translation editor.
-- Backup snapshots and scheduled backup CLI.
-- Deterministic rule engine in `src/noveltrad/narrative_rules.py`.
-- Existing deterministic preview endpoint `POST /api/chapters/{chapter_id}/offline-rules`.
-- Existing manual narrative-assistance options listed above.
-- The deterministic rules engine is not a general translator.
-- Initial CI on the final PR tree was green on Windows and Ubuntu before the merge into main; do not claim a CI run on a particular merge SHA unless verified.
+- Baseline `main`: `ca7eadf7c1847a64d95997c0ad98f6e062ca45d0`. PRs #1–#14 are closed and merged; no open issues or PRs were found during the baseline audit. The audit covers all 15 visible branches and their PR/feature provenance in [docs/AUDITORIA_RAMAS_Y_PENDIENTES.md](docs/AUDITORIA_RAMAS_Y_PENDIENTES.md).
+- Integrated capabilities include reader/library; EPUB/text-PDF import; persistent local storage; immutable source and versioned translations; on-demand and scheduled recoverable backups; deterministic offline rules; the Oknodie novel profile and unapproved terminology candidates; evidence-backed glossary extraction; heuristic quality warnings; glossary consistency warnings; the Windows portable build and packaged startup smoke test; and the visible Chromium ChatGPT/Gemini handoff plus persistent queue.
+- CI on the baseline SHA succeeded: [Ubuntu + Windows tests](https://github.com/jonhararagi/traslate/actions/runs/38896672388) and [Windows portable build + packaged smoke test](https://github.com/jonhararagi/traslate/actions/runs/38896672374). Artifact: `NovelTrad-Windows-x64`, SHA-256 `695d5c45bbc34d7a8437fa28b8076329635de086ab7a5ac88fb0095522b98633`.
+- Provider safety follow-up in `fix/provider-isolation-and-project-closeout`: prevent the Ollama `run-next` route from processing ChatGPT/Gemini jobs, and prevent manual prompt/submission endpoints from handling an explicitly Ollama job. Tests and documentation are changed on that branch; do not consider them integrated until its PR is merged and post-merge CI passes.
+- Older feature branches remain as provenance, not as release candidates. The PRs were squash-merged and branches have since diverged. Do not merge old branch heads wholesale or delete them merely to make the branch list look clean.
 
 ## Priority order
 
-1. Re-check current `main`, the latest CI runs, and this file before each continuation; the glossary-seeding PR #5 is merged and its PR and main-merge workflows passed on Ubuntu and Windows.
-2. Premium negative-path tests were added for unavailable Ollama, timeout, oversized input, no cloud fallback, and no-save behavior in commit `eacbfbf2e6b752c799638f44b937f5f9966d534b`. Verify the resulting GitHub Actions run; malformed-response coverage remains to add.
-3. Build chapter chunking and side-by-side review with explicit context carryover, retry controls, and per-fragment preview; never save automatically.
-4. Add glossary extraction suggestions from imported chapters with evidence snippets and candidate status; never auto-approve names, titles, or translations.
-5. Add consistency checks for protected names, honorifics, terms, and character spellings using the per-novel profile.
-6. Keep backups, recovery, import validation, original preservation, and translation history covered by regression tests.
+1. Finish the provider-isolation follow-up: inspect its diff, run Ubuntu/Windows tests and portable-build smoke test, merge only after CI passes, then update the exact main SHA/artifact metadata.
+2. User-side test on Windows: launch the extracted portable folder; log in directly to ChatGPT or Gemini; test a short chapter preview and a small persistent queue; pause/resume and restart; save a response while paused; retry a failure; review every chunk; verify apply stays blocked until reviewed; export EPUB. Record failures with screenshots/logs instead of treating CI as equivalent.
+3. Evaluate an authorized excerpt from the exact *I Became the Academy Villain's Daughter* edition. Measure missing/repeated text, paragraph drift, names such as Oknodie, and contextual gamer terms such as `farm`, `level`, `Steal`, and `tsundere`. Synthetic examples are not evidence of real-chapter quality.
+4. Add OCR only as a separately tested feature for scanned PDFs/comic pages, with explicit input/licensing boundaries. Until then, scanned PDFs remain unsupported.
+5. Retain regression coverage for backups/restore, source immutability, import security, translation history, UI JavaScript syntax, glossary evidence/approval, queue recovery, provider isolation, and EPUB export. Manually validate clean-Windows reader accessibility and complex EPUB navigation.
+6. Treat Argos Translate or any local neural engine as a separate optional future experiment. Do not introduce model downloads or continuous inference into the default Local mode; benchmark memory and direction-specific quality before recommending one.
 
 ## How to update this brain
 
