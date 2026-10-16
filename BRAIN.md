@@ -343,3 +343,26 @@ Esta sección actualiza la incidencia de nombre canónico no determinista y supe
 
 ### Próxima acción concreta
 Inspeccionar el nuevo SHA de la rama creado por este registro. Confirmar de nuevo Tests (pasos enfocado y completo en Ubuntu/Windows) y Windows Portable Build; descargar, medir y examinar el artefacto de ese SHA. Mantener el PR en draft y no fusionar ni cerrar.
+
+
+
+## Lector NovelTrad — navegación persistente por páginas (2026-10-16)
+
+### Alcance implementado en la rama autorizada
+
+- PR #16: https://github.com/jonhararagi/traslate/pull/16. Rama `feat/offline-linguistic-narrative-core`; mantener abierto, draft y sin merge. Base `main` inspeccionada: `6ebca3e06565456d473a44b1d62e14012531cde8`. No modificar `main`.
+- Añadido `src/noveltrad/reader_pages.py`: división determinista de texto original en páginas virtuales de hasta 2400 caracteres nominales, priorizando límites de párrafo, línea y palabra; reensamblado exacto; hash SHA-256 por página; adaptación determinista de traducciones de capítulo preexistentes al número de páginas; conservación del espacio/salto original al final de cada página traducida.
+- `src/noveltrad/main.py`: progreso en `books.current_location` ahora incluye capítulo actual, página actual, total de páginas y mapa de última página por capítulo. Se guardan páginas al navegar y al salir con `fetch(..., keepalive: true)`; el usuario vuelve a la última página visitada cuando abre el libro.
+- API agregada: `GET /api/chapters/{chapter_id}/reader-pages` y `PUT /api/chapters/{chapter_id}/reader-pages/translations`. Las traducciones por página se guardan en SQLite en `chapter_page_translations`, asociadas al hash del texto original. La escritura valida que no se haya modificado el original ni falte/reordene una página; se sincroniza la traducción completa del capítulo y se conserva el sistema de versiones existente.
+- UI agregada: Anterior/Siguiente por página y entre capítulos; indicador de página/capítulo; selector de capítulo; ventana ampliada con zoom; panel de traducción por página. Anterior se deshabilita en el comienzo del libro y Siguiente al final.
+- El panel ChatGPT/Gemini hace explícita la limitación del proveedor: genera el prompt, permite copiarlo, abrir el proveedor y pegar/guardar manualmente la respuesta. No envía el texto ni recupera automáticamente la respuesta desde la web. No describir esta modalidad como traducción automática.
+- Al guardar traducciones por página, se restablece el sufijo de espacio y saltos de línea del original para evitar palabras o párrafos pegados. Al cambiar texto del original, los hashes antiguos no se usan como si correspondieran a la nueva página; la API rechaza guardar un lote obsoleto.
+- Pruebas añadidas/actualizadas: `tests/test_reader_pages.py`, `tests/test_app.py`, `tests/test_frontend.py`. Cubren segmentación repetible, reconstrucción exacta, límites de página, espacios de frontera, persistencia del progreso, persistencia de traducción asociada al hash, rechazo de texto desactualizado y presencia de los controles UI.
+
+### SHA y verificación
+
+- Commits de implementación: `598d1e296f6332d7b5dbda393efb4d7df0d84d47` (segmentación), `24da5159ec8d941ee7b4949676842a3817720189` (tests de segmentación), `d38bbf02d57dcd4d2bb9a04d9754922ec984a869` (API y UI del lector), `33ccf8cc2c1b1c46f988e1c2e5878aa19e2c5739` (tests API), `3bcae8b7440e819a1ac0a151c7b52cb2404d919d` (test UI), `e77d6f17761d87aee82fe2680533275c2e347e43` (preservación de fronteras), `bae175e30213c7b33ee0ff8e1c81ba29a477f26d` y `1cc61951992245ba84394264413d451209266f95` (tests de fronteras), `42eaa839069d638378cb24914c39800dec4e77dd` (página de salida y frontera), `64082aff6823030fa95f023aa6072faacff0c643` (progreso `keepalive` y aviso para traducción sin guardar).
+- Primera ejecución de CI en SHA `3bcae8b7440e819a1ac0a151c7b52cb2404d919d` encontró solamente una aserción de test con texto esperado en mayúsculas diferente del aviso real; el job reportó `124 passed, 1 failed` en Ubuntu y Windows. Se corrigió la aserción.
+- En el SHA `64082aff6823030fa95f023aa6072faacff0c643`, el workflow push Tests (Ubuntu) completó correctamente; los jobs de Windows, el workflow Tests del PR y Windows Portable Build todavía estaban en curso al escribir este registro. No atribuir esos resultados al SHA documental siguiente.
+- **Pendiente obligatorio:** revisar Tests en Ubuntu y Windows y Windows Portable Build en el SHA final que resulte de esta actualización. Si falla un job, leer su log, corregir en esta rama y repetir CI.
+- **Pendiente de usuario:** prueba manual en Windows real y prueba visual end-to-end no realizadas. Tampoco se ha probado traducción real de capítulo completo. CI verde no certifica calidad de traducción ni la experiencia en el PC del usuario.
