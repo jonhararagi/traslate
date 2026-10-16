@@ -1698,7 +1698,7 @@ def submit_manual_translation_job_chunk(
         job = conn.execute("SELECT status, glossary_json FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
         if not job:
             raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
-        if job["status"] in ("paused", "applied", "completed"):
+        if job["status"] in ("applied", "completed"):
             raise HTTPException(status_code=409, detail="El trabajo no acepta respuestas en este estado.")
         chunk = conn.execute(
             "SELECT original_text, status FROM translation_job_chunks WHERE id = ? AND job_id = ?", (chunk_id, job_id)
@@ -1722,9 +1722,10 @@ def submit_manual_translation_job_chunk(
         remaining = conn.execute(
             "SELECT COUNT(*) FROM translation_job_chunks WHERE job_id = ? AND status IN ('pending', 'running')", (job_id,)
         ).fetchone()[0]
+        next_status = "paused" if job["status"] == "paused" else ("queued" if remaining else "completed")
         conn.execute(
             "UPDATE translation_jobs SET status = ?, last_error = '', updated_at = ? WHERE id = ?",
-            ("queued" if remaining else "completed", now, job_id),
+            (next_status, now, job_id),
         )
         return _translation_job_snapshot(conn, job_id)
 
