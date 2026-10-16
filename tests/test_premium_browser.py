@@ -249,3 +249,52 @@ def test_manual_queue_submission_persists_unreviewed_translation(monkeypatch):
     assert result["completed_chunks"] == 1
     assert result["reviewed_chunks"] == 0
     assert result["status"] == "completed"
+    with pytest.raises(HTTPException) as exc:
+        main.apply_reviewed_translation_job("job-1")
+    assert exc.value.status_code == 409
+
+
+def test_queue_pause_allows_current_response_and_resume_finishes(monkeypatch):
+    conn = use_sqlite_queue(monkeypatch)
+    prompt = main.next_translation_job_prompt("job-1")
+    paused = main.pause_translation_job("job-1")
+    assert paused["status"] == "paused"
+
+    after_submit = main.submit_manual_translation_job_chunk(
+        "job-1",
+        prompt["chunk_id"],
+        main.TranslationJobChunkSubmitInput(translated_text="Oknodie aprendió a farmear XP."),
+    )
+    assert after_submit["status"] == "paused"
+    assert after_submit["completed_chunks"] == 1
+    assert after_submit["reviewed_chunks"] == 0
+
+    resumed = main.resume_translation_job("job-1")
+    assert resumed["status"] == "completed"
+
+
+def test_queue_retry_failed_returns_only_failed_chunk_to_pending(monkeypatch):
+    conn = use_sqlite_queue(monkeypatch)
+    conn.execute("UPDATE translation_jobs SET status='failed' WHERE id='job-1'")
+    conn.execute(
+        "UPDATE translation_job_chunks SET status='failed', translated_text='', error='manual failure' WHERE id='chunk-1'"
+    )
+
+    result = main.retry_failed_translation_chunks("job-1")
+    row = conn.execute("SELECT status, translated_text, reviewed FROM translation_job_chunks WHERE id='chunk-1'").fetchone()
+    assert tuple(row) == ("pending", "", 0)
+    assert result["status"] == "queued"
+    assert result["pending_chunks"] == 1
+
+
+def test_interrupted_manual_queue_recovers_as_paused_and_pending(monkeypatch):
+    conn = use_sqlite_queue(monkeypatch)
+    conn.execute("UPDATE translation_jobs SET status='running' WHERE id='job-1'")
+    conn.execute("UPDATE translation_job_chunks SET status='running', attempts=1 WHERE id='chunk-1'")
+
+    main.recover_interrupted_translation_jobs()
+
+    job = conn.execute("SELECT status FROM translation_jobs WHERE id='job-1'").fetchone()
+    chunk = conn.execute("SELECT status FROM translation_job_chunks WHERE id='chunk-1'").fetchone()
+    assert job["status"] == "paused"
+    assert chunk["status"] == "pending"
