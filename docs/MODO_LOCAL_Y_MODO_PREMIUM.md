@@ -7,34 +7,44 @@
 - Conserva nombres y términos marcados como protegidos.
 - No puede traducir una oración desconocida por sí solo. El resultado debe identificarse como aplicación de reglas, no como traducción neuronal.
 
-## Modo Premium por cuenta en Chromium — primera versión de vista previa
+## Modo Premium por cuenta en Chromium
 
-En `main`, el usuario puede elegir ChatGPT o Gemini y abrir un perfil Chromium dedicado y persistente para iniciar sesión directamente en el sitio. El navegador se lanza con carga de imágenes desactivada (`--blink-settings=imagesEnabled=false`) y opciones para reducir actividad de fondo. No es un modo DevTools: es una opción de lanzamiento del navegador, y no garantiza que todos los elementos de la página sean solo texto.
+**Estado:** integrado en `main` mediante PR [#14](https://github.com/jonhararagi/traslate/pull/14). La versión principal validada antes de la auditoría de cierre fue `ca7eadf7c1847a64d95997c0ad98f6e062ca45d0`. Sus tests de Ubuntu/Windows y la compilación portátil de Windows, incluido el smoke test del ejecutable empaquetado, pasaron en GitHub Actions:
+- [Tests de main](https://github.com/jonhararagi/traslate/actions/runs/38896672388)
+- [Windows Portable Build de main](https://github.com/jonhararagi/traslate/actions/runs/38896672374)
 
-NovelTrad genera prompts por fragmento con glosario aprobado y estilo editorial. En la vista previa de capítulo, el usuario copia el prompt, lo envía en el sitio del proveedor y pega la respuesta en NovelTrad. En la cola persistente de libro completo, la aplicación reserva un fragmento, muestra su prompt y guarda la respuesta pegada como traducción provisional sin revisar. No hay envío automático ni lectura de cookies/credenciales. La aplicación final de la cola permanece bloqueada hasta que todos los fragmentos estén traducidos y revisados.
+NovelTrad abre un perfil persistente de Chromium para que la persona inicie sesión directamente en ChatGPT o Gemini. Desactiva la carga de imágenes y reduce cierta actividad de fondo, pero no garantiza un consumo de RAM fijo ni un ahorro específico. No lee, extrae ni almacena contraseñas, cookies o tokens. No envía prompts automáticamente: el usuario copia el prompt, lo pega en el sitio, espera la respuesta y la pega en NovelTrad.
 
-**Estado actual (`main`, PR #14 fusionado):** la vista previa de capítulo y la cola persistente ya tienen rutas de generación de prompt y pegado manual de respuestas para ChatGPT/Gemini. La cola guarda el proveedor y el progreso, procesa un fragmento por vez, conserva las respuestas sin revisar y exige revisión de todos los fragmentos antes de aplicar. Se añadieron pruebas unitarias iniciales; aún falta confirmar CI, revisar los casos de pausa/reanudación/reintento con pruebas de integración y realizar la prueba manual en Windows. La arquitectura y los criterios están descritos en [PREMIUM_CHROMIUM_CHATGPT_GEMINI.md](PREMIUM_CHROMIUM_CHATGPT_GEMINI.md).
+### Vista previa de capítulo
+
+El endpoint `POST /api/chapters/{chapter_id}/premium-browser-prompts/chunked` prepara prompts secuenciales con glosario aprobado, perfil editorial, delimitadores de texto fuente y contexto previo limitado. El usuario pega la respuesta en el campo de cada fragmento. La vista previa no guarda automáticamente: solo «Pasar al editor» la transfiere al editor y después el usuario debe guardar explícitamente.
+
+Por defecto, la operación divide el texto en fragmentos de 3.500 caracteres, con configuración interna/API entre 1.000 y 6.000, y hasta 200.000 caracteres por capítulo. Los límites reducen el tamaño de cada operación, pero no garantizan que el proveedor respete todo el contexto o conserve cada matiz.
+
+### Cola persistente de libro completo
+
+- Al crear una cola se guarda el proveedor elegido (ChatGPT o Gemini), el manifiesto de fragmentos y una instantánea del glosario aprobado. La creación no llama a ningún proveedor.
+- `POST /api/translation-jobs/{job_id}/next-prompt` reserva un solo fragmento y devuelve el prompt. No hay envío automático.
+- `POST /api/translation-jobs/{job_id}/chunks/{chunk_id}/submit` persiste la respuesta pegada como completada pero **no revisada**.
+- Pausa, reanudación, reintento de fragmentos fallidos y recuperación tras reiniciar conservan el progreso. Una respuesta ya reservada se puede guardar después de pausar; el trabajo permanece pausado.
+- El usuario compara cada salida con su original y guarda la revisión explícitamente. La aplicación al libro permanece bloqueada hasta que todos los fragmentos estén completados y revisados. Una sección que ya recibió una traducción por otra vía no debe sobrescribirse; el original importado permanece intacto.
+- Las advertencias heurísticas de calidad (salida vacía/idéntica, longitud sospechosa, diferencias de párrafos, posibles omisiones y repeticiones) son señales para revisar, no una puntuación ni una garantía de corrección.
+
+### Aislamiento entre proveedores y endpoint local heredado
+
+La cola de cuenta usa proveedores `chatgpt` o `gemini` y debe recorrer `next-prompt` + `submit`. El endpoint heredado `POST /api/translation-jobs/{job_id}/run-next` llama a Ollama en loopback y ahora debe usarse únicamente para trabajos creados explícitamente con `provider: "ollama"`; se rechaza si el trabajo fue creado para ChatGPT/Gemini. A la inversa, los endpoints de prompt/respuesta manual rechazan un trabajo local `ollama`. La interfaz no ofrece Ollama como proveedor de cola.
+
+También queda un endpoint de vista previa neuronal heredado, `POST /api/chapters/{chapter_id}/premium-translation-preview`, que llama a Ollama localmente. No es el modo Premium por cuenta ni forma parte de la cola manual. No instala ni descarga modelos. Si Ollama no está instalado/iniciado, la aplicación devuelve un error; no hay fallback a servicios remotos.
 
 ### Presupuesto conservador para Ryzen 5 5600G y 16 GB RAM
 
-El flujo de cuenta por Chromium usa principalmente el navegador y la sesión web del proveedor, no pesos de modelos locales. Aun así, el navegador consume RAM; mantener pocas pestañas y procesar un fragmento a la vez es preferible. No debe ejecutarse Ollama en segundo plano para este modo. Los detalles que siguen describen el endpoint Ollama que existe actualmente y no la arquitectura Premium objetivo.
+El modo Local es la opción de menor consumo: reglas aprobadas, glosario y normalización tipográfica deterministas; no carga modelos neuronales ni llama a la red. No puede traducir frases desconocidas por sí solo.
 
-- Premium no se ejecuta automáticamente al importar/abrir un libro. La cola del libro completo solo comienza cuando el usuario pulsa «Iniciar / reanudar»; las llamadas de inferencia son secuenciales.
-- La vista previa de capítulo usa fragmentos secuenciales de 3.500 caracteres por defecto, ajustables internamente entre 1.000 y 6.000, hasta 200.000 caracteres de origen por capítulo.
-- Se solicita `num_ctx=4096`, una salida máxima de 4096 tokens, temperatura 0,1 y `keep_alive=0` para pedir a Ollama que descargue el modelo de memoria al terminar. La traducción de capítulos usa peticiones secuenciales, no paralelas.
-- El uso real depende de la cuantización, el runtime, el tamaño del contexto y otras aplicaciones abiertas. Un modelo 3B cuantizado puede consumir varios GB entre pesos y memoria de ejecución; 16 GB no garantizan que no haya presión de RAM. Cerrar aplicaciones pesadas y preferir Local cuando no haga falta traducción neuronal.
-- La vista previa de capítulo trocea automáticamente hasta 200.000 caracteres de origen en fragmentos de 3.500 caracteres por defecto (configuración interna permitida: 1.000–6.000), priorizando límites de párrafo y oración. El final de la traducción anterior se pasa al modelo como referencia de continuidad; no debe repetirse como salida. Los capítulos mayores de 200.000 caracteres se rechazan explícitamente.
-- El endpoint de premium solo acepta la llamada a loopback codificada en la aplicación. No se configura una URL remota. No se envía el texto a proveedores externos.
-- El modelo puede equivocarse, omitir matices, alterar nombres o traducir mal juegos de palabras. El glosario aprobado se incluye en el prompt, pero no es una garantía absoluta.
+El modo Premium por cuenta evita cargar pesos neuronales locales, pero Chromium y las pestañas del proveedor consumen RAM. Conviene mantener una sola sesión de proveedor y procesar un fragmento a la vez. El bloqueo de imágenes puede ayudar, pero no permite prometer una cantidad de RAM libre. No hace falta instalar ni mantener Ollama ejecutándose para utilizar la cola ChatGPT/Gemini.
 
-## Límites actuales y tareas pendientes
+### Validación que sigue pendiente
 
-- La cola de libro completo crea un manifiesto persistente en SQLite con sección, fragmento, estado, intentos y error. Traduce un fragmento por petición; los resultados correctos sobreviven a un fallo posterior y pueden reanudarse tras cerrar la aplicación.
-- Si un fragmento falla, el trabajo se detiene y conserva los fragmentos completados. «Reintentar fallidos» vuelve a poner solamente los fragmentos fallidos en la cola. Al reiniciar, un fragmento que quedó en ejecución se recupera como pendiente y el trabajo queda pausado.
-- La cola captura el glosario aprobado cuando se crea para que las reglas no cambien a mitad del libro. El resultado sigue siendo provisional: cada fragmento debe marcarse revisado antes de «Aplicar traducciones revisadas».
-- Aplicar escribe las traducciones finales solo en secciones que aún no tengan traducción, conservando el original. Si otra operación rellenó una sección mientras la cola estaba activa, la aplicación se bloquea sin sobrescribirla.
-- La cola migrada no ejecuta Ollama: el usuario selecciona ChatGPT/Gemini, copia el prompt y pega la respuesta manualmente. El endpoint de vista previa neuronal antigua puede seguir existiendo como integración heredada separada; no es el flujo Premium por cuenta.
-- Falta una comprobación de calidad con capítulos reales de la edición que el usuario importe. El modo Local no es traducción automática general: solo aplica reglas aprobadas. No se debe afirmar que una novela está bien traducida sin comprobar sus resultados.
+Los tests y el smoke test del paquete de GitHub Actions no validan la cuenta personal ni la máquina del usuario. Falta en un Windows real: iniciar sesión directamente en ChatGPT o Gemini, completar la vista previa y una cola pequeña, cerrar/reabrir NovelTrad, comprobar pausa/reanudación/reintento y revisión, y contrastar la calidad de un fragmento de una edición que el usuario esté autorizado a utilizar. No hay benchmark de calidad de un capítulo real. Los PDF escaneados requieren OCR, que todavía no está implementado.
 
 ## Primera novela: I Became the Academy Villain's Daughter
 
