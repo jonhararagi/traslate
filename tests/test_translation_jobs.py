@@ -46,7 +46,7 @@ def test_book_queue_is_persistent_reviewable_and_never_changes_original(monkeypa
     with TestClient(main.app) as client:
         created = client.post(
             f"/api/books/{book_id}/translation-jobs",
-            json={"chunk_size": 1000, "context_chars": 50},
+            json={"chunk_size": 1000, "context_chars": 50, "provider": "ollama"},
         )
         assert created.status_code == 200, created.text
         job = created.json()
@@ -60,7 +60,7 @@ def test_book_queue_is_persistent_reviewable_and_never_changes_original(monkeypa
         # A second queue cannot accidentally duplicate work for the same book.
         duplicate = client.post(
             f"/api/books/{book_id}/translation-jobs",
-            json={"chunk_size": 1000, "context_chars": 50},
+            json={"chunk_size": 1000, "context_chars": 50, "provider": "ollama"},
         )
         assert duplicate.status_code == 409
 
@@ -146,7 +146,7 @@ def test_failed_chunk_is_recorded_and_can_be_retried_without_losing_completed_ch
     with TestClient(main.app) as client:
         created = client.post(
             f"/api/books/{book_id}/translation-jobs",
-            json={"chunk_size": 1000, "context_chars": 80},
+            json={"chunk_size": 1000, "context_chars": 80, "provider": "ollama"},
         )
         assert created.status_code == 200, created.text
         job_id = created.json()["id"]
