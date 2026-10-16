@@ -69,8 +69,8 @@ class NarrativeFinding:
     facts: tuple[NarrativeFact, ...]
 
 
-_WORD_RE = re.compile(r"[^\\W_]+(?:['’][^\\W_]+)*|[^\\w\\s]", re.UNICODE)
-_SENTENCE_RE = re.compile(r"[^.!?…]+(?:[.!?…]+[”’\"')\\]]*)?|[.!?…]+")
+_WORD_RE = re.compile(r"[^\W_]+(?:['’][^\W_]+)*|[^\w\s]", re.UNICODE)
+_SENTENCE_RE = re.compile(r"[^.!?…]+(?:[.!?…]+[”’\"')\]]*)?|[.!?…]+")
 _PRONOUNS = {
     "he", "she", "they", "him", "her", "them", "his", "hers", "their",
     "it", "its", "i", "we", "you", "me", "us", "my", "our", "your",
@@ -89,7 +89,7 @@ _COMMON_LOWER = {
 def _kind(word: str) -> str:
     if not word:
         return "punctuation"
-    if re.fullmatch(r"[^\\w\\s]", word, re.UNICODE):
+    if re.fullmatch(r"[^\w\s]", word, re.UNICODE):
         return "punctuation"
     if word.isdigit():
         return "number"
@@ -143,10 +143,11 @@ def analyze_text(text: str, aliases: Mapping[str, Iterable[str]] | None = None) 
     if aliases:
         patterns: list[tuple[int, str, str, str, re.Pattern[str]]] = []
         for entity_id, names in aliases.items():
-            for name in set(names):
-                if name.strip():
-                    patterns.append((len(name), entity_id, str(names and name), name,
-                                     re.compile(r"(?<!\\w)" + re.escape(name) + r"(?!\\w)", re.IGNORECASE)))
+            alias_names = tuple(name for name in names if name.strip())
+            canonical_name = alias_names[0] if alias_names else entity_id
+            for name in set(alias_names):
+                patterns.append((len(name), entity_id, canonical_name, name,
+                                 re.compile(r"(?<!\w)" + re.escape(name) + r"(?!\w)", re.IGNORECASE)))
         patterns.sort(key=lambda item: item[0], reverse=True)
         occupied: list[tuple[int, int]] = []
         for _, entity_id, canonical, alias, pattern in patterns:
@@ -167,7 +168,7 @@ def analyze_text(text: str, aliases: Mapping[str, Iterable[str]] | None = None) 
             warnings.append("Hay menciones de entidades fuera de una oración segmentada; revisá la puntuación.")
     if not text.strip():
         warnings.append("El texto está vacío.")
-    if re.search(r"(?i)\\b(?:he|she|they|it|él|ella|ellos|ellas)\\b", text):
+    if re.search(r"(?i)\b(?:he|she|they|it|él|ella|ellos|ellas)\b", text):
         warnings.append("Se detectaron pronombres; la resolución de referencias no es automática y requiere contexto.")
     if any(token.kind == "proper_noun_candidate" for sentence in sentence_rows for token in sentence.tokens):
         warnings.append("Los nombres propios son candidatos heurísticos; confirmalos en el glosario.")
