@@ -55,3 +55,29 @@ def test_empty_text_and_invalid_fact_are_explicit():
     import pytest
     with pytest.raises(ValueError):
         NarrativeFact("Oknodie", "age", "12", "", "confirmed")
+
+
+
+def test_equal_length_case_variant_aliases_are_deterministic():
+    text = "Kuro arrived."
+    aliases = {"kuro-id": ["Kuro", "KURO"]}
+    first = analyze_text(text, aliases)
+    second = analyze_text(text, aliases)
+    assert first.entities == second.entities
+    assert len(first.entities) == 1
+    mention = first.entities[0]
+    assert mention.canonical_name == "Kuro"
+    assert text[mention.start:mention.end].casefold() == mention.alias.casefold()
+
+
+def test_invalid_alias_and_fact_inputs_fail_explicitly():
+    import pytest
+
+    with pytest.raises(TypeError):
+        analyze_text("Kuro", {"kuro-id": [None]})
+    with pytest.raises(TypeError):
+        analyze_text("Kuro", [])
+    with pytest.raises(TypeError):
+        NarrativeFact("Oknodie", "age", 12, "chapter-1")
+    with pytest.raises(TypeError):
+        check_narrative_facts([{"subject": "Oknodie"}])
