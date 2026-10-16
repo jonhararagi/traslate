@@ -2,6 +2,15 @@ name: Windows Portable Build
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "data/**"
+      - "scripts/**"
+      - "pyproject.toml"
+      - ".github/workflows/windows-build.yml"
   pull_request:
     branches: [main]
     paths:
