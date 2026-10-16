@@ -7,18 +7,17 @@
 - Conserva nombres y términos marcados como protegidos.
 - No puede traducir una oración desconocida por sí solo. El resultado debe identificarse como aplicación de reglas, no como traducción neuronal.
 
-## Modo premium (local, bajo demanda)
+## Modo premium por cuenta en Chromium — objetivo pendiente de implementación
 
-Premium es un modo real de inferencia neuronal local, no una suscripción y no un servicio en la nube. La implementación usa el endpoint de Ollama en `127.0.0.1:11434`. Modelo predeterminado: `qwen2.5:3b`; se puede cambiar mediante `NOVELTRAD_PREMIUM_MODEL`.
+Premium debe abrir o enfocar una ventana Chromium para que el usuario inicie sesión directamente en ChatGPT o Gemini con su propia cuenta. NovelTrad generará el prompt con reglas de traducción, glosario aprobado, estilo de la novela y contexto limitado del fragmento. No debe pedir ni guardar contraseñas, cookies o tokens.
 
-### Activación manual en Windows
+La primera versión debe ser transparente y robusta: generar/copiar el prompt, permitir que el usuario lo envíe en la página del proveedor y recibir el resultado mediante pegado/importación para revisarlo en la cola. La automatización visible del navegador puede añadirse después, con consentimiento explícito y sin saltarse login, CAPTCHA, consentimiento, límites o controles del proveedor.
 
-1. Instalar Ollama por separado desde su sitio oficial y abrirlo.
-2. Descargar manualmente un modelo compatible; por ejemplo, `ollama pull qwen2.5:3b`. NovelTrad no descarga pesos ni inicia instalaciones por su cuenta.
-3. Abrir NovelTrad, elegir **Modo premium** y generar una vista previa. Si Ollama o el modelo faltan, la aplicación muestra un error y no deriva el texto a internet.
-4. Revisar el resultado y pulsar **Pasar al editor**. Guardar sigue siendo una acción manual.
+**Estado actual:** la rama main todavía usa Ollama en el endpoint etiquetado como Premium. Eso no satisface la decisión del usuario. La migración y las pruebas de extremo a extremo están pendientes. La arquitectura y sus criterios están descritos en [PREMIUM_CHROMIUM_CHATGPT_GEMINI.md](PREMIUM_CHROMIUM_CHATGPT_GEMINI.md).
 
 ### Presupuesto conservador para Ryzen 5 5600G y 16 GB RAM
+
+El flujo de cuenta por Chromium usa principalmente el navegador y la sesión web del proveedor, no pesos de modelos locales. Aun así, el navegador consume RAM; mantener pocas pestañas y procesar un fragmento a la vez es preferible. No debe ejecutarse Ollama en segundo plano para este modo. Los detalles que siguen describen el endpoint Ollama que existe actualmente y no la arquitectura Premium objetivo.
 
 - Premium no se ejecuta automáticamente al importar/abrir un libro. La cola del libro completo solo comienza cuando el usuario pulsa «Iniciar / reanudar»; las llamadas de inferencia son secuenciales.
 - La vista previa de capítulo usa fragmentos secuenciales de 3.500 caracteres por defecto, ajustables internamente entre 1.000 y 6.000, hasta 200.000 caracteres de origen por capítulo.
