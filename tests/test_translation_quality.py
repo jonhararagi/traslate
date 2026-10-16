@@ -82,7 +82,7 @@ def test_quality_warnings_are_persisted_and_returned_for_queue_chunks(monkeypatc
 
     monkeypatch.setattr(main, "_translate_with_local_model", poor_translation)
     with TestClient(main.app) as client:
-        created = client.post(f"/api/books/{book_id}/translation-jobs", json={})
+        created = client.post(f"/api/books/{book_id}/translation-jobs", json={"provider": "ollama"})
         assert created.status_code == 200, created.text
         job_id = created.json()["id"]
 
@@ -157,7 +157,7 @@ def test_queue_snapshots_glossary_rules_and_warns_when_required_terms_disappear(
 
     monkeypatch.setattr(main, "_translate_with_local_model", lambda text, glossary, continuity_context="": "La protagonista utiliza una habilidad.")
     with TestClient(main.app) as client:
-        created = client.post(f"/api/books/{book_id}/translation-jobs", json={})
+        created = client.post(f"/api/books/{book_id}/translation-jobs", json={"provider": "ollama"})
         assert created.status_code == 200, created.text
         job_id = created.json()["id"]
         output = client.post(f"/api/translation-jobs/{job_id}/run-next")
