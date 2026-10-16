@@ -2813,7 +2813,7 @@ $('#offline-close').addEventListener('click',()=>$('#offline-rules-panel').class
 $('#offline-run').addEventListener('click',async()=>{
  const c=chapters[chapterPos], map={};
  for(const line of $('#offline-phrase-map').value.split(/\r?\n/)){const sep=line.indexOf('=>');if(sep<0)continue;const source=line.slice(0,sep).trim(),target=line.slice(sep+2).trim();if(source&&target)map[source]=target}
- const button=$('#offline-run');button.disabled=true;$('#offline-status').textContent=$('#translation-mode').value==='premium'?'Ejecutando modelo neuronal local; puede tardar…':'Aplicando reglas locales…';$('#offline-apply').disabled=true;offlinePreviewText=null;
+ const button=$('#offline-run');button.disabled=true;$('#offline-status').textContent=$('#translation-mode').value==='premium'?'Preparando prompts para el proveedor seleccionado; no se enviará texto automáticamente…':'Aplicando reglas locales…';$('#offline-apply').disabled=true;offlinePreviewText=null;
  try{
   let report;
   if($('#translation-mode').value==='premium'){
