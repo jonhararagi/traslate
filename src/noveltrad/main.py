@@ -736,9 +736,13 @@ class PremiumBrowserOpenInput(BaseModel):
 
 
 class TranslationJobInput(ChunkedTranslationInput):
-    """Validated settings used to build a durable per-book translation queue."""
+    """Settings for manual account handoff or explicit legacy local-neural jobs.
 
-    provider: str = Field(default="chatgpt", pattern="^(chatgpt|gemini)$")
+    The browser UI exposes ChatGPT/Gemini. Ollama is API-only and must be
+    selected explicitly so provider identity cannot silently change in flight.
+    """
+
+    provider: str = Field(default="chatgpt", pattern="^(chatgpt|gemini|ollama)$")
 
 
 class TranslationJobChunkEditInput(BaseModel):
@@ -1620,6 +1624,11 @@ def next_translation_job_prompt(job_id: str) -> dict[str, object]:
         job = conn.execute("SELECT * FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
         if not job:
             raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
+        if job["provider"] == "ollama":
+            raise HTTPException(
+                status_code=409,
+                detail="Esta cola está configurada para Ollama. El modo de cuenta ChatGPT/Gemini requiere una cola con ese proveedor; no mezcles proveedores dentro del mismo trabajo."
+            )
         if job["status"] in ("paused", "applied", "completed"):
             raise HTTPException(status_code=409, detail="El trabajo no está disponible para generar otro prompt; reanudalo si corresponde.")
         failed = conn.execute(
@@ -1695,9 +1704,14 @@ def submit_manual_translation_job_chunk(
     init_db()
     now = datetime.now(timezone.utc).isoformat()
     with connection() as conn:
-        job = conn.execute("SELECT status, glossary_json FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
+        job = conn.execute("SELECT status, glossary_json, provider FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
         if not job:
             raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
+        if job["provider"] == "ollama":
+            raise HTTPException(
+                status_code=409,
+                detail="Esta cola usa Ollama y no acepta respuestas manuales de ChatGPT/Gemini."
+            )
         if job["status"] in ("applied", "completed"):
             raise HTTPException(status_code=409, detail="El trabajo no acepta respuestas en este estado.")
         chunk = conn.execute(
@@ -1742,6 +1756,11 @@ def run_next_translation_chunk(job_id: str) -> dict[str, object]:
             job = conn.execute("SELECT * FROM translation_jobs WHERE id = ?", (job_id,)).fetchone()
             if not job:
                 raise HTTPException(status_code=404, detail="No se encontró el trabajo de traducción.")
+            if job["provider"] != "ollama":
+                raise HTTPException(
+                    status_code=409,
+                    detail="Esta cola está configurada para ChatGPT/Gemini. Usá /next-prompt y pegá la respuesta; /run-next solo admite colas creadas explícitamente con provider='ollama'."
+                )
             if job["status"] == "paused":
                 raise HTTPException(status_code=409, detail="La cola está pausada. Pulsa «Iniciar / reanudar».")
             if job["status"] in ("completed", "applied"):
