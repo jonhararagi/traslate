@@ -261,46 +261,55 @@ Esta sección supersede el estado anterior de la incidencia de PR #16. No declar
 - Próxima acción obligatoria: esperar las ejecuciones del SHA final de código y del SHA documental más reciente; inspeccionar los resultados completos de Ubuntu, Windows y build portable, confirmar el smoke test y revisar los recursos del artefacto. Si cualquier control falla, leer logs, corregir en esta rama y repetir. Mantener el PR como draft y no fusionar.
 
 
+
 ## PR #16 — canonicalización determinista de alias no ordenados (2026-10-16)
 
-Esta sección supersede el estado de seguimiento anterior para el defecto concreto de selección del nombre canónico. Conserva el historial previo de la incidencia.
+Esta sección actualiza la incidencia de nombre canónico no determinista y supersede el estado pendiente del mismo seguimiento. Conserva las secciones históricas anteriores.
 
-- PR: https://github.com/jonhararagi/traslate/pull/16 — debe permanecer abierto y como draft.
+- PR: https://github.com/jonhararagi/traslate/pull/16 — permanece abierto, draft y sin merge.
 - Rama autorizada: `feat/offline-linguistic-narrative-core`.
-- SHA inicial solicitado e inspeccionado antes de cambios: `56e0d612a255621b14cd326b3f2a52238b482d2d`.
-- `main` verificado: `6ebca3e06565456d473a44b1d62e14012531cde8`. No se escribió en `main`.
-- SHA de implementación/pruebas/workflow antes de esta actualización documental: `09c7ae1f2683fd68177cb69f137e4b6cc9be650f`. El commit de este registro producirá un SHA posterior; consultar la referencia de la rama y sus ejecuciones asociadas para el SHA final de verificación.
+- SHA inicial comprobado antes de modificar: `56e0d612a255621b14cd326b3f2a52238b482d2d`.
+- SHA de `main` comprobado: `6ebca3e06565456d473a44b1d62e14012531cde8`. No se escribió en `main`.
+- SHA con corrección, tests, orden de CI y resultados completos de esta ronda: `35202b0b269fd99117d30e764e5a4deeeb3166c4`.
+- Este registro se está actualizando después de comprobar ese SHA. El commit documental resultante tendrá un nuevo SHA; deben consultarse nuevamente los workflows para dicho SHA antes de cerrar el PR. Este requisito está separado explícitamente para no atribuir resultados de un commit anterior al nuevo.
 
 ### Causa y corrección
-- Causa raíz: `analyze_text()` convertía cualquier colección de alias en una tupla y elegía `alias_names[0]`. En un `set` o `frozenset`, ese primer elemento es resultado de la iteración, no una prioridad declarada, por lo que el nombre canónico podía variar con la disposición interna del conjunto.
-- Corrección en `src/noveltrad/linguistic_analysis.py`: las colecciones ordenadas conservan el primer alias no vacío; `set` y `frozenset` eligen el nombre canónico por orden explícito `(alias.casefold(), alias)`. Se conservan validación de entradas, offsets, coincidencias, prioridad de alias más largos y prevención de menciones solapadas.
-- Pruebas en `tests/test_linguistic_analysis.py`: se mantiene la prueba de aliases que solo difieren por mayúsculas/minúsculas y se añade una prueba para `set` y otra iteración de la misma prueba para `frozenset`. El test busca dinámicamente valores cuyo orden de iteración cambia al variar el orden de construcción, y verifica que el nombre canónico sea idéntico en todas las permutaciones.
-- Contrato documentado en `docs/ANALIZADOR_LINGUISTICO_LOCAL.md`.
-- En `.github/workflows/tests.yml` se separa la ejecución enfocada (`python -m pytest -q tests/test_linguistic_analysis.py)) de la suite completa (`python -m pytest -q)), en ese orden y para la matriz Ubuntu/Windows.
+- Causa raíz: `analyze_text()` convertía todas las colecciones de alias en tuplas y tomaba `alias_names[0]`. Para `set` y `frozenset`, el primer elemento de iteración no expresa prioridad declarada y puede cambiar con el orden de construcción/disposición interna del conjunto.
+- En `src/noveltrad/linguistic_analysis.py`, `list`, `tuple` y otros iterables ordenados conservan el primer alias no vacío declarado. `set` y `frozenset` usan el orden estable explícito `(alias.casefold(), alias)`. Se mantienen validación, offsets, matching de alias y prioridad para los más largos.
+- `tests/test_linguistic_analysis.py` conserva la prueba de aliases que solo difieren por mayúsculas/minúsculas y añade un test de construcción sensible al orden para `set` y `frozenset`. El test encuentra valores con orden de iteración inicial distinto entre permutaciones, para demostrar que el canónico no depende de ese orden.
+- `docs/ANALIZADOR_LINGUISTICO_LOCAL.md` documenta el contrato.
+- `.github/workflows/tests.yml` ahora ejecuta primero `python -m pytest -q tests/test_linguistic_analysis.py` y después `python -m pytest -q`, tanto en Ubuntu como en Windows.
 
-### Commits del seguimiento
-- Código: https://github.com/jonhararagi/traslate/commit/085aa05309dbec03b1443ad768e38b2d1238ad30
-- Pruebas: https://github.com/jonhararagi/traslate/commit/d701c8e3ccefb298081231afbb84ebf9009d4e54
-- Documentación del analizador: https://github.com/jonhararagi/traslate/commit/c9eccffdb68142ad3b3abad910d025fe2a348c65
-- Orden de CI enfocado y suite completa: https://github.com/jonhararagi/traslate/commit/09c7ae1f2683fd68177cb69f137e4b6cc9be650f
+### CI verificado sobre SHA `35202b0b269fd99117d30e764e5a4deeeb3166c4`
+- Tests PR: https://github.com/jonhararagi/traslate/actions/runs/38942151241 — éxito en Ubuntu y Windows.
+- Tests push: https://github.com/jonhararagi/traslate/actions/runs/38942146498 — éxito en Ubuntu y Windows.
+- Ubuntu: tests específicos `9 passed in 0.03s`; suite completa `114 passed, 1 warning in 7.68s`.
+- Windows: tests específicos `9 passed in 0.04s`; suite completa `114 passed, 1 warning in 39.23s`. Sintaxis PowerShell validada para los tres scripts de mantenimiento: éxito.
+- Windows Portable Build: https://github.com/jonhararagi/traslate/actions/runs/38942151357 — éxito. Instalación de dependencias, suite automatizada, PyInstaller, smoke test y subida del artefacto completados.
+- Smoke test comprobó que el ejecutable empaquetado arrancó y `/api/health` devolvió `status=ok` y `mode=local-first`. No equivale a una prueba manual en el PC del usuario ni valida una traducción real.
 
-### Verificación obligatoria — actualizar con datos reales del SHA post-documentación
-- Tests PR (Ubuntu y Windows): PENDIENTE de confirmar pasos enfocados y suite completa sobre el SHA final.
-- Windows Portable Build: PENDIENTE de confirmar instalación, pruebas automatizadas, generación del paquete, smoke test `/api/health` y subida del artefacto sobre el SHA final.
-- Artefacto de ese SHA: PENDIENTE. Registrar ID, tamaño, digest SHA-256 y contenido del ZIP inspeccionado. El artefacto de un SHA anterior no satisface este requisito.
-- Pruebas ejecutadas localmente: no declarar una ejecución local; usar los logs de CI como evidencia ejecutable.
-- Herramientas estáticas: `pyproject.toml` configura pytest, pero no un lint/type-check independiente.
-- El smoke test valida arranque y estado `local-first`; no demuestra calidad de traducción ni sustituye una prueba manual en el PC del usuario.
-- El analizador sigue siendo una base técnica offline: no está integrado como traductor completo, no resuelve correferencias generales ni extrae canon automáticamente.
+### Artefacto inspeccionado para el SHA `35202b0b269fd99117d30e764e5a4deeeb3166c4`
+- Nombre: `NovelTrad-Windows-x64`.
+- ID: `12063423183`; workflow run: `38942151357`.
+- Tamaño: `40,741,990` bytes.
+- SHA-256 confirmado independientemente con `sha256sum` y coincidente con el digest de GitHub Actions: `0116ffb81d05e8d244aa73f7faecaf2f94c413d20723caac717c72c4131b9426`.
+- ZIP descargado y validado: `unzip -t` terminó con “No errors detected in compressed data”. Contiene 183 entradas: `NovelTrad.exe` (7,930,263 bytes), 53 DLL, 32 módulos `.pyd`, `_internal/base_library.zip` y datos empaquetados `_internal/data/benchmarks/academy_villain_context_cases.json` y `_internal/data/novels/i_became_the_academy_villains_daughter.json`, además de módulos y recursos internos de Python/uvicorn/PyMuPDF. El artefacto está disponible hasta `2026-10-30T17:47:02Z`.
+- Este artefacto corresponde al SHA indicado arriba; no atribuirlo a un SHA posterior sin comprobar el artefacto de su ejecución.
 
-### Estado por criterio
-- Corrección del nombre canónico para `set`/`frozenset`: IMPLEMENTADA.
-- Prueba determinista sensible al orden de construcción y compatibilidad con alias ordenados/case-variants: IMPLEMENTADA; VERIFICADA solo cuando el paso enfocado concluya sobre el SHA final.
-- Suite completa en Ubuntu y Windows: PENDIENTE.
-- Windows Portable Build, smoke test y subida: PENDIENTE.
-- Inspección directa del artefacto asociado al SHA final: PENDIENTE.
-- Rama principal intacta, PR abierto y draft: VERIFICADO al inicio de esta fase; volver a comprobarlo al cierre.
-- Cierre de la fase: PENDIENTE.
+### Advertencias y límites
+- En Ubuntu y Windows: `StarletteDeprecationWarning` — uso de `httpx` con `starlette.testclient`; pytest siguió exitosamente.
+- En logs de acciones: avisos de deprecación de Node.js 20 para `actions/checkout@v4`, `actions/setup-python@v5` y `actions/upload-artifact@v4` al ser forzadas a Node.js 24; también `DEP0040` (`punycode`) y `DEP0169` (`url.parse()`). No bloquearon CI.
+- `pyproject.toml` no configura un lint ni un type-check independientes; no declarar esas comprobaciones.
+- El analizador sigue siendo infraestructura determinista offline, no un traductor completo integrado. No resuelve correferencias generales ni extrae canon automáticamente.
+
+### Estado por criterio para el SHA verificado
+- Regla determinista de nombre canónico y compatibilidad con alias ordenados/case-variants: IMPLEMENTADA y VERIFICADA.
+- Pruebas específicas antes de suite completa: VERIFICADAS en Ubuntu y Windows.
+- Suite completa: VERIFICADA en Ubuntu y Windows.
+- Windows Portable Build, smoke test y upload: VERIFICADOS.
+- Inspección del ZIP, contenido y digest: VERIFICADA para el SHA indicado.
+- Rama `main` intacta, PR abierto y draft: comprobado antes de esta actualización; volver a comprobar después.
+- SHA de esta actualización documental y sus workflows: PENDIENTE hasta que terminen las ejecuciones nuevas; no declarar verificada la rama actual usando solamente la evidencia de `35202b0b269fd99117d30e764e5a4deeeb3166c4`.
 
 ### Próxima acción concreta
-Consultar las ejecuciones generadas por el commit documental más reciente, verificar el orden y el resultado de los pasos enfocados/full-suite para Ubuntu y Windows, y confirmar el workflow portable completo. Descargar y examinar el artefacto producido por ese mismo SHA. Si un control falla, consultar los logs del job y corregir solo esta incidencia en la rama autorizada. Mantener el PR en draft; no fusionar ni cerrar.
+Inspeccionar el nuevo SHA de la rama creado por este registro. Confirmar de nuevo Tests (pasos enfocado y completo en Ubuntu/Windows) y Windows Portable Build; descargar, medir y examinar el artefacto de ese SHA. Mantener el PR en draft y no fusionar ni cerrar.
