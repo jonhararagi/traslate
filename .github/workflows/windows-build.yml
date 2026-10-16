@@ -10,6 +10,7 @@ on:
       - "data/**"
       - "scripts/**"
       - "pyproject.toml"
+      - "BRAIN.md"
       - ".github/workflows/windows-build.yml"
   pull_request:
     branches: [main]
