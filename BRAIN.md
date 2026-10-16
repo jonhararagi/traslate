@@ -48,6 +48,16 @@ Novel profile: `data/novels/i_became_the_academy_villains_daughter.json`. Glossa
 - Ollama-backed inference currently exists in main under the old Premium label and is an architecture mismatch to migrate. It must either be moved to a separately named optional local-neural mode or removed after equivalent account-based flow is tested.
 - Both modes must keep source text immutable, persist provisional chunk results, and require review before applying. Never label account-based Premium ready until its UI, prompt generation, handoff, queue recovery, privacy boundaries, and tests work end-to-end.
 
+## Latest continuation — Chromium Premium first implementation (draft PR #14)
+
+- Branch: `feat/chromium-account-premium`; PR [#14](https://github.com/jonhararagi/traslate/pull/14) remains draft/open/unmerged. `main` is not modified.
+- Commit `753a0f48ea1fdfff1f375dbc05441eccb41caeab` adds the first functional chapter-level account handoff in `src/noveltrad/main.py`.
+- UI: Premium provider selector (ChatGPT/Gemini), button to open a dedicated persistent browser profile, and per-fragment copy-prompt + paste-result fields. Editor transfer stays disabled until every fragment has a non-empty result.
+- Browser launcher finds an already installed Chrome/Chromium/Edge and does not download a browser. It uses a provider-specific profile under NovelTrad's local data directory and starts with image loading disabled plus reduced background activity. The user signs in directly on the provider site. NovelTrad does not collect credentials or cookies and does not auto-submit source text.
+- Prompts contain the approved glossary with rule hints, editorial style selection, source delimiters, bounded chunks, and a limited prior-source context excerpt. Source chapters remain unchanged; preview is not saved automatically.
+- Limitations: focused tests and manual Windows validation are not yet confirmed. The persistent whole-book queue still uses the old Ollama endpoint and is not migrated. Do not describe Premium as release-ready until queue integration, tests, and Windows/translation-quality checks pass.
+- GitHub Actions were triggered for commit `753a0f48ea1fdfff1f375dbc05441eccb41caeab`; check their final conclusions before the next status report.
+
 ## Current known project state (verify before relying on it)
 
 ### Latest continuation — candidate glossary seeding (merged to main)
