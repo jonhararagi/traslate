@@ -104,3 +104,18 @@ def page_source_hash(text: str) -> str:
     if not isinstance(text, str):
         raise TypeError("El texto de página debe ser una cadena.")
     return sha256(text.encode("utf-8")).hexdigest()
+
+
+def preserve_source_page_boundary(original_text: str, translated_text: str) -> str:
+    """Keep the original page's trailing whitespace exactly at the stitched boundary.
+
+    Translation providers commonly trim trailing spaces/newlines. Restoring the
+    original boundary prevents adjacent translated pages from joining words or
+    paragraphs, while leaving translated prose itself untouched.
+    """
+    if not isinstance(original_text, str) or not isinstance(translated_text, str):
+        raise TypeError("El original y la traducción de página deben ser cadenas.")
+    suffix = original_text[len(original_text.rstrip(" \t\r\n")):]
+    if not suffix:
+        return translated_text
+    return translated_text.rstrip(" \t\r\n") + suffix
