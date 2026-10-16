@@ -366,3 +366,11 @@ Inspeccionar el nuevo SHA de la rama creado por este registro. Confirmar de nuev
 - En el SHA `64082aff6823030fa95f023aa6072faacff0c643`, el workflow push Tests (Ubuntu) completó correctamente; los jobs de Windows, el workflow Tests del PR y Windows Portable Build todavía estaban en curso al escribir este registro. No atribuir esos resultados al SHA documental siguiente.
 - **Pendiente obligatorio:** revisar Tests en Ubuntu y Windows y Windows Portable Build en el SHA final que resulte de esta actualización. Si falla un job, leer su log, corregir en esta rama y repetir CI.
 - **Pendiente de usuario:** prueba manual en Windows real y prueba visual end-to-end no realizadas. Tampoco se ha probado traducción real de capítulo completo. CI verde no certifica calidad de traducción ni la experiencia en el PC del usuario.
+
+
+### Continuación tras la primera verificación de CI — restauración de versiones
+
+- Después del registro anterior se endureció el guardado al salir y la protección contra respuestas pegadas sin guardar en `64082aff6823030fa95f023aa6072faacff0c643`.
+- Se detectó un caso de consistencia de la nueva paginación: restaurar una versión de capítulo no debe dejar activas las traducciones sobrescritas por página de una versión posterior. La corrección `f5b5709e756d47553b921fcbd433d7e82637b052` elimina esas sobrescrituras al restaurar el capítulo y actualiza la vista paginada al terminar la operación.
+- `4012e421bb94e820cf316c354fead583e4a46864` añade prueba de regresión: guardar traducción por página, restaurar la versión anterior del capítulo y comprobar que el lector vuelve a mostrar la versión restaurada y no el override obsoleto.
+- El SHA actual de código después de esa corrección era `4012e421bb94e820cf316c354fead583e4a46864`; este documento todavía no contiene el SHA final de la última actualización. Revalidar la suite de Ubuntu/Windows y el paquete Windows sobre el SHA que resulte de esta actualización documental. No cerrar como verificado hasta que todos los jobs estén completos y verdes.
