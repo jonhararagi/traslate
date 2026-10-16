@@ -7,13 +7,13 @@
 - Conserva nombres y términos marcados como protegidos.
 - No puede traducir una oración desconocida por sí solo. El resultado debe identificarse como aplicación de reglas, no como traducción neuronal.
 
-## Modo premium por cuenta en Chromium — objetivo pendiente de implementación
+## Modo Premium por cuenta en Chromium — primera versión de vista previa
 
-Premium debe abrir o enfocar una ventana Chromium para que el usuario inicie sesión directamente en ChatGPT o Gemini con su propia cuenta. NovelTrad generará el prompt con reglas de traducción, glosario aprobado, estilo de la novela y contexto limitado del fragmento. No debe pedir ni guardar contraseñas, cookies o tokens.
+En la rama `feat/chromium-account-premium`, el usuario puede elegir ChatGPT o Gemini y abrir un perfil Chromium dedicado y persistente para iniciar sesión directamente en el sitio. El navegador se lanza con carga de imágenes desactivada (`--blink-settings=imagesEnabled=false`) y opciones para reducir actividad de fondo. No es un modo DevTools: es una opción de lanzamiento del navegador, y no garantiza que todos los elementos de la página sean solo texto.
 
-La primera versión debe ser transparente y robusta: generar/copiar el prompt, permitir que el usuario lo envíe en la página del proveedor y recibir el resultado mediante pegado/importación para revisarlo en la cola. La automatización visible del navegador puede añadirse después, con consentimiento explícito y sin saltarse login, CAPTCHA, consentimiento, límites o controles del proveedor.
+NovelTrad genera prompts por fragmento con glosario aprobado y estilo editorial. El usuario copia el prompt, lo envía en el sitio del proveedor y pega la respuesta en NovelTrad. No hay envío automático ni lectura de cookies/credenciales; el resultado solo se puede pasar al editor cuando todos los fragmentos tienen una respuesta no vacía. La vista previa no guarda traducciones por sí sola.
 
-**Estado actual:** la rama main todavía usa Ollama en el endpoint etiquetado como Premium. Eso no satisface la decisión del usuario. La migración y las pruebas de extremo a extremo están pendientes. La arquitectura y sus criterios están descritos en [PREMIUM_CHROMIUM_CHATGPT_GEMINI.md](PREMIUM_CHROMIUM_CHATGPT_GEMINI.md).
+**Estado actual:** la primera ruta de vista previa está implementada en la rama del PR #14, pero aún necesita pruebas focalizadas y prueba manual en Windows. La cola persistente de libro completo sigue usando el endpoint Ollama antiguo y no se considera migrada. `main` no ha cambiado. La arquitectura y los criterios están descritos en [PREMIUM_CHROMIUM_CHATGPT_GEMINI.md](PREMIUM_CHROMIUM_CHATGPT_GEMINI.md).
 
 ### Presupuesto conservador para Ryzen 5 5600G y 16 GB RAM
 
