@@ -2830,7 +2830,7 @@ def home() -> str:
 </section><p class="sub small">Modo local aplica reglas aprobadas, pero no traduce por sí solo frases desconocidas. Premium utiliza tu sesión de ChatGPT o Gemini en Chromium; requiere copiar el prompt y pegar la respuesta. Las vistas previas nunca se guardan automáticamente.</p></main>
 <script>
 const $=s=>document.querySelector(s);let currentBook=null,chapters=[],chapterPos=0,saveTimer=null,translationDirty=false,editingGlossaryId=null;
-let queueBookId=null,currentTranslationJobId=null,currentQueueChunkId=null,queueWorkerActive=false,queuePauseRequested=false,currentQueuePrompt=null;
+let queueBookId=null,currentTranslationJobId=null,currentQueueChunkId=null,queueWorkerActive=false,queuePauseRequested=false,currentQueuePrompt=null,currentQueueProvider='chatgpt';
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function api(url,options={}){const r=await fetch(url,options);let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.detail||'No se pudo completar la operación');return d}
 async function refresh(){try{const books=await api('/api/books');syncQueueBookOptions(books);$('#books').className=books.length?'':'empty';$('#books').innerHTML=books.length?books.map(b=>{let pos={};try{pos=JSON.parse(b.current_location||'{}')}catch{}return '<article class="book"><div class="bookinfo"><strong>'+esc(b.title)+'</strong><div class="sub small">'+b.chapter_count+' secciones · '+esc(b.source_format.toUpperCase())+' · Progreso guardado</div></div><button class="primary" type="button" data-open="'+esc(b.id)+'" data-chapter="'+(Number.isInteger(pos.chapter_index)?pos.chapter_index:0)+'">Abrir novela</button></article>'}).join(''):'<div class="empty">Todavía no hay novelas. Importá un EPUB o PDF para empezar.</div>';if(!queueBookId&&books.length){queueBookId=$('#queue-book-select').value||books[0].id;$('#queue-book-select').value=queueBookId;await loadLatestQueueForBook(queueBookId)}}catch(e){$('#books').textContent=e.message}}
@@ -2848,14 +2848,14 @@ function queueStatusLabel(status){
 }
 function queueButtons(job){
   const active=queueWorkerActive;
-  $('#queue-run').disabled=active||!job||['applied','completed'].includes(job.status)||job.failed_chunks>0;
+  $('#queue-run').disabled=active||!job||['applied','completed'].includes(job.status)||job.failed_chunks>0||Boolean(currentQueuePrompt);
   $('#queue-pause').disabled=!job||active===false&&job.status!=='queued'&&job.status!=='running';
   $('#queue-retry').disabled=!job||!job.failed_chunks||active||job.status==='applied';
   $('#queue-apply').disabled=!job||job.status!=='completed'||job.completed_chunks!==job.total_chunks||job.reviewed_chunks!==job.total_chunks||job.status==='applied'||active;
   $('#queue-review-save').disabled=!job||active||job.status==='applied';
   $('#queue-open-provider').disabled=!job||job.status==='applied';
-  $('#queue-copy-prompt').disabled=!currentQueuePrompt||!currentQueuePrompt.prompt;
-  $('#queue-submit-response').disabled=!job||!currentQueuePrompt||!currentQueuePrompt.chunk_id||!$('#queue-translation').value.trim()||job.status==='applied';
+  $('#queue-copy-prompt').disabled=!currentQueuePrompt||!currentQueuePrompt.prompt||currentQueueChunkId!==currentQueuePrompt.chunk_id;
+  $('#queue-submit-response').disabled=!job||!currentQueuePrompt||!currentQueuePrompt.chunk_id||currentQueueChunkId!==currentQueuePrompt.chunk_id||!$('#queue-translation').value.trim()||job.status==='applied';
 }
 function clearQueueView(message){
   currentTranslationJobId=null;currentQueueChunkId=null;currentQueuePrompt=null;$('#queue-prompt').value='';
@@ -2863,6 +2863,7 @@ function clearQueueView(message){
   $('#queue-progress-bar').value=0;$('#queue-progress-bar').max=100;
   $('#queue-last-error').textContent='';$('#queue-chunk-select').innerHTML='';
   $('#queue-review-panel').classList.add('hidden');$('#queue-status').textContent=message||'No hay un trabajo cargado.';
+  $('#queue-provider').disabled=false;
   queueButtons(null);
 }
 async function showQueueState(job){
@@ -2871,7 +2872,9 @@ async function showQueueState(job){
   $('#queue-status-label').textContent=queueStatusLabel(job.status)+' · '+job.chapter_count+' secciones';
   $('#queue-progress-bar').max=Math.max(job.total_chunks,1);$('#queue-progress-bar').value=job.completed_chunks;
   $('#queue-status').textContent='Progreso persistido localmente. Estado: '+queueStatusLabel(job.status)+'. Proveedor: '+(job.provider||'chatgpt')+'.';
-  $('#queue-provider').value=job.provider||'chatgpt';
+  currentQueueProvider=job.provider||'chatgpt';
+  $('#queue-provider').value=currentQueueProvider;
+  $('#queue-provider').disabled=job.status!=='applied';
   $('#queue-last-error').textContent=job.last_error||'';
   const chunks=job.chunks||[];
   $('#queue-chunk-select').innerHTML=chunks.map(c=>'<option value="'+esc(c.id)+'">'+(c.status==='completed'?(c.reviewed?'✓ Revisado':'○ Revisar'):c.status==='failed'?'⚠ Falló':c.status==='running'?'… En curso':'· Pendiente')+(c.quality_warning_count?' ⚠ QA '+c.quality_warning_count:'')+' — sección '+(c.chapter_index+1)+', fragmento '+c.chunk_index+' ('+esc(c.chapter_title)+')</option>').join('');
@@ -2887,7 +2890,7 @@ async function loadQueueChunk(chunkId,jobId=currentTranslationJobId){
   try{
     const c=await api('/api/translation-jobs/'+jobId+'/chunks/'+chunkId);
     $('#queue-original').value=c.original_text||'';$('#queue-translation').value=c.translated_text||'';
-    if(!currentQueuePrompt||currentQueuePrompt.chunk_id!==chunkId){$('#queue-prompt').value='';currentQueuePrompt=null;}
+    $('#queue-prompt').value=currentQueuePrompt&&currentQueuePrompt.chunk_id===chunkId?currentQueuePrompt.prompt:'';
     const qualityWarnings=c.quality_warnings||[];
     $('#queue-chunk-state').textContent='Sección '+(c.chapter_index+1)+' · '+c.chapter_title+' · Fragmento '+c.chunk_index+' · '+queueStatusLabel(c.status)+' · Intentos: '+c.attempts+(c.reviewed?' · Revisado':'')+(c.error?' · Error: '+c.error:'')+(qualityWarnings.length?' · ALERTAS DE REVISIÓN: '+qualityWarnings.join(' | '):' · Sin alertas heurísticas detectadas (esto no certifica la traducción).');
     const job=await api('/api/translation-jobs/'+jobId);
@@ -2947,7 +2950,7 @@ $('#queue-run').addEventListener('click',async()=>{
   }finally{queueWorkerActive=false;try{const job=await api('/api/translation-jobs/'+currentTranslationJobId);queueButtons(job)}catch(_){queueButtons(null)}}
 });
 $('#queue-open-provider').addEventListener('click',async()=>{
-  const provider=$('#queue-provider').value;
+  const provider=currentQueueProvider;
   try{const result=await api('/api/premium-browser/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider})});$('#queue-status').textContent=result.message+' Pegá manualmente el prompt y la respuesta.'}
   catch(e){$('#queue-status').textContent=e.message}
 });
@@ -2956,7 +2959,7 @@ $('#queue-copy-prompt').addEventListener('click',async()=>{
   try{await navigator.clipboard.writeText(currentQueuePrompt.prompt);$('#queue-status').textContent='Prompt copiado. Pegalo manualmente en la conversación abierta del proveedor.'}
   catch(e){$('#queue-prompt').focus();$('#queue-prompt').select();$('#queue-status').textContent='El navegador no permitió copiar automáticamente; el prompt quedó seleccionado para copiarlo manualmente.'}
 });
-$('#queue-translation').addEventListener('input',()=>{const jobStatus=$('#queue-status-label').textContent;$('#queue-submit-response').disabled=!currentQueuePrompt||!currentQueuePrompt.chunk_id||!$('#queue-translation').value.trim()||jobStatus.includes('Aplicada')});
+$('#queue-translation').addEventListener('input',()=>{const jobStatus=$('#queue-status-label').textContent;$('#queue-submit-response').disabled=!currentQueuePrompt||!currentQueuePrompt.chunk_id||currentQueueChunkId!==currentQueuePrompt.chunk_id||!$('#queue-translation').value.trim()||jobStatus.includes('Aplicada')});
 $('#queue-submit-response').addEventListener('click',async()=>{
   if(!currentTranslationJobId||!currentQueuePrompt||!$('#queue-translation').value.trim())return;
   const chunkId=currentQueuePrompt.chunk_id;
@@ -2976,7 +2979,14 @@ $('#queue-retry').addEventListener('click',async()=>{
   try{const job=await api('/api/translation-jobs/'+currentTranslationJobId+'/retry-failed',{method:'POST'});await showQueueState(job);$('#queue-status').textContent='Los fragmentos fallidos volvieron a la cola. Iniciá/reanudá cuando quieras.'}
   catch(e){$('#queue-status').textContent=e.message}
 });
-$('#queue-chunk-select').addEventListener('change',e=>loadQueueChunk(e.target.value));
+$('#queue-chunk-select').addEventListener('change',e=>{
+  const selected=e.target.value;
+  if(currentQueuePrompt&&currentQueuePrompt.chunk_id!==selected&&$('#queue-translation').value.trim()&&!confirm('Hay una respuesta pegada pero todavía no guardada. ¿Descartarla y cambiar de fragmento?')){
+    e.target.value=currentQueueChunkId;
+    return;
+  }
+  loadQueueChunk(selected);
+});
 $('#queue-review-save').addEventListener('click',async()=>{
   if(!currentTranslationJobId||!currentQueueChunkId)return;
   try{
