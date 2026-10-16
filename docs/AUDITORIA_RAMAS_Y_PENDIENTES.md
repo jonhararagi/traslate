@@ -6,7 +6,7 @@
 
 ## Resultado ejecutivo
 
-En el SHA de referencia, los PR #1–#14 estaban cerrados y fusionados; la búsqueda de GitHub no devolvió PR ni issues abiertos. Las 14 ramas históricas visibles correspondían a esos PR. La mayoría están divergidas de `main` porque los cambios se fusionaron mediante squash o porque algunos PR intermedios usaron ramas de trabajo como base. Esa divergencia no significa por sí sola que el contenido esté ausente. No se deben volver a fusionar las cabezas de esas ramas a ciegas.
+En el SHA de referencia, los PR #1–#14 estaban cerrados y fusionados; la búsqueda de GitHub no devolvió PR ni issues abiertos. Las 14 ramas históricas de entonces correspondían a esos PR. Después de la auditoría se creó la rama de cierre y el PR #15, ya cerrado y fusionado como `b4eec78a956614ef318f2ebc3c1235b784d4fa03`. Todas las cabezas históricas siguen siendo referencias: no se deben volver a fusionar completas a ciegas, porque la mayoría divergen de `main` tras los squash merges y la cadena de ramas base.
 
 La revisión del árbol actual confirmó archivos y pruebas para los grupos históricos: aplicación base, copias de seguridad y recuperación, asistencia narrativa manual, motor determinista offline, perfil de Oknodie, empaquetado de Windows, fragmentación de capítulo, validación del modelo heredado, cola persistente, candidatos de glosario con evidencia, advertencias de calidad, consistencia del glosario y handoff manual Chromium. No se identificó un conjunto de cambios de una rama antigua que justificara una reintegración directa de su cabeza completa.
 
@@ -28,6 +28,7 @@ La revisión del árbol actual confirmó archivos y pruebas para los grupos hist
 | `feat/glossary-consistency-checks` | [#12](https://github.com/jonhararagi/traslate/pull/12) | Cerrado, fusionado | Señales de consistencia para reglas aprobadas, manteniendo flexibilidad contextual. |
 | `fix/windows-portable-startup-smoke` | [#13](https://github.com/jonhararagi/traslate/pull/13) | Cerrado, fusionado | Diagnóstico de arranque y smoke test del ejecutable empaquetado. |
 | `feat/chromium-account-premium` | [#14](https://github.com/jonhararagi/traslate/pull/14) | Cerrado, fusionado | ChatGPT/Gemini en Chromium visible, handoff manual y cola de libro completo migrada a prompt/respuesta. |
+| `fix/provider-isolation-and-project-closeout` | [#15](https://github.com/jonhararagi/traslate/pull/15) | Cerrado, fusionado como `b4eec78a956614ef318f2ebc3c1235b784d4fa03` | Rechaza mezcla de proveedores y actualiza README, BRAIN, guías y auditoría de ramas. |
 
 ## Validación de la versión principal de referencia
 
@@ -37,17 +38,17 @@ La revisión del árbol actual confirmó archivos y pruebas para los grupos hist
 - El artefacto `NovelTrad-Windows-x64` se asoció al SHA de referencia. SHA-256 del ZIP: `695d5c45bbc34d7a8437fa28b8076329635de086ab7a5ac88fb0095522b98633`.
 - Esto verifica pruebas y arranque dentro de GitHub Actions, no la experiencia real en el PC del usuario.
 
-## Hallazgo de integración en revisión
+## Hallazgo de integración corregido en PR #15
 
 La cola actual usa un proveedor guardado en cada trabajo (`chatgpt` o `gemini`), pero el endpoint heredado `POST /api/translation-jobs/{job_id}/run-next` llama a Ollama. Antes de la corrección, la API no impedía ejecutar ese endpoint sobre un trabajo configurado para una cuenta externa; a la inversa, las rutas manuales tampoco distinguían una cola local.
 
-La rama `fix/provider-isolation-and-project-closeout` corrige este cruce y añade pruebas de regresión:
+El PR [#15](https://github.com/jonhararagi/traslate/pull/15), fusionado como `b4eec78a956614ef318f2ebc3c1235b784d4fa03`, corrigió este cruce y añadió pruebas de regresión:
 - `TranslationJobInput` acepta `ollama` solo como selección explícita para uso API; la interfaz normal continúa ofreciendo solo ChatGPT/Gemini.
 - `run-next` rechaza trabajos ChatGPT/Gemini.
 - `next-prompt` y el endpoint de envío manual rechazan trabajos Ollama.
 - Las pruebas de los flujos locales especifican explícitamente `provider: "ollama"`; se prueba que un trabajo ChatGPT/Gemini no llama al modelo local.
 
-**Estado de este hallazgo:** cambios preparados en una rama de trabajo, pendientes de CI y revisión de integración. No deben describirse como ya fusionados hasta comprobar el PR y los workflows.
+**Estado de este hallazgo:** fusionado y verificado. Los tests Ubuntu/Windows del PR pasaron en [run 38903477554](https://github.com/jonhararagi/traslate/actions/runs/38903477554); el empaquetado y smoke test del PR pasaron en [run 38903477674](https://github.com/jonhararagi/traslate/actions/runs/38903477674). Los workflows del merge a `main` también pasaron: [tests](https://github.com/jonhararagi/traslate/actions/runs/38903735293) y [build + smoke test](https://github.com/jonhararagi/traslate/actions/runs/38903735461).
 
 ## Tareas realmente pendientes
 

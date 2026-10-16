@@ -45,7 +45,7 @@ Read [BRAIN.md](BRAIN.md) first when resuming work after a lost conversation. It
 
 ## Cross-branch status
 
-All PRs through #14 are closed and merged. Historical feature branches remain as references; do not merge their heads wholesale because they diverged from the current `main`. The audit records what was checked and distinguishes code/CI completion from the two validations that still require a real Windows session and an authorized novel excerpt: [Cross-branch audit and remaining work](docs/AUDITORIA_RAMAS_Y_PENDIENTES.md).
+PRs #1–#15 are closed and merged. PR #15 (merged as `b4eec78a956614ef318f2ebc3c1235b784d4fa03`) isolates ChatGPT/Gemini account queues from the legacy Ollama-only queue API. Historical feature branches remain as provenance; do not merge their diverged heads wholesale. The cross-branch audit separates validated code/CI from the real Windows and authorized-excerpt checks that still require user-side testing: [Cross-branch audit and remaining work](docs/AUDITORIA_RAMAS_Y_PENDIENTES.md).
 
 ## Local data
 

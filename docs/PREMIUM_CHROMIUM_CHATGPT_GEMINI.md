@@ -64,7 +64,7 @@ Implemented and covered by automated tests:
 Provider-isolation follow-up:
 - The legacy `POST /api/translation-jobs/{job_id}/run-next` calls Ollama; it must only accept jobs explicitly created with `provider: "ollama"`.
 - The account-based queue must use `next-prompt` and `chunks/{chunk_id}/submit`; these routes must reject Ollama jobs. The regular UI exposes ChatGPT/Gemini only.
-- This correction, its regression tests, and the cross-branch close-out documentation are in `fix/provider-isolation-and-project-closeout`. Do not call this follow-up integrated until its PR is merged and post-merge CI passes.
+- This correction, its regression tests and the cross-branch close-out documentation were merged via [PR #15](https://github.com/jonhararagi/traslate/pull/15) as `b4eec78a956614ef318f2ebc3c1235b784d4fa03`. [PR tests](https://github.com/jonhararagi/traslate/actions/runs/38903477554), [PR build/smoke test](https://github.com/jonhararagi/traslate/actions/runs/38903477674), [post-merge main tests](https://github.com/jonhararagi/traslate/actions/runs/38903735293) and [post-merge main build/smoke test](https://github.com/jonhararagi/traslate/actions/runs/38903735461) passed.
 
 Not verified by CI and still outstanding:
 - [ ] Clean-Windows user-side test of the downloaded artifact, first-time provider sign-in and an end-to-end account-based queue, including pause/resume/restart and review-before-apply.
