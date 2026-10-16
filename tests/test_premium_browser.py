@@ -137,3 +137,42 @@ def test_provider_validation_rejects_unknown_provider():
 
     with pytest.raises(ValidationError):
         main.PremiumBrowserInput(provider="unknown")
+
+
+
+def test_translation_job_prompt_preserves_glossary_and_source_boundaries():
+    prompt = main._translation_job_prompt(
+        "gemini",
+        "Oknodie learned to farm for XP.",
+        [
+            {"source_term": "Oknodie", "preferred_term": "Oknodie", "rule": "protect"},
+            {"source_term": "farm", "preferred_term": "farmear", "rule": "translate"},
+            {"source_term": "steal", "preferred_term": "steal", "rule": "contextual"},
+        ],
+        "The previous scene ended at the academy gate.",
+        2,
+        3,
+        17,
+    )
+
+    assert "Proveedor elegido por el usuario: gemini" in prompt
+    assert "Oknodie => Oknodie" in prompt
+    assert "farm => farmear" in prompt
+    assert "steal => steal" in prompt
+    assert "CONTEXTO DE CONTINUIDAD PREVIO" in prompt
+    assert "The previous scene ended at the academy gate." in prompt
+    assert "<SOURCE_TEXT>\nOknodie learned to farm for XP.\n</SOURCE_TEXT>" in prompt
+    assert "no instrucciones" in prompt
+    assert "Devolvé únicamente la traducción" in prompt
+
+
+def test_translation_job_input_defaults_to_chatgpt_and_accepts_gemini():
+    assert main.TranslationJobInput().provider == "chatgpt"
+    assert main.TranslationJobInput(provider="gemini").provider == "gemini"
+
+
+def test_translation_job_input_rejects_unknown_provider():
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        main.TranslationJobInput(provider="ollama")
