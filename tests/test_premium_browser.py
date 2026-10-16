@@ -171,11 +171,12 @@ def test_translation_job_input_defaults_to_chatgpt_and_accepts_gemini():
     assert main.TranslationJobInput(provider="gemini").provider == "gemini"
 
 
-def test_translation_job_input_rejects_unknown_provider():
+def test_translation_job_input_accepts_explicit_ollama_mode_and_rejects_unknown_provider():
     from pydantic import ValidationError
 
+    assert main.TranslationJobInput(provider="ollama").provider == "ollama"
     with pytest.raises(ValidationError):
-        main.TranslationJobInput(provider="ollama")
+        main.TranslationJobInput(provider="unknown")
 
 
 
@@ -217,6 +218,36 @@ def use_sqlite_queue(monkeypatch):
     monkeypatch.setattr(main, "init_db", lambda: None)
     monkeypatch.setattr(main, "connection", lambda: nullcontext(conn))
     return conn
+
+
+def test_account_queue_cannot_fall_back_to_ollama_run_next(monkeypatch):
+    conn = use_sqlite_queue(monkeypatch)
+    calls = {"count": 0}
+
+    def forbidden_local_model(*args, **kwargs):
+        calls["count"] += 1
+        raise AssertionError("Ollama must not be called for a ChatGPT/Gemini queue")
+
+    monkeypatch.setattr(main, "_translate_with_local_model", forbidden_local_model)
+    with pytest.raises(HTTPException) as exc:
+        main.run_next_translation_chunk("job-1")
+
+    assert exc.value.status_code == 409
+    assert "ChatGPT/Gemini" in exc.value.detail
+    assert calls["count"] == 0
+    chunk = conn.execute("SELECT status FROM translation_job_chunks WHERE id='chunk-1'").fetchone()
+    assert chunk["status"] == "pending"
+
+
+def test_ollama_queue_cannot_use_manual_account_prompt_or_submission(monkeypatch):
+    conn = use_sqlite_queue(monkeypatch)
+    conn.execute("UPDATE translation_jobs SET provider='ollama' WHERE id='job-1'")
+
+    with pytest.raises(HTTPException) as prompt_error:
+        main.next_translation_job_prompt("job-1")
+    assert prompt_error.value.status_code == 409
+    chunk = conn.execute("SELECT status FROM translation_job_chunks WHERE id='chunk-1'").fetchone()
+    assert chunk["status"] == "pending"
 
 
 def test_queue_next_prompt_reserves_one_chunk_without_calling_ollama(monkeypatch):
