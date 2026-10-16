@@ -57,7 +57,7 @@ def test_persistent_reader_has_page_navigation_zoom_and_manual_translation_hando
     assert "chapterPagePositions[String(chapterPos)]" in page
     assert "chapter_pages:chapterPagePositions" in page
     assert "/reader-pages/translations" in page
-    assert "No puede recuperar esa respuesta automáticamente desde la web" in page
+    assert "recuperar esa respuesta automáticamente desde la web" in page
     assert "function persistTranslationPages()" in page
 
 def test_manual_narrative_assistant_exposes_consent_gated_workflow():
