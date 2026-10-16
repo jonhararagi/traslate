@@ -2895,7 +2895,8 @@ async function loadQueueChunk(chunkId,jobId=currentTranslationJobId){
     $('#queue-chunk-state').textContent='Sección '+(c.chapter_index+1)+' · '+c.chapter_title+' · Fragmento '+c.chunk_index+' · '+queueStatusLabel(c.status)+' · Intentos: '+c.attempts+(c.reviewed?' · Revisado':'')+(c.error?' · Error: '+c.error:'')+(qualityWarnings.length?' · ALERTAS DE REVISIÓN: '+qualityWarnings.join(' | '):' · Sin alertas heurísticas detectadas (esto no certifica la traducción).');
     const job=await api('/api/translation-jobs/'+jobId);
     $('#queue-review-save').disabled=queueWorkerActive||job.status==='running'||job.status==='applied'||c.status!=='completed';
-    $('#queue-submit-response').disabled=queueWorkerActive||job.status==='applied'||c.status!=='running'||!$('#queue-translation').value.trim();
+    $('#queue-submit-response').disabled=queueWorkerActive||job.status==='applied'||c.status!=='running'||!$('#queue-translation').value.trim()||!currentQueuePrompt||currentQueueChunkId!==currentQueuePrompt.chunk_id;
+    queueButtons(job);
   }catch(e){$('#queue-chunk-state').textContent='No se pudo cargar el fragmento: '+e.message}
 }
 async function loadQueueJob(jobId){
