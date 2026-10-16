@@ -23,7 +23,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 from noveltrad.narrative_rules import TermRule, apply_offline_rules, get_profile
-from noveltrad.reader_pages import page_source_hash, split_reader_pages, split_text_to_count
+from noveltrad.reader_pages import page_source_hash, preserve_source_page_boundary, split_reader_pages, split_text_to_count
 
 APP_NAME = "NovelTrad"
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
@@ -2852,12 +2852,16 @@ def save_reader_pages(chapter_id: str, payload: ReaderPagesTranslationInput) -> 
             raise HTTPException(status_code=422, detail="El envío debe incluir todas las páginas actuales del capítulo.")
         if [item.page_index for item in payload.pages] != list(range(len(source_pages))):
             raise HTTPException(status_code=422, detail="Las páginas deben enviarse en orden, sin duplicados ni omisiones.")
+        normalized_translations: list[str] = []
         for item, original_text in zip(payload.pages, source_pages):
             if item.source_hash != page_source_hash(original_text):
                 raise HTTPException(status_code=409, detail="El original cambió desde que se abrió el lector. Recargá el capítulo antes de guardar.")
-        if sum(len(item.translated_text) for item in payload.pages) > 2_000_000:
+            normalized_translations.append(
+                preserve_source_page_boundary(original_text, item.translated_text)
+            )
+        if sum(len(text) for text in normalized_translations) > 2_000_000:
             raise HTTPException(status_code=413, detail="La traducción supera el límite de 2 millones de caracteres.")
-        translated_text = "".join(item.translated_text for item in payload.pages)
+        translated_text = "".join(normalized_translations)
         current = chapter["translated_text"] or ""
         if current != translated_text:
             version = conn.execute(
@@ -2873,14 +2877,17 @@ def save_reader_pages(chapter_id: str, payload: ReaderPagesTranslationInput) -> 
                 "UPDATE chapters SET translated_text = ?, status = ? WHERE id = ?",
                 (translated_text, "translated" if translated_text.strip() else "imported", chapter_id),
             )
-        for item in payload.pages:
+        for item, translated_page in zip(payload.pages, normalized_translations):
             conn.execute(
                 "INSERT OR REPLACE INTO chapter_page_translations "
                 "(chapter_id, page_index, source_hash, translated_text, updated_at) VALUES(?,?,?,?,?)",
-                (chapter_id, item.page_index, item.source_hash, item.translated_text, now),
+                (chapter_id, item.page_index, item.source_hash, translated_page, now),
             )
     return {"chapter_id": chapter_id, "translated_text": translated_text,
-            "pages": [item.model_dump() for item in payload.pages], "saved": True}
+            "pages": [
+                {"page_index": item.page_index, "source_hash": item.source_hash, "translated_text": translated_page}
+                for item, translated_page in zip(payload.pages, normalized_translations)
+            ], "saved": True}
 
 
 @app.put("/api/chapters/{chapter_id}/translation")
@@ -3262,6 +3269,7 @@ async function persistProgressNow(){
  currentBook.current_location=JSON.stringify({...payload})
 }
 function saveProgress(){if(!currentBook)return;clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{try{await persistProgressNow()}catch(e){$('#save-status').textContent='No se pudo guardar el progreso: '+e.message}},250)}
+window.addEventListener('pagehide',()=>{persistProgressNow().catch(()=>{})});
 $('#export-epub').addEventListener('click',async()=>{if(!currentBook)return;const button=$('#export-epub');button.disabled=true;$('#save-status').textContent='Preparando EPUB…';try{const response=await fetch('/api/books/'+currentBook.id+'/export/epub');let result={};if(!response.ok){try{result=await response.json()}catch{}throw new Error(result.detail||'No se pudo exportar el EPUB')}const blob=await response.blob();const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=(currentBook.title||'NovelTrad')+'-es.epub';document.body.appendChild(anchor);anchor.click();anchor.remove();URL.revokeObjectURL(url);$('#save-status').textContent='EPUB de traducción exportado.'}catch(e){$('#save-status').textContent='Exportación: '+e.message}finally{button.disabled=false}});
 async function persistTranslationPages(){
  const c=chapters[chapterPos];if(!c||!readerPages.length)return;
