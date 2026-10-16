@@ -176,3 +176,76 @@ def test_translation_job_input_rejects_unknown_provider():
 
     with pytest.raises(ValidationError):
         main.TranslationJobInput(provider="ollama")
+
+
+
+def use_sqlite_queue(monkeypatch):
+    import sqlite3
+
+    from contextlib import nullcontext
+
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(
+        """
+        CREATE TABLE translation_jobs (
+            id TEXT PRIMARY KEY, book_id TEXT NOT NULL, status TEXT NOT NULL,
+            chunk_size INTEGER NOT NULL, context_chars INTEGER NOT NULL,
+            glossary_json TEXT NOT NULL, provider TEXT NOT NULL DEFAULT 'chatgpt',
+            total_chunks INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+            last_error TEXT NOT NULL DEFAULT '', applied_at TEXT
+        );
+        CREATE TABLE translation_job_chunks (
+            id TEXT PRIMARY KEY, job_id TEXT NOT NULL, chapter_id TEXT NOT NULL,
+            chapter_index INTEGER NOT NULL, chapter_title TEXT NOT NULL, chunk_index INTEGER NOT NULL,
+            original_text TEXT NOT NULL, translated_text TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0,
+            reviewed INTEGER NOT NULL DEFAULT 0, error TEXT NOT NULL DEFAULT '',
+            quality_warnings_json TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL
+        );
+        INSERT INTO translation_jobs
+        (id, book_id, status, chunk_size, context_chars, glossary_json, provider, total_chunks, created_at, updated_at)
+        VALUES ('job-1', 'book-1', 'queued', 3500, 1200,
+                '[{"source_term":"Oknodie","preferred_term":"Oknodie","rule":"protect"}]',
+                'gemini', 1, 'now', 'now');
+        INSERT INTO translation_job_chunks
+        (id, job_id, chapter_id, chapter_index, chapter_title, chunk_index, original_text, status, updated_at)
+        VALUES ('chunk-1', 'job-1', 'chapter-1', 0, 'Opening', 1,
+                'Oknodie learned to farm for XP.', 'pending', 'now');
+        """
+    )
+    monkeypatch.setattr(main, "init_db", lambda: None)
+    monkeypatch.setattr(main, "connection", lambda: nullcontext(conn))
+    return conn
+
+
+def test_queue_next_prompt_reserves_one_chunk_without_calling_ollama(monkeypatch):
+    conn = use_sqlite_queue(monkeypatch)
+    result = main.next_translation_job_prompt("job-1")
+
+    assert result["provider"] == "gemini"
+    assert result["chunk_id"] == "chunk-1"
+    assert "Oknodie => Oknodie" in result["prompt"]
+    assert "Oknodie learned to farm for XP." in result["prompt"]
+    assert result["done"] is False
+    row = conn.execute("SELECT status, attempts FROM translation_job_chunks WHERE id='chunk-1'").fetchone()
+    assert tuple(row) == ("running", 1)
+    assert conn.execute("SELECT status FROM translation_jobs WHERE id='job-1'").fetchone()[0] == "running"
+
+
+def test_manual_queue_submission_persists_unreviewed_translation(monkeypatch):
+    conn = use_sqlite_queue(monkeypatch)
+    prompt = main.next_translation_job_prompt("job-1")
+    result = main.submit_manual_translation_job_chunk(
+        "job-1",
+        prompt["chunk_id"],
+        main.TranslationJobChunkSubmitInput(translated_text="Oknodie aprendió a farmear XP."),
+    )
+
+    row = conn.execute(
+        "SELECT status, translated_text, reviewed FROM translation_job_chunks WHERE id='chunk-1'"
+    ).fetchone()
+    assert tuple(row) == ("completed", "Oknodie aprendió a farmear XP.", 0)
+    assert result["completed_chunks"] == 1
+    assert result["reviewed_chunks"] == 0
+    assert result["status"] == "completed"
