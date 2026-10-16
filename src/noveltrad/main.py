@@ -3055,7 +3055,32 @@ def home() -> str:
 <div class="queue-meta"><strong id="queue-progress-label">Sin cola activa</strong><span id="queue-status-label" class="sub small"></span></div>
 <progress id="queue-progress-bar" max="100" value="0"></progress>
 <label for="queue-provider">Proveedor de la cola</label><select id="queue-provider" class="queue-select"><option value="chatgpt">ChatGPT (cuenta en Chromium)</option><option value="gemini">Gemini (cuenta en Chromium)</option></select>
-<div class="reader-actions"><button id="queue-run" class="primary" type="button" disabled>Generar siguiente prompt</button><button id="queue-open-provider" class="secondary" type="button" disabled>Abrir proveedor</button><button id="queue-copy-prompt" class="secondary" type="button" disabled>Copiar prompt</button><button id="queue-submit-response" class="primary" type="button" disabled>Guardar respuesta del proveedor</button><button id="queue-pause" class="secondary" type="button" disabled>Pausar</button><button id="queue-retry" class="secondary" type="button" disabled>Reintentar fallidos</button><button id="queue-apply" class="secondary" type="button" disabled>Aplicar traducciones revisadas</button></div>
+<section class="reading-pane" style="margin-top:12px" id="queue-prompt-options">
+<h3>Opciones de traducción</h3>
+<p class="sub small">Elegí una preferencia para el próximo fragmento o escribí una instrucción propia. Se incluye en el prompt que copiarás; no se envía nada automáticamente.</p>
+<label for="queue-translation-style">Estilo para el siguiente fragmento</label>
+<select id="queue-translation-style" class="queue-select">
+<option value="faithful_natural">Fiel y natural (recomendado)</option>
+<option value="gamer_terms">Priorizar jerga otaku/gamer</option>
+<option value="fluent_spanish">Priorizar fluidez narrativa en español</option>
+<option value="literal_review">Más literal para comparar con el original</option>
+</select>
+<label for="queue-custom-instruction">Instrucción adicional propia (opcional)</label>
+<textarea id="queue-custom-instruction" maxlength="2000" rows="3" placeholder="Ej.: conserva los nombres de habilidades en inglés si todavía no hay una equivalencia aprobada." style="width:100%"></textarea>
+<p class="sub small">La instrucción personalizada tiene un límite de 2.000 caracteres y se aplica al prompt siguiente. Las reglas de fidelidad, nombres aprobados y no inventar hechos siguen vigentes.</p>
+</section>
+<div class="reader-actions"><button id="queue-run" class="primary" type="button" disabled>Generar siguiente prompt</button><button id="queue-open-provider" class="secondary" type="button" disabled>Abrir proveedor</button><button id="queue-copy-prompt" class="secondary" type="button" disabled>Copiar prompt</button><button id="queue-submit-response" class="primary" type="button" disabled>Enviar respuesta pegada</button><button id="queue-pause" class="secondary" type="button" disabled>Parar y guardar progreso</button><button id="queue-retry" class="secondary" type="button" disabled>Reintentar fallidos</button><button id="queue-apply" class="secondary" type="button" disabled>Aplicar traducciones revisadas</button></div>
+<section class="reading-pane" style="margin-top:12px" id="queue-quick-control">
+<h3>Control rápido</h3>
+<p class="sub small">Elegí una acción y pulsá «Enviar». Esto controla NovelTrad localmente: no envía el prompt por ti a ChatGPT/Gemini.</p>
+<label for="queue-quick-action">Acción</label>
+<select id="queue-quick-action" class="queue-select">
+<option value="continue">Seguir: preparar el siguiente prompt</option>
+<option value="pause">Parar: conservar el progreso y pausar</option>
+<option value="submit">Enviar: guardar la respuesta pegada</option>
+</select>
+<div class="reader-actions"><button id="queue-quick-send" class="primary" type="button" disabled>Enviar</button></div>
+</section>
 <p id="queue-last-error" class="sub small" role="status"></p>
 <section id="queue-review-panel" class="panel hidden">
 <h3>Revisión de fragmentos</h3>
