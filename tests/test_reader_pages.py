@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from noveltrad.reader_pages import page_source_hash, split_reader_pages, split_text_to_count
+from noveltrad.reader_pages import (
+    page_source_hash,
+    preserve_source_page_boundary,
+    split_reader_pages,
+    split_text_to_count,
+)
 
 
 def test_reader_pages_are_deterministic_and_round_trip_without_losing_source():
@@ -43,3 +48,21 @@ def test_translation_partition_rejects_invalid_page_count(count):
 def test_reader_split_rejects_invalid_page_size():
     with pytest.raises(ValueError):
         split_reader_pages("text", max_chars=0)
+
+
+
+@pytest.mark.parametrize(
+    ("original", "translated", "expected"),
+    (
+        ("word ", "palabra", "palabra "),
+        ("paragraph.\\n\\n", "párrafo.", "párrafo.\\n\\n"),
+        ("line\\r\\n", "línea", "línea\\r\\n"),
+        ("last sentence.", "última oración.", "última oración."),
+    ),
+)
+def test_translation_page_restores_exact_original_boundary(original, translated, expected):
+    assert preserve_source_page_boundary(original, translated) == expected
+
+
+def test_translation_page_boundary_does_not_duplicate_whitespace():
+    assert preserve_source_page_boundary("word  ", "palabra  ") == "palabra  "
