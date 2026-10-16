@@ -107,3 +107,33 @@ def test_browser_open_fails_actionably_when_no_chromium_installed(monkeypatch):
 
     assert exc.value.status_code == 503
     assert "No encontré Chrome" in exc.value.detail
+
+
+def test_browser_open_uses_persistent_profile_and_disables_images(monkeypatch, tmp_path):
+    import subprocess
+
+    captured = {}
+    monkeypatch.setattr(main, "_find_chromium_executable", lambda: "/usr/bin/chromium")
+    monkeypatch.setattr(main, "data_dir", lambda: tmp_path)
+
+    def fake_popen(args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+        return object()
+
+    monkeypatch.setattr(subprocess, "Popen", fake_popen)
+    result = main.open_premium_browser(main.PremiumBrowserOpenInput(provider="gemini"))
+
+    assert result["opened"] is True
+    assert result["images_disabled"] is True
+    assert "--blink-settings=imagesEnabled=false" in captured["args"]
+    assert "--disable-background-networking" in captured["args"]
+    assert any(arg.startswith("--user-data-dir=") and "gemini" in arg for arg in captured["args"])
+    assert captured["args"][-1] == "https://gemini.google.com/app"
+
+
+def test_provider_validation_rejects_unknown_provider():
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        main.PremiumBrowserInput(provider="unknown")
