@@ -54,8 +54,13 @@ class NarrativeFact:
     status: str = "confirmed"
 
     def __post_init__(self) -> None:
-        if not all(x.strip() for x in (self.subject, self.predicate, self.value, self.source)):
+        fields = (self.subject, self.predicate, self.value, self.source)
+        if not all(isinstance(value, str) for value in fields):
+            raise TypeError("subject, predicate, value y source deben ser cadenas")
+        if not all(value.strip() for value in fields):
             raise ValueError("subject, predicate, value y source son obligatorios")
+        if not isinstance(self.status, str):
+            raise TypeError("status debe ser una cadena")
         if self.status not in {"confirmed", "inference", "hypothesis", "disputed"}:
             raise ValueError("status debe ser confirmed, inference, hypothesis o disputed")
 
@@ -121,6 +126,8 @@ def analyze_text(text: str, aliases: Mapping[str, Iterable[str]] | None = None) 
     """
     if not isinstance(text, str):
         raise TypeError("text debe ser una cadena")
+    if aliases is not None and not isinstance(aliases, Mapping):
+        raise TypeError("aliases debe ser un mapping de identificadores a alias")
     sentence_rows: list[Sentence] = []
     for match in _SENTENCE_RE.finditer(text):
         raw = match.group(0)
@@ -183,6 +190,8 @@ def check_narrative_facts(facts: Iterable[NarrativeFact]) -> tuple[NarrativeFind
     """
     grouped: dict[tuple[str, str], list[NarrativeFact]] = {}
     for fact in facts:
+        if not isinstance(fact, NarrativeFact):
+            raise TypeError("facts debe contener únicamente NarrativeFact")
         grouped.setdefault((fact.subject.casefold().strip(), fact.predicate.casefold().strip()), []).append(fact)
 
     findings: list[NarrativeFinding] = []
