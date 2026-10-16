@@ -22,7 +22,7 @@ When the user says "Eres el cerebro de NovelTrad":
 - The exact `main` SHA `ca7eadf7c1847a64d95997c0ad98f6e062ca45d0` passed Ubuntu/Windows tests in [run 38896672388](https://github.com/jonhararagi/traslate/actions/runs/38896672388). Its Windows portable build and packaged `/api/health` smoke test passed in [run 38896672374](https://github.com/jonhararagi/traslate/actions/runs/38896672374); artifact `NovelTrad-Windows-x64`, SHA-256 `695d5c45bbc34d7a8437fa28b8076329635de086ab7a5ac88fb0095522b98633`.
 - This is CI evidence, not a manual test on the user's PC. Actual sign-in and a quality review using an authorized excerpt remain pending. Chromium consumes RAM; image blocking does not guarantee a fixed saving.
 - A follow-up branch `fix/provider-isolation-and-project-closeout` isolates legacy Ollama queue execution from ChatGPT/Gemini queues, adds regression coverage, corrects stale documentation, and records the branch audit. Treat that work as pending until its PR and CI status are verified.
-- Sections labelled historical below are archival notes. Their old statements about open PRs, pending features, or CI are superseded by this active status.
+- The continuation sections below this current verified-state section are an archival changelog; old statements about PRs being open, features unimplemented, or CI pending are superseded by this active status.
 
 ## Product goal
 
