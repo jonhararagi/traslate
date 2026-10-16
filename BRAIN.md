@@ -241,3 +241,21 @@ No confundir CI verde con calidad lingüística, ni build portable exitoso con p
 - Causa visible en los tests: las expresiones regulares estaban escritas con escapes duplicados, provocando que el punto final se separara como token independiente y que la detección heurística de pronombres no se activara.
 - Corrección aplicada en `src/noveltrad/linguistic_analysis.py` en commit `69eaf067379be0035e3cc30baf6e05e358eabbe2`: normalización de escapes de regex y ajuste del nombre canónico para que derive del primer alias configurado, no del alias coincidente.
 - Estado actual: CORRECCIÓN APLICADA, VERIFICACIÓN PENDIENTE. GitHub Actions debe completar sobre el nuevo SHA antes de evaluar si el problema quedó resuelto. No declarar la tarea verificada hasta revisar tests Ubuntu/Windows y build portable.
+
+
+
+## PR #16 — seguimiento técnico y verificación en curso (2026-10-16; actualización)
+
+Esta sección supersede el estado anterior de la incidencia de PR #16. No declara la fase verificada.
+
+- PR: https://github.com/jonhararagi/traslate/pull/16 (abierto, draft, sin merge).
+- Rama autorizada: `feat/offline-linguistic-narrative-core`.
+- `main` inspeccionado: `6ebca3e06565456d473a44b1d62e14012531cde8`; no se escribió en `main`.
+- Head previo con CI verde: `75c474515d0656a81c04c7896740d680a595cc49`. En ese SHA, Tests #446 pasó en Ubuntu y Windows (https://github.com/jonhararagi/traslate/actions/runs/38933909432) y Windows Portable Build #60 pasó en pruebas, build, smoke test y subida del artefacto (https://github.com/jonhararagi/traslate/actions/runs/38933909046). Artefacto: `NovelTrad-Windows-x64`, ID `12059929086`, 40,742,001 bytes, SHA-256 `7f603a81b7b4689a95dd91f85311d3b3791e5d57d0293c3ee6db210063d5a7c2`, con expiración 2026-10-30. Este artefacto corresponde al SHA anterior, no al código defensivo añadido después.
+- Logs de las ejecuciones fallidas originales consultados: Tests Ubuntu y Windows fallaban en `test_token_offsets_round_trip_to_exact_source` porque el punto final quedaba separado y en `test_unknown_name_and_pronouns_are_marked_as_heuristics` porque la advertencia no se activaba. El Windows portable build fallaba en `Run automated tests` por los mismos dos fallos. Evidencia: https://github.com/jonhararagi/traslate/actions/runs/38932299149 y https://github.com/jonhararagi/traslate/actions/runs/38932299159.
+- Cambios posteriores al SHA verde: `src/noveltrad/linguistic_analysis.py` valida tipos y valores de `NarrativeFact`, valida el mapping y las entradas de alias, estabiliza la prioridad de alias mediante ordenación explícita y rechaza elementos inválidos en `check_narrative_facts`. `tests/test_linguistic_analysis.py` añade pruebas de alias que solo difieren en mayúsculas/minúsculas y de entradas inválidas.
+- SHA de código más reciente inspeccionado antes de esta actualización documental: `11a480e72d311be589ce7a0bb7b5bd52ded47dbf`.
+- CI sobre ese SHA estaba en curso al actualizar este registro: Tests push https://github.com/jonhararagi/traslate/actions/runs/38939487116; Tests PR https://github.com/jonhararagi/traslate/actions/runs/38939494289; Windows Portable Build https://github.com/jonhararagi/traslate/actions/runs/38939494381. No registrar esos resultados como pasados hasta que concluyan. La actualización de este archivo producirá un nuevo SHA y requerirá revisar los checks asociados al SHA final.
+- Estilo/análisis estático: `pyproject.toml` configura pytest, pero no define una herramienta de lint o type-check independiente. No afirmar que se ejecutó una herramienta que no está configurada.
+- Estado por criterios: reparación original de regex — IMPLEMENTADA; tests específicos nuevos — EN CURSO; suite completa en SHA final — EN CURSO; CI Ubuntu/Windows en SHA final — EN CURSO; build y smoke test del paquete en SHA final — EN CURSO; inspección directa del contenido del ZIP del SHA final — PENDIENTE; alcance y limitaciones documentados — IMPLEMENTADA; PR verificado — PENDIENTE.
+- Próxima acción obligatoria: esperar las ejecuciones del SHA final de código y del SHA documental más reciente; inspeccionar los resultados completos de Ubuntu, Windows y build portable, confirmar el smoke test y revisar los recursos del artefacto. Si cualquier control falla, leer logs, corregir en esta rama y repetir. Mantener el PR como draft y no fusionar.
