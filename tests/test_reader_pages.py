@@ -55,8 +55,8 @@ def test_reader_split_rejects_invalid_page_size():
     ("original", "translated", "expected"),
     (
         ("word ", "palabra", "palabra "),
-        ("paragraph.\\n\\n", "párrafo.", "párrafo.\\n\\n"),
-        ("line\\r\\n", "línea", "línea\\r\\n"),
+        ("paragraph.\n\n", "párrafo.", "párrafo.\n\n"),
+        ("line\r\n", "línea", "línea\r\n"),
         ("last sentence.", "última oración.", "última oración."),
     ),
 )
