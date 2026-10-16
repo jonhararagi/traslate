@@ -7,6 +7,7 @@
 - Segmenta oraciones y tokens con offsets sobre el texto original.
 - Asigna etiquetas gramaticales heurísticas; no son un análisis sintáctico completo.
 - Busca alias definidos por el usuario, priorizando el alias más largo y evitando menciones solapadas.
+- Selecciona el nombre canónico de forma explícita: en listas, tuplas y otros iterables ordenados conserva el primer alias no vacío declarado; en `set` y `frozenset`, que no tienen orden declarativo, usa el menor valor según `(alias.casefold(), alias)`. Las coincidencias más largas conservan prioridad y alias que difieren solo en mayúsculas/minúsculas no generan menciones duplicadas del mismo tramo.
 - Emite advertencias cuando aparecen pronombres o candidatos a nombres propios; no afirma resolver correferencias.
 - Compara hechos estructurados que el usuario ya registró con una fuente. Los valores confirmados incompatibles se informan para revisión; hipótesis e inferencias quedan separadas y no crean conflictos de canon.
 
