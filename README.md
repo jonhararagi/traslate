@@ -2,7 +2,7 @@
 
 NovelTrad is a local-first Windows-friendly reader and translation workspace for light novels, webnovels, and fanfiction. It is designed around a calm reading experience, persistent per-book terminology, protected names, and optional help from a chat website without paid API keys.
 
-> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor with CRUD controls. Fully translated books can be exported as Spanish EPUB. The persistent whole-book queue is now migrated on `main` to manual ChatGPT/Gemini handoff through Chromium (merged via PR #14). A legacy Ollama chapter-preview endpoint remains in code and is not used by the migrated queue. A legacy Ollama chapter-preview endpoint remains in code and is not used by the migrated queue. Evidence-based glossary candidate extraction is merged and tested. The feature presents source evidence for terms and names and requires explicit human approval before glossary rules become active. The queue now includes heuristic per-fragment quality warnings (short/identical output, omissions, paragraph structure and suspicious repetition) to help human review; warnings do not certify correctness. The merged application now checks whether approved protect/preserve/translate glossary mappings remain present in chunk outputs, while contextual rules stay flexible. OCR, a real-chapter quality benchmark, and clean-Windows manual testing remain unfinished.
+> **Development status:** early MVP, not a finished translator. The current branch implements a local web library, SQLite persistence, EPUB/PDF text import, chapter reading, saved reading position, a separate translation editor with version snapshots, and a per-book glossary editor with CRUD controls. Fully translated books can be exported as Spanish EPUB. The persistent whole-book queue is now migrated on `main` to manual ChatGPT/Gemini handoff through Chromium (merged via PR #14). A legacy Ollama chapter-preview endpoint and a separated opt-in local-neural queue API remain for compatibility; neither is used by the ChatGPT/Gemini account-based queue. Evidence-based glossary candidate extraction is merged and tested. The feature presents source evidence for terms and names and requires explicit human approval before glossary rules become active. The queue now includes heuristic per-fragment quality warnings (short/identical output, omissions, paragraph structure and suspicious repetition) to help human review; warnings do not certify correctness. The merged application now checks whether approved protect/preserve/translate glossary mappings remain present in chunk outputs, while contextual rules stay flexible. OCR, a real-chapter quality benchmark, and clean-Windows manual testing remain unfinished.
 
 ## Product principles
 
@@ -18,7 +18,7 @@ NovelTrad is a local-first Windows-friendly reader and translation workspace for
 
 - Python 3.11 or newer.
 - Internet is only needed to install dependencies initially. EPUB/PDF import and local storage run on the computer.
-- The reader exposes **Modo local**, which applies approved deterministic rules without a model. On the `feat/chromium-account-premium` branch, **Modo Premium** opens a dedicated persistent Chromium-family profile for ChatGPT or Gemini, blocks image loading, and supports manual prompt/response handoff both for chapter previews and the persistent whole-book queue. The queue reserves one chunk at a time, persists pasted responses as unreviewed, supports pause/resume/retry, and blocks final application until every chunk is reviewed. The implementation is merged into `main` via PR #14. The portable Windows build from the exact current `main` SHA is being verified; manual login and real translation-quality validation on the user's PC remain outstanding. The persistent whole-book queue stores chunks, resumes after restart, retries failures, snapshots the approved glossary, and requires review before application. See [the mode and hardware guide](docs/MODO_LOCAL_Y_MODO_PREMIUM.md) and [the Chromium Premium architecture decision](docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md).
+- The reader exposes **Modo local**, which applies only approved deterministic rules without a model and uses minimal extra RAM. **Modo Premium** opens a dedicated persistent Chromium-family profile for ChatGPT or Gemini and supports manual prompt/response handoff for chapter previews and the persistent whole-book queue. NovelTrad never auto-submits source text or reads/stores provider credentials or cookies. The queue reserves one chunk at a time, persists pasted responses as unreviewed, supports pause/resume/retry/restart recovery, and blocks final application until every chunk is reviewed. PR #14 is merged. The exact `main` SHA `ca7eadf7c1847a64d95997c0ad98f6e062ca45d0` passed Ubuntu/Windows tests and the Windows portable-build plus packaged smoke test; manual sign-in, real-PC workflow, and real-chapter quality validation remain outstanding. See [the mode and hardware guide](docs/MODO_LOCAL_Y_MODO_PREMIUM.md), [the Chromium Premium architecture decision](docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md), and [the cross-branch audit and remaining work](docs/AUDITORIA_RAMAS_Y_PENDIENTES.md).
 
 ## Run on Windows
 
@@ -42,6 +42,10 @@ On other platforms, create a virtual environment, install `.[test]`, and run `no
 ## Recovery and project continuity
 
 Read [BRAIN.md](BRAIN.md) first when resuming work after a lost conversation. It defines the recovery protocol, product boundaries, hardware constraints, and priority queue. The first novel profile and unapproved terminology candidates live in `data/novels/i_became_the_academy_villains_daughter.json`.
+
+## Cross-branch status
+
+All PRs through #14 are closed and merged. Historical feature branches remain as references; do not merge their heads wholesale because they diverged from the current `main`. The audit records what was checked and distinguishes code/CI completion from the two validations that still require a real Windows session and an authorized novel excerpt: [Cross-branch audit and remaining work](docs/AUDITORIA_RAMAS_Y_PENDIENTES.md).
 
 ## Local data
 
@@ -68,9 +72,11 @@ Imported source files are stored under `imports/`; SQLite stores books, extracte
 - `POST /api/books/{book_id}/translation-jobs` — create a persistent queue for untranslated sections; this does not call the model.
 - `GET /api/books/{book_id}/translation-jobs` — inspect saved queues for the selected book.
 - `GET /api/translation-jobs/{job_id}` — inspect progress, failed fragments and review state.
-- `POST /api/translation-jobs/{job_id}/run-next` — translate one pending chunk with local Ollama; progress is persisted immediately.
+- `POST /api/translation-jobs/{job_id}/next-prompt` — reserve one chunk and create a prompt for manual ChatGPT/Gemini handoff; it does not call the provider.
+- `POST /api/translation-jobs/{job_id}/chunks/{chunk_id}/submit` — save a pasted ChatGPT/Gemini answer as completed but unreviewed.
 - `POST /api/translation-jobs/{job_id}/pause`, `/resume`, and `/retry-failed` — control and recover a queue.
-- `GET /api/translation-jobs/{job_id}/chunks/{chunk_id}` and `PUT` on the same path — inspect and save a reviewed chunk.
+- `GET /api/translation-jobs/{job_id}/chunks/{chunk_id}` and `PUT` on the same path — inspect/edit a completed chunk and explicitly mark it reviewed.
+- `POST /api/translation-jobs/{job_id}/run-next` — legacy local-Ollama queue endpoint. It is isolated from ChatGPT/Gemini jobs and only accepts a queue explicitly created with `provider: "ollama"`; the UI does not offer this mode. The account-based queue must use `next-prompt` plus manual submission.
 - `POST /api/translation-jobs/{job_id}/apply` — apply only after all chunks are complete and reviewed; original source fields are never updated.
 - `GET /api/books/{book_id}/glossary` — per-book and global glossary entries.
 - `POST /api/books/{book_id}/glossary` — add a glossary rule (`preserve`, `translate`, `contextual`, or `protect`).

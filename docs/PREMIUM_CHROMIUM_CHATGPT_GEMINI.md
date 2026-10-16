@@ -49,20 +49,26 @@ The program-generated prompt must:
 - [ ] Tests cover missing browser/profile, no active login, empty/malformed output, provider unavailable, chunk retry/restart, mandatory review, and original-text immutability.
 - [ ] Clean-Windows manual testing and a quality benchmark on a user-authorized excerpt are completed before calling Premium release-ready.
 
-## Implementation status on feat/chromium-account-premium
+## Current implementation status — main baseline and close-out
 
-Implemented on `main` (PR #14): Premium targets ChatGPT/Gemini; a provider selector opens a dedicated persistent Chromium-family profile; launch arguments disable image loading and reduce background browser activity; chapter prompts include approved glossary rules, editorial style, source delimiters, bounded chunks and preceding context. The persistent whole-book queue also stores the selected provider, reserves one chunk at a time, generates a bounded prompt, accepts a manually pasted response, persists it as unreviewed, and keeps review/apply separate. Pause/resume, retry-failed and startup recovery remain part of the durable queue state machine. The provider is never sent text automatically, and NovelTrad does not read or store credentials/cookies.
+PR [#14](https://github.com/jonhararagi/traslate/pull/14) is merged. At audit baseline `ca7eadf7c1847a64d95997c0ad98f6e062ca45d0`, GitHub Actions reported success for [Ubuntu/Windows tests](https://github.com/jonhararagi/traslate/actions/runs/38896672388) and [Windows portable build + packaged smoke test](https://github.com/jonhararagi/traslate/actions/runs/38896672374).
 
-The launcher locates an installed Chrome/Chromium/Edge executable and does not download a browser. First-time sign-in is performed by the user directly on the provider site in the dedicated profile. The --blink-settings=imagesEnabled=false flag blocks page images, but does not promise a fully text-only page or disable every animated/scripted element.
+Implemented and covered by automated tests:
+- [x] Provider selector targets ChatGPT/Gemini and opens a dedicated persistent Chromium profile, with no credential/cookie collection and no automatic submission.
+- [x] Chapter-preview prompt generation includes approved glossary rules, editorial style, source boundaries, bounded chunks and limited continuity context. Responses are manually pasted; the preview is not saved automatically.
+- [x] Whole-book queue stores provider and progress, reserves one fragment at a time, persists manually pasted responses as unreviewed, and retains pause/resume/retry/restart recovery.
+- [x] Applying a queue requires every chunk completed and explicitly reviewed; imported source text is preserved.
+- [x] Queue quality warnings and glossary consistency checks are advisory and do not certify translation correctness.
+- [x] Windows CI runs the tests, creates the portable package and starts the packaged executable to verify `GET /api/health`.
 
-## Release criteria still outstanding
+Provider-isolation follow-up:
+- The legacy `POST /api/translation-jobs/{job_id}/run-next` calls Ollama; it must only accept jobs explicitly created with `provider: "ollama"`.
+- The account-based queue must use `next-prompt` and `chunks/{chunk_id}/submit`; these routes must reject Ollama jobs. The regular UI exposes ChatGPT/Gemini only.
+- This correction, its regression tests, and the cross-branch close-out documentation are in `fix/provider-isolation-and-project-closeout`. Do not call this follow-up integrated until its PR is merged and post-merge CI passes.
 
-- [x] UI offers Local and Premium (ChatGPT / Gemini) as distinct modes.
-- [x] Selecting a provider opens a dedicated persistent Chromium profile without collecting credentials.
-- [x] Prompt generation includes approved glossary rules, source delimiters, style instructions, and bounded chunk context.
-- [x] Manual handoff supports copying prompts, pasting each result, and blocking editor transfer until all chunks are non-empty.
-- [ ] Add focused automated tests for prompt generation, provider validation, missing browser, empty chapter, glossary rule hints, and source preservation.
-- [ ] Integrate account-based provider handoff with the persistent whole-book queue; the current implementation is a chapter preview/handoff, not a resumable full-book Premium queue.
-- [ ] Complete clean-Windows manual testing and a translation-quality benchmark on a user-authorized excerpt.
+Not verified by CI and still outstanding:
+- [ ] Clean-Windows user-side test of the downloaded artifact, first-time provider sign-in and an end-to-end account-based queue, including pause/resume/restart and review-before-apply.
+- [ ] Quality benchmark using an excerpt the user is authorized to translate from the exact source edition. Measure omissions, repetition, paragraph changes and consistency of names/context-sensitive gamer terms.
+- [ ] OCR for scanned PDFs/comic pages remains unimplemented; it is a separate feature and not a hidden capability of Premium.
 
-`main` now contains chapter-preview handoff and the migration of the persistent whole-book queue to manual provider handoff. Do not call it release-ready until CI validates the latest commit, queue integration tests cover pause/resume/retry/restart and reviewed-only apply, the portable Windows build is produced from the exact approved SHA, and the user performs a manual Windows smoke test. PR #14 is merged. The remaining user-side validation is a real ChatGPT/Gemini login and a quality review of a translated excerpt on Windows.
+Image blocking and reduced background activity may reduce some browser work, but do not guarantee a fixed RAM saving. Chromium consumes memory; this remains important on a 16 GB machine with other applications open.
