@@ -107,3 +107,31 @@ def test_manual_narrative_assistant_has_no_network_or_persistence_side_channels(
     assert "window.open(url, '_blank', 'noopener,noreferrer')" in assistant
     assert "openProvider('https://chatgpt.com/')" in assistant
     assert "openProvider('https://gemini.google.com/app')" in assistant
+
+def test_translation_queue_offers_style_choices_and_quick_continue_stop_send():
+    page = home()
+    expected_controls = (
+        'id="queue-translation-style"',
+        'value="faithful_natural"',
+        'value="gamer_terms"',
+        'value="fluent_spanish"',
+        'value="literal_review"',
+        'id="queue-custom-instruction"',
+        'id="queue-quick-action"',
+        'value="continue"',
+        'value="pause"',
+        'value="submit"',
+        'id="queue-quick-send"',
+        '>Enviar</button>',
+    )
+    for control in expected_controls:
+        assert control in page
+
+    assert "Seguir: preparar el siguiente prompt" in page
+    assert "Parar: conservar el progreso y pausar" in page
+    assert "Enviar: guardar la respuesta pegada" in page
+    assert "no envía el prompt por ti a ChatGPT/Gemini" in page
+    assert "translation_style:$('#queue-translation-style').value" in page
+    assert "custom_instruction:$('#queue-custom-instruction').value.trim()" in page
+    assert "function refreshQueueQuickControl()" in page
+
