@@ -3144,6 +3144,12 @@ function queueButtons(job){
   $('#queue-open-provider').disabled=!job||job.status==='applied';
   $('#queue-copy-prompt').disabled=!currentQueuePrompt||!currentQueuePrompt.prompt||currentQueueChunkId!==currentQueuePrompt.chunk_id;
   $('#queue-submit-response').disabled=!job||!currentQueuePrompt||!currentQueuePrompt.chunk_id||currentQueueChunkId!==currentQueuePrompt.chunk_id||!$('#queue-translation').value.trim()||job.status==='applied';
+  refreshQueueQuickControl();
+}
+function refreshQueueQuickControl(){
+  const targets={continue:'queue-run',pause:'queue-pause',submit:'queue-submit-response'};
+  const target=targets[$('#queue-quick-action').value];
+  $('#queue-quick-send').disabled=!currentTranslationJobId||!target||$('#'+target).disabled;
 }
 function clearQueueView(message){
   currentTranslationJobId=null;currentQueueChunkId=null;currentQueuePrompt=null;$('#queue-prompt').value='';
@@ -3219,12 +3225,19 @@ $('#queue-run').addEventListener('click',async()=>{
   try{
     const job=await api('/api/translation-jobs/'+currentTranslationJobId);
     if(job.status==='paused')await api('/api/translation-jobs/'+currentTranslationJobId+'/resume',{method:'POST'});
-    const result=await api('/api/translation-jobs/'+currentTranslationJobId+'/next-prompt',{method:'POST'});
+    const promptOptions={
+      translation_style:$('#queue-translation-style').value,
+      custom_instruction:$('#queue-custom-instruction').value.trim()
+    };
+    const result=await api('/api/translation-jobs/'+currentTranslationJobId+'/next-prompt',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(promptOptions)
+    });
     if(result.done){currentQueuePrompt=null;$('#queue-prompt').value='';$('#queue-status').textContent='Todos los fragmentos tienen respuesta. Revisá cada uno; no se aplicará nada hasta completar la revisión.';}
     else{
       currentQueuePrompt=result;currentQueueChunkId=result.chunk_id;$('#queue-prompt').value=result.prompt;
       $('#queue-original').value=result.original_text;$('#queue-translation').value='';
-      $('#queue-chunk-state').textContent='Sección '+(result.chapter_index+1)+' · '+result.chapter_title+' · Fragmento '+result.chunk_index+' · Prompt listo · Intentos: '+result.attempts+'. Copiá el prompt, pegalo en '+(result.provider==='gemini'?'Gemini':'ChatGPT')+' y pegá solo la traducción en el campo de respuesta.';
+      const selectedStyle=$('#queue-translation-style').selectedOptions[0]?.textContent||'Fiel y natural';
+      $('#queue-chunk-state').textContent='Sección '+(result.chapter_index+1)+' · '+result.chapter_title+' · Fragmento '+result.chunk_index+' · Prompt listo · Estilo: '+selectedStyle+(result.has_custom_instruction?' · instrucción propia incluida':'')+' · Intentos: '+result.attempts+'. Copiá el prompt, pegalo en '+(result.provider==='gemini'?'Gemini':'ChatGPT')+' y pegá solo la traducción en el campo de respuesta.';
       $('#queue-status').textContent=result.message;
       $('#queue-open-provider').disabled=false;$('#queue-copy-prompt').disabled=false;$('#queue-submit-response').disabled=true;
       $('#queue-chunk-select').value=result.chunk_id;
@@ -3248,7 +3261,7 @@ $('#queue-copy-prompt').addEventListener('click',async()=>{
   try{await navigator.clipboard.writeText(currentQueuePrompt.prompt);$('#queue-status').textContent='Prompt copiado. Pegalo manualmente en la conversación abierta del proveedor.'}
   catch(e){$('#queue-prompt').focus();$('#queue-prompt').select();$('#queue-status').textContent='El navegador no permitió copiar automáticamente; el prompt quedó seleccionado para copiarlo manualmente.'}
 });
-$('#queue-translation').addEventListener('input',()=>{const jobStatus=$('#queue-status-label').textContent;$('#queue-submit-response').disabled=!currentQueuePrompt||!currentQueuePrompt.chunk_id||currentQueueChunkId!==currentQueuePrompt.chunk_id||!$('#queue-translation').value.trim()||jobStatus.includes('Aplicada')});
+$('#queue-translation').addEventListener('input',()=>{const jobStatus=$('#queue-status-label').textContent;$('#queue-submit-response').disabled=!currentQueuePrompt||!currentQueuePrompt.chunk_id||currentQueueChunkId!==currentQueuePrompt.chunk_id||!$('#queue-translation').value.trim()||jobStatus.includes('Aplicada');refreshQueueQuickControl()});
 $('#queue-submit-response').addEventListener('click',async()=>{
   if(!currentTranslationJobId||!currentQueuePrompt||!$('#queue-translation').value.trim())return;
   const chunkId=currentQueuePrompt.chunk_id;
@@ -3260,8 +3273,15 @@ $('#queue-submit-response').addEventListener('click',async()=>{
 });
 $('#queue-pause').addEventListener('click',async()=>{
   if(!currentTranslationJobId)return;queuePauseRequested=true;
-  try{const job=await api('/api/translation-jobs/'+currentTranslationJobId+'/pause',{method:'POST'});await showQueueState(job);$('#queue-status').textContent='Pausa solicitada; se terminará como máximo el fragmento que ya estaba en curso.'}
+  try{const job=await api('/api/translation-jobs/'+currentTranslationJobId+'/pause',{method:'POST'});await showQueueState(job);$('#queue-status').textContent='Trabajo parado en pausa. El progreso guardado se conserva; podés seguir cuando quieras.'}
   catch(e){$('#queue-status').textContent=e.message}
+});
+$('#queue-quick-action').addEventListener('change',refreshQueueQuickControl);
+$('#queue-quick-send').addEventListener('click',()=>{
+  const targets={continue:'queue-run',pause:'queue-pause',submit:'queue-submit-response'};
+  const target=targets[$('#queue-quick-action').value];
+  if(!target||$('#'+target).disabled)return;
+  $('#'+target).click();
 });
 $('#queue-retry').addEventListener('click',async()=>{
   if(!currentTranslationJobId)return;
