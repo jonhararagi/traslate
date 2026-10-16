@@ -35,6 +35,31 @@ def test_embedded_reader_javascript_parses():
 
 
 
+
+def test_persistent_reader_has_page_navigation_zoom_and_manual_translation_handoff():
+    page = home()
+    for control in (
+        'id="page-indicator"',
+        'id="previous"',
+        'id="next"',
+        'id="chapter-select"',
+        'id="read-page"',
+        'id="translate-page"',
+        'id="read-page-modal"',
+        'id="read-page-larger"',
+        'id="page-translation-prompt"',
+        'id="page-translation-answer"',
+        'id="page-save-translation"',
+    ):
+        assert control in page
+
+    assert "async function goToPage(nextIndex)" in page
+    assert "chapterPagePositions[String(chapterPos)]" in page
+    assert "chapter_pages:chapterPagePositions" in page
+    assert "/reader-pages/translations" in page
+    assert "No puede recuperar esa respuesta automáticamente desde la web" in page
+    assert "function persistTranslationPages()" in page
+
 def test_manual_narrative_assistant_exposes_consent_gated_workflow():
     page = home()
     assert "Microventana de asistencia narrativa" in page
