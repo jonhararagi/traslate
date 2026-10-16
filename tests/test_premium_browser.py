@@ -249,6 +249,13 @@ def test_ollama_queue_cannot_use_manual_account_prompt_or_submission(monkeypatch
     chunk = conn.execute("SELECT status FROM translation_job_chunks WHERE id='chunk-1'").fetchone()
     assert chunk["status"] == "pending"
 
+    with pytest.raises(HTTPException) as submit_error:
+        main.submit_manual_translation_job_chunk(
+            "job-1", "chunk-1",
+            main.TranslationJobChunkSubmitInput(translated_text="Oknodie aprendió a farmear XP.")
+        )
+    assert submit_error.value.status_code == 409
+
 
 def test_queue_next_prompt_reserves_one_chunk_without_calling_ollama(monkeypatch):
     conn = use_sqlite_queue(monkeypatch)
