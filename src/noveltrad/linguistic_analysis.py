@@ -164,7 +164,7 @@ def analyze_text(text: str, aliases: Mapping[str, Iterable[str]] | None = None) 
             canonical_name = alias_names[0] if alias_names else entity_id
             for name in sorted(set(alias_names), key=lambda value: (value.casefold(), value)):
                 patterns.append((len(name), entity_id, canonical_name, name,
-                                 re.compile(r"(?<!\\w)" + re.escape(name) + r"(?!\\w)", re.IGNORECASE)))
+                                 re.compile(r"(?<!\w)" + re.escape(name) + r"(?!\w)", re.IGNORECASE)))
         patterns.sort(key=lambda item: (-item[0], item[3].casefold(), item[1], item[3]))
         occupied: list[tuple[int, int]] = []
         for _, entity_id, canonical, alias, pattern in patterns:
