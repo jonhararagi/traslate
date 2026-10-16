@@ -70,6 +70,47 @@ def test_equal_length_case_variant_aliases_are_deterministic():
     assert text[mention.start:mention.end].casefold() == mention.alias.casefold()
 
 
+def test_unordered_alias_sets_choose_canonical_name_independent_of_construction_order():
+    from itertools import combinations, permutations
+
+    def find_order_sensitive_aliases(collection_type):
+        # Alias strings with the same low hash bits force probe collisions in
+        # small CPython sets. Pick a trio where construction order changes the
+        # observed iteration order, so this test exercises the actual defect.
+        candidates = [f"Alias-{index:03d}" for index in range(512)]
+        buckets = {}
+        for alias in candidates:
+            buckets.setdefault(hash(alias) & 7, []).append(alias)
+
+        for bucket in buckets.values():
+            for aliases in combinations(bucket, 3):
+                orders = tuple(permutations(aliases))
+                iteration_orders = {
+                    tuple(collection_type(order)) for order in orders
+                }
+                if len({order[0] for order in iteration_orders}) > 1:
+                    return aliases, orders
+        raise AssertionError(
+            f"Could not find order-sensitive aliases for {collection_type.__name__}"
+        )
+
+    for collection_type in (set, frozenset):
+        aliases, construction_orders = find_order_sensitive_aliases(collection_type)
+        expected_canonical = min(aliases, key=lambda value: (value.casefold(), value))
+        observed_canonicals = []
+
+        # The same values are inserted in every possible order. At least two
+        # constructions have different iteration-first values; none may affect
+        # the selected canonical name.
+        for order in construction_orders:
+            names = collection_type(order)
+            result = analyze_text(aliases[0], {"entity-id": names})
+            assert len(result.entities) == 1
+            observed_canonicals.append(result.entities[0].canonical_name)
+
+        assert observed_canonicals == [expected_canonical] * len(construction_orders)
+
+
 def test_invalid_alias_and_fact_inputs_fail_explicitly():
     import pytest
 
