@@ -21,10 +21,10 @@ NovelTrad is a local-first Windows reader and translation workspace for EPUB/PDF
 
 - PC: AMD Ryzen 5 5600G, 16 GB RAM.
 - Prefer the deterministic local mode for routine glossary/phrase work. It must use negligible additional RAM and never load a neural model.
-- Premium mode is a distinct **local neural model**, not a cloud subscription/API. It must be opt-in per action, never run automatically, avoid parallel model calls, use a conservative context/memory profile, and unload the model after use where supported.
-- Never download model weights automatically. Explain model disk/RAM cost and require the user to install/configure it.
-- Never call external translation APIs or silently upload book text. Only loopback/local inference is allowed unless the user explicitly changes the policy.
-- The user does not want the neural mode running continuously. Default to Local.
+- Premium mode is intended to use a visible Chromium window signed into the user's own ChatGPT or Gemini account. NovelTrad generates the prompt and manages bounded chunks; it must not collect or store provider passwords, cookies, or tokens.
+- The initial safe implementation should use explicit user-mediated prompt/result handoff. Browser automation is optional future work, must be visible and opt-in, and must stop at login, CAPTCHA, consent, rate limits, or unexpected pages.
+- Ollama is not the account-based Premium mode. If retained, it must be labeled as a separate optional local-neural mode and must never run continuously or download model weights automatically.
+- Do not silently transmit book text. The user must explicitly start each provider translation job and know which provider receives the selected text. Default to Local.
 
 ## Permanent safety and data rules
 
@@ -44,9 +44,9 @@ Novel profile: `data/novels/i_became_the_academy_villains_daughter.json`. Glossa
 ## Modes
 
 - **Modo local**: deterministic approved glossary/phrase rules and typography normalization; no neural inference, no network, minimal RAM. It cannot translate unknown sentences.
-- **Modo premium**: optional local neural translation through a local runtime such as Ollama on loopback. No remote API. It is more RAM/CPU intensive and must be manually invoked. Use conservative request limits and unload after a call. If the local runtime/model is absent, show setup guidance; never silently fall back to cloud.
-- Both modes must keep preview-only behavior; user manually transfers result to editor and saves.
-- Never label Premium as ready until the runtime call is implemented and tested end-to-end. Document limitations and hardware cost honestly.
+- **Modo premium (objetivo de producto)**: translation through a visible Chromium window signed into the user's ChatGPT or Gemini account. NovelTrad constructs the prompt from approved glossary rules, the novel's style guide, relevant continuity context, and a bounded source chunk. Initial delivery must support a transparent manual handoff; browser automation must not be assumed implemented.
+- Ollama-backed inference currently exists in main under the old Premium label and is an architecture mismatch to migrate. It must either be moved to a separately named optional local-neural mode or removed after equivalent account-based flow is tested.
+- Both modes must keep source text immutable, persist provisional chunk results, and require review before applying. Never label account-based Premium ready until its UI, prompt generation, handoff, queue recovery, privacy boundaries, and tests work end-to-end.
 
 ## Current known project state (verify before relying on it)
 
@@ -201,3 +201,11 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Premium prompt now sends explicit instruction labels for approved `protect`, `preserve`, `translate`, and `contextual` rules. Persistent queue glossary snapshots contain the rule alongside source/preferred term.
 - Quality warnings check whether a preferred form for a mandatory rule is present in output when its source term appears in the chunk. Missing `Oknodie`, `Steal skill`, or approved translations such as `farm => farmear` are flagged; `contextual` terms such as `tsundere` are not forced. Checks run after model output and after manual edits, but are literal/conservative and non-blocking.
 - Tests cover missing mandatory terms, non-mandatory contextual terms, queue rule snapshots and prompt directives. Clean-Windows manual smoke test and real authorized-chapter translation benchmark remain outstanding.
+
+
+## Architecture correction — account-based Chromium Premium (2026-10-16)
+
+- User clarified that Premium must use a Chromium window signed into the user's own ChatGPT or Gemini account, with NovelTrad generating the translation prompt and rules. It is not Ollama and not an API key integration.
+- Decision and acceptance criteria: [docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md](docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md).
+- Current main still implements an Ollama endpoint under the Premium label. This is an explicit migration gap, not a completed feature. Do not claim the Chromium integration exists until implementation and end-to-end tests land.
+- First implementation should favor visible, user-mediated prompt/result handoff over brittle silent DOM automation. Never store account credentials/cookies or bypass provider controls. Ollama can only remain as a separately named optional mode.
