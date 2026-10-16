@@ -1,5 +1,29 @@
 # NovelTrad Brain — Continuity and Recovery
 
+## PR #16 close-out status — 2026-10-16 (active; supersedes prior pending notes)
+
+PR: https://github.com/jonhararagi/traslate/pull/16. Keep open and draft; do not merge or close.
+Authorized branch: `feat/offline-linguistic-narrative-core`. Main SHA verified at inspection: `6ebca3e06565456d473a44b1d62e14012531cde8`; no changes were made to main.
+
+### Verified code SHA and existing CI evidence
+
+The alias-canonicalization implementation is verified on code SHA `545bd10c514c9ce171a66b85387f06b365220d6a`. This SHA is the code/evidence SHA; any later commit that only updates this file or workflow configuration must not inherit its CI result.
+
+- Tests push: https://github.com/jonhararagi/traslate/actions/runs/38942571156
+- Tests PR (Ubuntu and Windows): https://github.com/jonhararagi/traslate/actions/runs/38942576889 — both jobs succeeded; focused linguistic-analysis step and full pytest suite succeeded on both platforms. Windows PowerShell maintenance-script validation also succeeded.
+- Windows Portable Build: https://github.com/jonhararagi/traslate/actions/runs/38942576875 — dependency installation, automated tests, PyInstaller build, packaged executable smoke test and artifact upload all succeeded.
+- Packaged smoke test: `NovelTrad.exe` started and `/api/health` returned `status=ok`, `mode=local-first`. This does not prove manual use on the user's PC or real translation quality.
+- Artifact: `NovelTrad-Windows-x64`; artifact ID `12063248589`; size `40742729` bytes; GitHub Actions digest `sha256:c73d3e0b015e314415a4f52addab6f407cc4f3cf1e57bfdc888d38d290c9a917`; 183 ZIP entries were checked and ZIP integrity passed. Contents included `NovelTrad.exe` and application data. Run metadata identifies head SHA `545bd10c514c9ce171a66b85387f06b365220d6a`. Artifact expires 2026-10-30T17:50:57Z.
+- Non-blocking warnings: `StarletteDeprecationWarning` concerning httpx/Starlette TestClient and action/runtime deprecations (Node.js 20, `punycode`, `url.parse()`). These did not fail the jobs. No independent lint/type-check is configured.
+
+### Documentation and CI filter close-out
+
+This section records the verified evidence above and supersedes older pending statements about that same SHA. Historical sections below remain archival and must be read as historical where they conflict with this section.
+
+The next commit(s) update documentation and the portable-build path filter only; they do not reimplement canonicalization. The Windows portable workflow must include `BRAIN.md` in `pull_request.paths` while retaining every existing path filter. After the final authorized-branch commit, check Tests (focused test then full suite on Ubuntu and Windows) and Windows Portable Build (tests, build, smoke test, upload) against that exact final SHA. Download and inspect that SHA's artifact, recording its own ID, byte size, digest and contents. Until those final-SHA checks complete, mark new-SHA CI and artifact verification PENDING; do not attribute the SHA `545bd10c514c9ce171a66b85387f06b365220d6a` results to a later SHA.
+
+Manual Windows use and evaluation of a real, user-authorized translation excerpt remain PENDING. Do not claim translation quality has been verified.
+
 This file is the durable project handoff. If a ChatGPT conversation is lost, read this file first, then README.md, docs/PROSA_Y_TRADUCCION_OFFLINE.md, docs/MODO_LOCAL_Y_MODO_PREMIUM.md, and the latest commits/PRs before changing code.
 
 ## Recovery command
