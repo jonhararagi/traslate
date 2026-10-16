@@ -235,3 +235,9 @@ No confundir CI verde con calidad lingüística, ni build portable exitoso con p
 - Workflow Windows Portable Build: https://github.com/jonhararagi/traslate/actions/runs/38932299159 — conclusión FAILURE, paso «Run automated tests».
 - Estado correcto: IMPLEMENTADA, NO VERIFICADA; no integrar ni hacer merge.
 - Siguiente acción obligatoria: recuperar logs de los jobs fallidos, identificar error raíz, corregir en la misma rama autorizada, volver a ejecutar tests y build, revisar todos los checks sobre el nuevo SHA y actualizar este registro. No inferir causa antes de leer logs.
+
+### Seguimiento de incidencia PR #16 — corrección aplicada, pendiente de CI
+- Se inspeccionaron los logs de los tres jobs fallidos (Ubuntu tests, Windows tests y Windows portable build).
+- Causa visible en los tests: las expresiones regulares estaban escritas con escapes duplicados, provocando que el punto final se separara como token independiente y que la detección heurística de pronombres no se activara.
+- Corrección aplicada en `src/noveltrad/linguistic_analysis.py` en commit `69eaf067379be0035e3cc30baf6e05e358eabbe2`: normalización de escapes de regex y ajuste del nombre canónico para que derive del primer alias configurado, no del alias coincidente.
+- Estado actual: CORRECCIÓN APLICADA, VERIFICACIÓN PENDIENTE. GitHub Actions debe completar sobre el nuevo SHA antes de evaluar si el problema quedó resuelto. No declarar la tarea verificada hasta revisar tests Ubuntu/Windows y build portable.
