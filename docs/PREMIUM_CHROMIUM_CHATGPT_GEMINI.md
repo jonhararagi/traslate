@@ -49,6 +49,20 @@ The program-generated prompt must:
 - [ ] Tests cover missing browser/profile, no active login, empty/malformed output, provider unavailable, chunk retry/restart, mandatory review, and original-text immutability.
 - [ ] Clean-Windows manual testing and a quality benchmark on a user-authorized excerpt are completed before calling Premium release-ready.
 
-## Status
+## Implementation status on feat/chromium-account-premium
 
-This document records the intended architecture and acceptance criteria. It does not claim the Chromium integration is implemented. The current main branch still contains an Ollama-backed endpoint under the old Premium label; that code and its UI must be migrated and tested before this decision is considered implemented.
+Implemented in the current branch: the Premium selector targets ChatGPT/Gemini instead of Ollama; a provider selector opens a dedicated persistent Chromium-family profile; launch arguments disable image loading and reduce background browser activity; prompt generation includes approved glossary rules, selected editorial style, source delimiters, bounded chunks, and a preceding source-context excerpt; each chunk shows a copyable prompt and a separate response field; NovelTrad enables transfer to the editor only after every chunk has a non-empty response. The provider is not sent any text automatically, and NovelTrad does not read or store account credentials or cookies.
+
+The launcher locates an installed Chrome/Chromium/Edge executable and does not download a browser. First-time sign-in is performed by the user directly on the provider site in the dedicated profile. The --blink-settings=imagesEnabled=false flag blocks page images, but does not promise a fully text-only page or disable every animated/scripted element.
+
+## Release criteria still outstanding
+
+- [x] UI offers Local and Premium (ChatGPT / Gemini) as distinct modes.
+- [x] Selecting a provider opens a dedicated persistent Chromium profile without collecting credentials.
+- [x] Prompt generation includes approved glossary rules, source delimiters, style instructions, and bounded chunk context.
+- [x] Manual handoff supports copying prompts, pasting each result, and blocking editor transfer until all chunks are non-empty.
+- [ ] Add focused automated tests for prompt generation, provider validation, missing browser, empty chapter, glossary rule hints, and source preservation.
+- [ ] Integrate account-based provider handoff with the persistent whole-book queue; the current implementation is a chapter preview/handoff, not a resumable full-book Premium queue.
+- [ ] Complete clean-Windows manual testing and a translation-quality benchmark on a user-authorized excerpt.
+
+The current feature branch contains a first functional chapter-preview handoff. It is not release-ready yet: automated tests and manual Windows verification remain outstanding, and the persistent whole-book queue still uses the old Ollama implementation. main remains unchanged; see draft PR #14.
