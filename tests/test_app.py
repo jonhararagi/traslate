@@ -169,6 +169,14 @@ def test_reader_page_translation_persists_by_source_page_and_updates_chapter_tex
     chapter_after = client.get(f"/api/books/{book['id']}/chapters").json()[0]
     assert chapter_after["translated_text"] == translated
 
+    restored = client.post(
+        f"/api/chapters/{chapter['id']}/translation/restore/1"
+    )
+    assert restored.status_code == 200, restored.text
+    assert restored.json()["translated_text"] == ""
+    after_restore = client.get(endpoint).json()
+    assert after_restore["pages"][0]["translated_text"] == ""
+
     stale = client.put(
         endpoint + "/translations",
         json={"pages": [{
