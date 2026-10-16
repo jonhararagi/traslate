@@ -374,3 +374,15 @@ Inspeccionar el nuevo SHA de la rama creado por este registro. Confirmar de nuev
 - Se detectó un caso de consistencia de la nueva paginación: restaurar una versión de capítulo no debe dejar activas las traducciones sobrescritas por página de una versión posterior. La corrección `f5b5709e756d47553b921fcbd433d7e82637b052` elimina esas sobrescrituras al restaurar el capítulo y actualiza la vista paginada al terminar la operación.
 - `4012e421bb94e820cf316c354fead583e4a46864` añade prueba de regresión: guardar traducción por página, restaurar la versión anterior del capítulo y comprobar que el lector vuelve a mostrar la versión restaurada y no el override obsoleto.
 - El SHA actual de código después de esa corrección era `4012e421bb94e820cf316c354fead583e4a46864`; este documento todavía no contiene el SHA final de la última actualización. Revalidar la suite de Ubuntu/Windows y el paquete Windows sobre el SHA que resulte de esta actualización documental. No cerrar como verificado hasta que todos los jobs estén completos y verdes.
+
+
+### Dictamen de verificación de navegación — resultados confirmados (2026-10-16)
+
+Este registro resuelve los pendientes de CI anotados arriba para el SHA final de código `0a41105beccca9817a83486c36f0bb1232c25386`:
+
+- Workflow **Tests** del PR: https://github.com/jonhararagi/traslate/actions/runs/38964986145 — éxito. `Tests (ubuntu-latest)` y `Tests (windows-latest)` completados con conclusión `success`, incluida la suite completa.
+- Workflow **Windows Portable Build**: https://github.com/jonhararagi/traslate/actions/runs/38964986129 — éxito. Pruebas automatizadas, compilación del portable, smoke test del ejecutable y subida del artefacto completados con conclusión `success`.
+- Artefacto generado: `NovelTrad-Windows-x64`, ID `12074402763`, 40,753,642 bytes, no expirado al momento de la comprobación.
+- El PR #16 continúa abierto, en estado Draft y sin fusionar. La rama base sigue siendo `main`. SHA de `main` verificado sin cambios: `6ebca3e06565456d473a44b1d62e14012531cde8`.
+- La implementación queda **verificada por CI** para tests de Ubuntu/Windows y empaquetado Windows. Esto no equivale a una prueba visual/end-to-end manual en el PC del usuario ni a una validación de calidad lingüística de una traducción real; esos puntos siguen pendientes.
+- Este registro es un commit documental adicional. Por disciplina de evidencia, volver a comprobar tests y paquete en el SHA que resulte de este commit antes de tratar dicho SHA documental como final. No modificar `main`, no quitar el estado Draft y no fusionar.
