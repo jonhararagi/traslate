@@ -13,6 +13,17 @@ When the user says "Eres el cerebro de NovelTrad":
 5. Report evidence with links/SHA/test results. Distinguish implemented, tested, merged, and released.
 6. Do not claim a capability works until the implementation and relevant tests verify it. Update this file whenever architecture or project state materially changes.
 
+## Active implementation status — 2026-10-16 (supersedes older status notes below)
+
+- Working branch: `feat/chromium-account-premium`; draft PR #14 targets `main`. Do not merge or build a user-facing release until the user explicitly approves and current CI/build/manual checks pass.
+- Product constraint: Local mode remains deterministic and lightweight. Account-based Premium uses the user's own ChatGPT/Gemini account in a visible, persistent Chromium-family profile. NovelTrad must not auto-submit source text or read/store provider credentials/cookies.
+- The chapter-level manual prompt flow is implemented on this branch.
+- The persistent whole-book queue has now been changed from automatic Ollama inference to a manual handoff flow: jobs store provider; `next-prompt` reserves one pending chunk and returns a bounded prompt; the user copies it to the provider and pastes the answer back; `submit` persists it as completed but unreviewed. Review and apply remain separate; apply must still require every chunk to be completed and reviewed.
+- Queue schema migration adds a `provider` column with `chatgpt` default for existing databases. Queue startup recovery returns interrupted running chunks to pending and pauses their job. Pause/resume/retry behavior needs integration-test confirmation after this migration.
+- Latest code/doc edits were committed to the branch, but must not be called validated until GitHub Actions checks the latest branch SHA. Tests added so far cover prompt construction and provider validation; add route-level tests for chunk reservation, response persistence, pause/resume/retry and reviewed-only apply.
+- Docs were updated in README.md, docs/MODO_LOCAL_Y_MODO_PREMIUM.md, and docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md. Keep older notes below as project history, not current implementation status.
+- Still required before a PC package: inspect latest CI; fix failures; run Windows portable build from the exact approved branch SHA; verify artifact/source SHA; then manual smoke test on the user's Windows PC. Do not merge PR #14 or provide a stale ZIP as final.
+
 ## Product goal
 
 NovelTrad is a local-first Windows reader and translation workspace for EPUB/PDF novels. Primary direction: English/Japanese/Korean source text to Spanish, offline-first, no paid API, safe originals, versioned translations, reliable backups, consistent per-novel terminology, and manual review before saving.
