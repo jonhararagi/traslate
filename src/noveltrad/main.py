@@ -23,6 +23,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 from noveltrad.narrative_rules import TermRule, apply_offline_rules, get_profile
+from noveltrad.reader_pages import page_source_hash, split_reader_pages, split_text_to_count
 
 APP_NAME = "NovelTrad"
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
@@ -497,6 +498,16 @@ def init_db() -> None:
                 status TEXT NOT NULL DEFAULT 'imported',
                 UNIQUE(book_id, chapter_index)
             );
+            CREATE TABLE IF NOT EXISTS chapter_page_translations (
+                chapter_id TEXT NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+                page_index INTEGER NOT NULL CHECK(page_index >= 0),
+                source_hash TEXT NOT NULL,
+                translated_text TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY(chapter_id, page_index, source_hash)
+            );
+            CREATE INDEX IF NOT EXISTS idx_chapter_page_translations_chapter
+                ON chapter_page_translations(chapter_id, page_index);
             CREATE TABLE IF NOT EXISTS glossary_entries (
                 id TEXT PRIMARY KEY,
                 book_id TEXT REFERENCES books(id) ON DELETE CASCADE,
@@ -657,10 +668,42 @@ class BackupSettingsInput(BaseModel):
 class ProgressInput(BaseModel):
     chapter_index: int = Field(ge=0)
     scroll_top: float = Field(default=0, ge=0, le=100000000)
+    page_index: int = Field(default=0, ge=0, le=100000)
+    page_count: int = Field(default=1, ge=1, le=100000)
+    chapter_pages: dict[str, int] = Field(default_factory=dict)
+
+    @field_validator("chapter_pages")
+    @classmethod
+    def validate_chapter_pages(cls, value: dict[str, int]) -> dict[str, int]:
+        if len(value) > 10000:
+            raise ValueError("El progreso no puede contener más de 10000 capítulos.")
+        for chapter_index, page_index in value.items():
+            if not chapter_index.isdigit() or int(chapter_index) > 100000:
+                raise ValueError("El índice de capítulo guardado no es válido.")
+            if page_index < 0 or page_index > 100000:
+                raise ValueError("El índice de página guardado no es válido.")
+        return value
 
 
 class TranslationInput(BaseModel):
     translated_text: str = Field(max_length=2_000_000)
+
+
+class ReaderPageTranslationItem(BaseModel):
+    page_index: int = Field(ge=0, le=100000)
+    source_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    translated_text: str = Field(max_length=100000)
+
+    @field_validator("translated_text", mode="before")
+    @classmethod
+    def preserve_page_text(cls, value: object) -> object:
+        if not isinstance(value, str):
+            raise ValueError("La traducción de una página debe ser texto.")
+        return value
+
+
+class ReaderPagesTranslationInput(BaseModel):
+    pages: list[ReaderPageTranslationItem] = Field(min_length=1, max_length=10000)
 
 
 class GlossaryInput(BaseModel):
@@ -2713,8 +2756,12 @@ def ignore_glossary_candidate(book_id: str, candidate_id: str) -> dict[str, obje
 @app.put("/api/books/{book_id}/progress")
 def save_progress(book_id: str, progress: ProgressInput) -> dict[str, object]:
     init_db()
+    if progress.page_index >= progress.page_count:
+        raise HTTPException(status_code=422, detail="La página actual debe estar dentro del total de páginas.")
     with connection() as conn:
-        book = conn.execute("SELECT id FROM books WHERE id = ?", (book_id,)).fetchone()
+        book = conn.execute(
+            "SELECT id, current_location FROM books WHERE id = ?", (book_id,)
+        ).fetchone()
         if not book:
             raise HTTPException(status_code=404, detail="No se encontró la novela.")
         chapter = conn.execute(
@@ -2723,12 +2770,117 @@ def save_progress(book_id: str, progress: ProgressInput) -> dict[str, object]:
         ).fetchone()
         if not chapter:
             raise HTTPException(status_code=422, detail="El capítulo indicado no existe en esta novela.")
+        chapter_pages: dict[str, int] = {}
+        try:
+            previous = json.loads(book["current_location"] or "{}")
+        except (TypeError, json.JSONDecodeError):
+            previous = {}
+        if isinstance(previous, dict) and isinstance(previous.get("chapter_pages"), dict):
+            for key, value in previous["chapter_pages"].items():
+                if str(key).isdigit() and isinstance(value, int) and value >= 0:
+                    chapter_pages[str(key)] = value
+        for key, value in progress.chapter_pages.items():
+            saved_chapter = conn.execute(
+                "SELECT 1 FROM chapters WHERE book_id = ? AND chapter_index = ?",
+                (book_id, int(key)),
+            ).fetchone()
+            if not saved_chapter:
+                raise HTTPException(status_code=422, detail="El progreso incluye un capítulo que no existe.")
+            chapter_pages[str(int(key))] = value
+        chapter_pages[str(progress.chapter_index)] = progress.page_index
         location = json.dumps(
-            {"chapter_index": progress.chapter_index, "scroll_top": progress.scroll_top},
+            {
+                "chapter_index": progress.chapter_index,
+                "scroll_top": progress.scroll_top,
+                "page_index": progress.page_index,
+                "page_count": progress.page_count,
+                "chapter_pages": chapter_pages,
+            },
             separators=(",", ":"),
         )
         conn.execute("UPDATE books SET current_location = ? WHERE id = ?", (location, book_id))
-    return {"book_id": book_id, **progress.model_dump(), "saved": True}
+    return {"book_id": book_id, **progress.model_dump(), "chapter_pages": chapter_pages, "saved": True}
+
+
+@app.get("/api/chapters/{chapter_id}/reader-pages")
+def get_reader_pages(chapter_id: str) -> dict[str, object]:
+    """Return deterministic source pages and saved translations for those exact source slices."""
+    init_db()
+    with connection() as conn:
+        chapter = conn.execute(
+            "SELECT id, title, original_text, translated_text FROM chapters WHERE id = ?",
+            (chapter_id,),
+        ).fetchone()
+        if not chapter:
+            raise HTTPException(status_code=404, detail="No se encontró el capítulo.")
+        source_pages = split_reader_pages(chapter["original_text"] or "")
+        legacy_pages = split_text_to_count(chapter["translated_text"] or "", len(source_pages))
+        saved_rows = conn.execute(
+            "SELECT page_index, source_hash, translated_text FROM chapter_page_translations WHERE chapter_id = ?",
+            (chapter_id,),
+        ).fetchall()
+    saved = {
+        (int(row["page_index"]), row["source_hash"]): row["translated_text"]
+        for row in saved_rows
+    }
+    pages = []
+    for page_index, original_text in enumerate(source_pages):
+        source_hash = page_source_hash(original_text)
+        pages.append({
+            "page_index": page_index,
+            "source_hash": source_hash,
+            "original_text": original_text,
+            "translated_text": saved.get((page_index, source_hash), legacy_pages[page_index]),
+        })
+    return {"chapter_id": chapter_id, "title": chapter["title"], "page_count": len(pages), "pages": pages}
+
+
+@app.put("/api/chapters/{chapter_id}/reader-pages/translations")
+def save_reader_pages(chapter_id: str, payload: ReaderPagesTranslationInput) -> dict[str, object]:
+    """Persist page translations atomically and keep chapter-level export/history in sync."""
+    init_db()
+    now = datetime.now(timezone.utc).isoformat()
+    with connection() as conn:
+        chapter = conn.execute(
+            "SELECT id, original_text, translated_text FROM chapters WHERE id = ?",
+            (chapter_id,),
+        ).fetchone()
+        if not chapter:
+            raise HTTPException(status_code=404, detail="No se encontró el capítulo.")
+        source_pages = split_reader_pages(chapter["original_text"] or "")
+        if len(payload.pages) != len(source_pages):
+            raise HTTPException(status_code=422, detail="El envío debe incluir todas las páginas actuales del capítulo.")
+        if [item.page_index for item in payload.pages] != list(range(len(source_pages))):
+            raise HTTPException(status_code=422, detail="Las páginas deben enviarse en orden, sin duplicados ni omisiones.")
+        for item, original_text in zip(payload.pages, source_pages):
+            if item.source_hash != page_source_hash(original_text):
+                raise HTTPException(status_code=409, detail="El original cambió desde que se abrió el lector. Recargá el capítulo antes de guardar.")
+        if sum(len(item.translated_text) for item in payload.pages) > 2_000_000:
+            raise HTTPException(status_code=413, detail="La traducción supera el límite de 2 millones de caracteres.")
+        translated_text = "".join(item.translated_text for item in payload.pages)
+        current = chapter["translated_text"] or ""
+        if current != translated_text:
+            version = conn.execute(
+                "SELECT COALESCE(MAX(version_number), 0) + 1 AS next_version "
+                "FROM translation_versions WHERE chapter_id = ?", (chapter_id,)
+            ).fetchone()["next_version"]
+            conn.execute(
+                "INSERT INTO translation_versions(id, chapter_id, version_number, translated_text, created_at) "
+                "VALUES(?,?,?,?,?)",
+                (str(uuid4()), chapter_id, version, current, now),
+            )
+            conn.execute(
+                "UPDATE chapters SET translated_text = ?, status = ? WHERE id = ?",
+                (translated_text, "translated" if translated_text.strip() else "imported", chapter_id),
+            )
+        for item in payload.pages:
+            conn.execute(
+                "INSERT OR REPLACE INTO chapter_page_translations "
+                "(chapter_id, page_index, source_hash, translated_text, updated_at) VALUES(?,?,?,?,?)",
+                (chapter_id, item.page_index, item.source_hash, item.translated_text, now),
+            )
+    return {"chapter_id": chapter_id, "translated_text": translated_text,
+            "pages": [item.model_dump() for item in payload.pages], "saved": True}
 
 
 @app.put("/api/chapters/{chapter_id}/translation")
@@ -2752,6 +2904,7 @@ def save_translation(chapter_id: str, translation: TranslationInput) -> dict[str
                 "VALUES(?,?,?,?,?)",
                 (str(uuid4()), chapter_id, version, current, now),
             )
+            conn.execute("DELETE FROM chapter_page_translations WHERE chapter_id = ?", (chapter_id,))
             conn.execute(
                 "UPDATE chapters SET translated_text = ?, status = ? WHERE id = ?",
                 (translation.translated_text, "translated" if translation.translated_text.strip() else "imported", chapter_id),
@@ -2812,7 +2965,7 @@ def home() -> str:
 <title>NovelTrad — Tu biblioteca</title><style>
 :root{color-scheme:light dark;--bg:#f5f0e8;--panel:#fffdf8;--ink:#28251f;--muted:#777064;--accent:#6b5a9e;--line:#e4ddd1;--soft:#eee8f8}
 @media(prefers-color-scheme:dark){:root{--bg:#191a20;--panel:#23252d;--ink:#ece9e2;--muted:#aaa6b0;--accent:#c0b2ff;--line:#393b46;--soft:#34303f}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:3px}main{max-width:1120px;margin:auto;padding:24px 20px 60px}.top{display:flex;align-items:center;gap:12px;margin-bottom:28px}.mark{background:var(--accent);color:white;border-radius:14px;padding:9px 12px;font-weight:800}.sub{color:var(--muted)}h1{font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.15;margin:.2rem 0}h2{margin-top:0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;margin:18px 0;box-shadow:0 6px 24px #00000008}.primary,.secondary,.quiet{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:12px;padding:10px 15px;font-weight:650}.primary{background:var(--accent);color:white}.secondary{background:var(--soft);color:var(--ink)}.quiet{background:transparent;color:var(--ink);border:1px solid var(--line)}input[type=file]{max-width:100%;margin:12px 0}.book{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}.book:last-child{border:0}.bookinfo{flex:1;min-width:0}.empty{padding:24px;text-align:center;color:var(--muted)}#status{margin-top:12px;min-height:1.5em}.pill{font-size:.8rem;border:1px solid var(--line);border-radius:99px;padding:3px 9px;color:var(--muted)}#reader{display:none}.reader-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.reader-head h2{margin:0;flex:1}.reader-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.reader-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.reading-pane{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}.reading-pane h3{margin-top:0}.original-text{white-space:pre-wrap;overflow-wrap:anywhere;max-height:65vh;overflow:auto;font-family:Georgia,'Times New Roman',serif;line-height:1.85;font-size:19px}.translation-text{width:100%;min-height:48vh;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);line-height:1.85;font-family:Georgia,'Times New Roman',serif;font-size:19px}.chapter-nav{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:14px 0}.chapter-nav select{max-width:65%;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)}.reader-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.small{font-size:.9rem}.hidden{display:none!important}@media(max-width:760px){main{padding:18px 12px 40px}.reader-grid{grid-template-columns:1fr}.original-text{max-height:45vh}.translation-text{min-height:35vh}.panel{padding:16px}.book{align-items:flex-start;flex-wrap:wrap}.bookinfo{flex-basis:60%}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:3px}main{max-width:1120px;margin:auto;padding:24px 20px 60px}.top{display:flex;align-items:center;gap:12px;margin-bottom:28px}.mark{background:var(--accent);color:white;border-radius:14px;padding:9px 12px;font-weight:800}.sub{color:var(--muted)}h1{font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.15;margin:.2rem 0}h2{margin-top:0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;margin:18px 0;box-shadow:0 6px 24px #00000008}.primary,.secondary,.quiet{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:12px;padding:10px 15px;font-weight:650}.primary{background:var(--accent);color:white}.secondary{background:var(--soft);color:var(--ink)}.quiet{background:transparent;color:var(--ink);border:1px solid var(--line)}input[type=file]{max-width:100%;margin:12px 0}.book{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}.book:last-child{border:0}.bookinfo{flex:1;min-width:0}.empty{padding:24px;text-align:center;color:var(--muted)}#status{margin-top:12px;min-height:1.5em}.pill{font-size:.8rem;border:1px solid var(--line);border-radius:99px;padding:3px 9px;color:var(--muted)}#reader{display:none}.reader-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.reader-head h2{margin:0;flex:1}.reader-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.reader-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.reading-pane{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}.reading-pane h3{margin-top:0}.original-text{white-space:pre-wrap;overflow-wrap:anywhere;max-height:65vh;overflow:auto;font-family:Georgia,'Times New Roman',serif;line-height:1.85;font-size:19px}.translation-text{width:100%;min-height:48vh;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);line-height:1.85;font-family:Georgia,'Times New Roman',serif;font-size:19px}.chapter-nav{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:14px 0}.reader-modal{width:min(1200px,96vw);max-width:96vw;max-height:94vh;overflow:auto;border:1px solid var(--line);border-radius:18px;padding:20px;background:var(--panel);color:var(--ink)}.reader-modal::backdrop{background:#111827b8}.reader-modal-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.reader-modal-head h2{margin:0;flex:1}.reader-modal-text{white-space:pre-wrap;overflow-wrap:anywhere;max-height:62vh;overflow:auto;font-family:Georgia,'Times New Roman',serif;line-height:1.85;font-size:21px}.reader-modal textarea{width:100%;min-height:10rem;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:14px}.chapter-nav select{max-width:65%;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)}.reader-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.small{font-size:.9rem}.hidden{display:none!important}@media(max-width:760px){main{padding:18px 12px 40px}.reader-grid{grid-template-columns:1fr}.original-text{max-height:45vh}.translation-text{min-height:35vh}.panel{padding:16px}.book{align-items:flex-start;flex-wrap:wrap}.bookinfo{flex-basis:60%}}
 #queue-original,#queue-translation{width:100%;min-height:34vh;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);line-height:1.7;font-family:Georgia,'Times New Roman',serif;font-size:16px}#queue-progress-bar{width:100%;height:14px;margin:8px 0;accent-color:var(--accent)}.queue-meta{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.queue-meta>*{min-width:0}.queue-select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
 </style></head><body><main>
 <header class="top"><div class="mark">NT</div><div><strong>NovelTrad</strong><div class="sub">Tu biblioteca, tus reglas, tu espacio</div></div><span style="margin-left:auto" class="pill">Local-first</span></header>
@@ -2842,18 +2995,35 @@ def home() -> str:
 <section class="panel"><h2>Copias de seguridad</h2><p class="sub">Guarda el estado de tu biblioteca y permite recuperarlo. Antes de restaurar se crea otra copia de seguridad automática.</p><div class="reader-actions"><button id="create-backup" class="secondary" type="button">Crear copia ahora</button><button id="refresh-backups" class="quiet" type="button">Actualizar lista</button></div><label class="small" for="backup-select">Copia disponible</label><select id="backup-select" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"><option value="">Todavía no hay copias</option></select><button id="restore-backup" class="secondary" type="button" disabled>Restaurar copia seleccionada</button><div id="backup-status" role="status" aria-live="polite"></div></section>
 <section class="panel"><h2>Copias automáticas</h2><p class="sub">La aplicación crea copias en segundo plano mientras está abierta. La programación y la retención se guardan en este equipo.</p><label><input id="backup-enabled" type="checkbox" checked> Activar copias automáticas</label><div class="reader-actions"><label for="backup-interval">Frecuencia (horas)<input id="backup-interval" type="number" min="1" max="720" value="24" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></label><label for="backup-retention">Copias a conservar<input id="backup-retention" type="number" min="1" max="100" value="14" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></label></div><button id="save-backup-settings" class="secondary" type="button">Guardar programación</button><button id="prune-backups" class="quiet" type="button">Aplicar retención ahora</button><div id="backup-settings-status" role="status" aria-live="polite"></div></section></section>
 <section id="reader"><div class="reader-head"><button id="back" class="quiet" type="button">← Biblioteca</button><h2 id="book-title">Leyendo</h2><button id="toggle-glossary" class="secondary" type="button">Glosario</button><label class="small">Texto <select id="font-size" aria-label="Tamaño del texto"><option value="17">Pequeño</option><option value="19" selected>Mediano</option><option value="22">Grande</option><option value="26">Muy grande</option></select></label></div>
-<div class="chapter-nav"><button id="previous" class="secondary" type="button">← Anterior</button><select id="chapter-select" aria-label="Elegir capítulo"></select><button id="next" class="secondary" type="button">Siguiente →</button></div>
-<div class="reader-grid"><section class="reading-pane"><h3>Original</h3><div id="original" class="original-text" tabindex="0"></div></section><section class="reading-pane"><h3>Traducción</h3><p class="sub small">El original permanece intacto. Tus cambios se guardan aparte.</p><textarea id="translation" class="translation-text" aria-label="Texto de traducción" placeholder="Escribí o pegá aquí tu traducción…"></textarea><div class="reader-actions"><button id="save-translation" class="primary" type="button">Guardar traducción</button><button id="offline-rules-open" class="secondary" type="button">Reglas offline</button><button id="export-epub" class="secondary" type="button">Exportar EPUB</button><button id="show-history" class="secondary" type="button">Historial</button><span id="save-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">Cada guardado conserva una versión anterior.</p>
+<div class="chapter-nav"><button id="previous" class="secondary" type="button">← Anterior</button><select id="chapter-select" aria-label="Elegir capítulo"></select><strong id="page-indicator" class="small" aria-live="polite">Página 1 de 1</strong><button id="next" class="secondary" type="button">Siguiente →</button></div>
+<div class="reader-actions"><button id="read-page" class="secondary" type="button">Leer página</button><button id="translate-page" class="primary" type="button">Traducir página</button><span id="page-status" class="sub small" role="status" aria-live="polite"></span></div>
+<div class="reader-grid"><section class="reading-pane"><h3>Original</h3><div id="original" class="original-text" tabindex="0"></div></section><section class="reading-pane"><h3>Traducción</h3><p class="sub small">El original permanece intacto. Editá y guardá la traducción correspondiente a la página actual.</p><textarea id="translation" class="translation-text" aria-label="Traducción de la página actual" placeholder="Pegá o editá la traducción de esta página…"></textarea><div class="reader-actions"><button id="save-translation" class="primary" type="button">Guardar traducción</button><button id="offline-rules-open" class="secondary" type="button">Reglas offline</button><button id="export-epub" class="secondary" type="button">Exportar EPUB</button><button id="show-history" class="secondary" type="button">Historial</button><span id="save-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">Cada guardado conserva una versión anterior.</p>
 <div id="offline-rules-panel" class="panel hidden"><h3>Motor de traducción</h3><p class="sub small">Elegí un modo por operación. Ambos generan una vista previa y nunca guardan por su cuenta.</p><label>Modo <select id="translation-mode" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="local">Modo local — reglas, glosario y formato (RAM mínima)</option><option value="premium">Modo Premium — ChatGPT o Gemini en Chromium</option></select></label><p id="premium-info" class="sub small">Premium abre un perfil Chromium persistente para iniciar sesión en ChatGPT o Gemini. Se bloquean las imágenes para reducir carga; NovelTrad no envía texto automáticamente. Genera fragmentos secuenciales de hasta 3.500 caracteres. Copiá cada prompt, pegá la respuesta y revisá todos los fragmentos antes de pasarlos al editor.</p><label>Proveedor Premium <select id="premium-provider" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="chatgpt">ChatGPT</option><option value="gemini">Gemini</option></select></label><div class="reader-actions"><button id="premium-open-browser" class="secondary" type="button">Abrir Chromium / iniciar sesión</button><span id="premium-browser-status" class="sub small" role="status" aria-live="polite"></span></div><label>Perfil editorial <select id="offline-profile" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="light_novel_es">Novela ligera en español</option><option value="faithful_literary_es">Traducción literaria fiel</option><option value="webnovel_es">Novela web en español</option></select></label><label>Mapa de frases, una por línea: original =&gt; traducción<textarea id="offline-phrase-map" rows="4" style="display:block;width:100%;padding:9px;margin:6px 0 12px" placeholder="reached =&gt; alcanzó&#10;magic stone =&gt; piedra mágica"></textarea></label><div class="reader-actions"><button id="offline-run" class="primary" type="button">Generar vista previa</button><button id="offline-apply" class="secondary" type="button" disabled>Pasar al editor</button><button id="offline-close" class="quiet" type="button">Cerrar</button></div><p id="offline-status" class="sub small" role="status" aria-live="polite"></p><pre id="offline-result" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:32rem;overflow:auto"></pre><div id="offline-chunks" class="reader-grid" style="margin-top:14px"></div></div><div id="translation-history" class="hidden"><h4>Versiones guardadas</h4><div id="history-list"></div><p id="history-status" class="sub small" role="status" aria-live="polite"></p></div></section></div>
 <section id="glossary-panel" class="panel hidden"><div class="reader-head"><h2>Glosario de esta novela</h2><button id="close-glossary" class="quiet" type="button">Cerrar</button></div><p class="sub small">Protegé nombres y fijá términos para mantener la coherencia. Las reglas se guardan por novela.</p><div class="reader-actions"><button id="extract-glossary-candidates" class="secondary" type="button">Buscar candidatos en el texto original</button><span id="glossary-candidate-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">El análisis local busca términos del perfil, vocabulario gamer/otaku y nombres potenciales. Cada candidato muestra evidencia; nada se aprueba ni se aplica automáticamente.</p><div id="glossary-candidates-list"></div><form id="glossary-form"><div class="reader-grid"><label>Término original<input id="glossary-source" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label><label>Forma preferida<input id="glossary-target" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label></div><div class="reader-actions"><label>Regla <select id="glossary-rule" style="padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)"><option value="protect">Proteger nombre/término</option><option value="preserve">Conservar exactamente</option><option value="translate">Traducir siempre así</option><option value="contextual">Depende del contexto</option></select></label><label><input id="glossary-approved" type="checkbox"> Aprobado</label><button id="glossary-submit" class="primary" type="submit">Guardar término</button><button id="glossary-cancel" class="secondary hidden" type="button">Cancelar edición</button></div><label>Notas opcionales<textarea id="glossary-notes" rows="2" maxlength="2000" style="display:block;width:100%;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Nombre propio; no traducir."></textarea></label><p id="glossary-status" class="sub small" role="status" aria-live="polite"></p></form><div id="glossary-list"></div></section>
-</section><p class="sub small">Modo local aplica reglas aprobadas, pero no traduce por sí solo frases desconocidas. Premium utiliza tu sesión de ChatGPT o Gemini en Chromium; requiere copiar el prompt y pegar la respuesta. Las vistas previas nunca se guardan automáticamente.</p></main>
+</section>
+<dialog id="read-page-modal" class="reader-modal" aria-labelledby="read-page-title">
+  <div class="reader-modal-head"><h2 id="read-page-title">Leer página</h2><button id="read-page-smaller" class="secondary" type="button" aria-label="Reducir tamaño de letra">A−</button><button id="read-page-larger" class="secondary" type="button" aria-label="Aumentar tamaño de letra">A+</button><button id="read-page-close" class="quiet" type="button">Cerrar</button></div>
+  <div class="reader-grid"><section class="reading-pane"><h3>Original</h3><div id="read-page-original" class="reader-modal-text"></div></section><section class="reading-pane"><h3>Traducción</h3><div id="read-page-translation" class="reader-modal-text"></div></section></div>
+  <div class="reader-actions"><button id="read-page-previous" class="secondary" type="button">← Anterior</button><button id="read-page-next" class="secondary" type="button">Siguiente →</button></div>
+</dialog>
+<dialog id="translate-page-modal" class="reader-modal" aria-labelledby="translate-page-title">
+  <div class="reader-modal-head"><h2 id="translate-page-title">Traducir página</h2><button id="translate-page-close" class="quiet" type="button">Cerrar</button></div>
+  <p class="sub small">El proveedor se abre con tu sesión habitual. NovelTrad no envía el texto ni lee la respuesta automáticamente: copiá el prompt, pegalo en ChatGPT/Gemini y pegá aquí la traducción para guardarla en esta página.</p>
+  <label>Proveedor <select id="page-translation-provider" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="chatgpt">ChatGPT</option><option value="gemini">Gemini</option></select></label>
+  <label>Prompt de esta página<textarea id="page-translation-prompt" readonly rows="9" aria-label="Prompt de traducción de la página"></textarea></label>
+  <div class="reader-actions"><button id="page-copy-prompt" class="secondary" type="button">Copiar prompt</button><button id="page-open-provider" class="secondary" type="button">Abrir proveedor</button></div>
+  <label>Respuesta traducida<textarea id="page-translation-answer" rows="12" aria-label="Respuesta traducida" placeholder="Pegá aquí únicamente la traducción de la página…"></textarea></label>
+  <div class="reader-actions"><button id="page-save-translation" class="primary" type="button">Guardar traducción de la página</button><p id="page-translate-status" class="sub small" role="status" aria-live="polite"></p></div>
+</dialog>
+<p class="sub small">Modo local aplica reglas aprobadas, pero no traduce por sí solo frases desconocidas. Premium utiliza tu sesión de ChatGPT o Gemini en Chromium; requiere copiar el prompt y pegar la respuesta. Las vistas previas nunca se guardan automáticamente.</p></main>
 <script>
 const $=s=>document.querySelector(s);let currentBook=null,chapters=[],chapterPos=0,saveTimer=null,translationDirty=false,editingGlossaryId=null;
+let readerPages=[],translationPages=[],pageIndex=0,chapterPagePositions={},readPageFontSize=22;
 let queueBookId=null,currentTranslationJobId=null,currentQueueChunkId=null,queueWorkerActive=false,queuePauseRequested=false,currentQueuePrompt=null,currentQueueProvider='chatgpt';
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function api(url,options={}){const r=await fetch(url,options);let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.detail||'No se pudo completar la operación');return d}
-async function refresh(){try{const books=await api('/api/books');syncQueueBookOptions(books);$('#books').className=books.length?'':'empty';$('#books').innerHTML=books.length?books.map(b=>{let pos={};try{pos=JSON.parse(b.current_location||'{}')}catch{}return '<article class="book"><div class="bookinfo"><strong>'+esc(b.title)+'</strong><div class="sub small">'+b.chapter_count+' secciones · '+esc(b.source_format.toUpperCase())+' · Progreso guardado</div></div><button class="primary" type="button" data-open="'+esc(b.id)+'" data-chapter="'+(Number.isInteger(pos.chapter_index)?pos.chapter_index:0)+'">Abrir novela</button></article>'}).join(''):'<div class="empty">Todavía no hay novelas. Importá un EPUB o PDF para empezar.</div>';if(!queueBookId&&books.length){queueBookId=$('#queue-book-select').value||books[0].id;$('#queue-book-select').value=queueBookId;await loadLatestQueueForBook(queueBookId)}}catch(e){$('#books').textContent=e.message}}
-$('#books').addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(b)openBook(b.dataset.open,Number(b.dataset.chapter)||0)});
+async function refresh(){try{const books=await api('/api/books');syncQueueBookOptions(books);$('#books').className=books.length?'':'empty';$('#books').innerHTML=books.length?books.map(b=>{let pos={};try{pos=JSON.parse(b.current_location||'{}')}catch{}return '<article class="book"><div class="bookinfo"><strong>'+esc(b.title)+'</strong><div class="sub small">'+b.chapter_count+' secciones · '+esc(b.source_format.toUpperCase())+' · Progreso guardado</div></div><button class="primary" type="button" data-open="'+esc(b.id)+'" data-chapter="'+(Number.isInteger(pos.chapter_index)?pos.chapter_index:0)+'" data-page="'+(Number.isInteger(pos.page_index)?pos.page_index:0)+'">Abrir novela</button></article>'}).join(''):'<div class="empty">Todavía no hay novelas. Importá un EPUB o PDF para empezar.</div>';if(!queueBookId&&books.length){queueBookId=$('#queue-book-select').value||books[0].id;$('#queue-book-select').value=queueBookId;await loadLatestQueueForBook(queueBookId)}}catch(e){$('#books').textContent=e.message}}
+$('#books').addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(b)openBook(b.dataset.open,Number(b.dataset.chapter)||0,Number(b.dataset.page)||0)});
 
 function syncQueueBookOptions(books){
   const select=$('#queue-book-select');const previous=select.value||queueBookId;
@@ -3035,15 +3205,117 @@ $('#refresh-backups').addEventListener('click',loadBackups);
 $('#restore-backup').addEventListener('click',async()=>{const name=$('#backup-select').value;if(!name)return;if(!confirm('La restauración reemplazará la biblioteca actual con el estado de esta copia. Antes se guardará una copia de seguridad del estado actual. ¿Continuar?'))return;const button=$('#restore-backup');button.disabled=true;$('#backup-status').textContent='Validando y restaurando…';try{const result=await api('/api/backups/'+encodeURIComponent(name)+'/restore',{method:'POST'});$('#backup-status').textContent='Biblioteca restaurada. Copia de seguridad del estado anterior: '+result.safety_backup+'.';await refresh();await loadBackups()}catch(e){$('#backup-status').textContent='No se pudo restaurar: '+e.message}finally{button.disabled=false}});
 
 $('#upload').addEventListener('submit',async e=>{e.preventDefault();const file=$('#file').files[0];if(!file)return;$('#status').textContent='Importando y preparando el libro…';const data=new FormData();data.append('file',file);try{const result=await api('/api/books/import',{method:'POST',body:data});$('#status').textContent='“'+result.title+'” se importó correctamente ('+result.chapter_count+' secciones).';e.target.reset();await refresh()}catch(err){$('#status').textContent=err.message}});
-async function openBook(id,preferred=0){try{const books=await api('/api/books');currentBook=books.find(b=>b.id===id);if(!currentBook)throw new Error('No se encontró la novela');chapters=await api('/api/books/'+id+'/chapters');if(!chapters.length)throw new Error('La novela no contiene secciones legibles');chapterPos=Math.max(0,Math.min(preferred,chapters.length-1));$('#book-title').textContent=currentBook.title;$('#chapter-select').innerHTML=chapters.map((c,i)=>'<option value="'+i+'">'+(i+1)+'. '+esc(c.title)+'</option>').join('');$('#library').classList.add('hidden');$('#reader').style.display='block';renderChapter(true)}catch(e){$('#status').textContent=e.message}}
-function renderChapter(restore){const c=chapters[chapterPos];if(!c)return;translationDirty=false;$('#chapter-select').value=String(chapterPos);$('#original').textContent=c.original_text;$('#translation').value=c.translated_text||'';$('#previous').disabled=chapterPos===0;$('#next').disabled=chapterPos===chapters.length-1;$('#save-status').textContent='';$('#original').scrollTop=0;if(restore){let p={};try{p=JSON.parse(currentBook.current_location||'{}')}catch{}if(p.chapter_index===chapterPos&&Number.isFinite(p.scroll_top))$('#original').scrollTop=p.scroll_top}saveProgress()}
-function goToChapter(i){if(i<0||i>=chapters.length)return;if(translationDirty&&!confirm('Hay cambios de traducción sin guardar. ¿Descartarlos y cambiar de capítulo?'))return;translationDirty=false;chapterPos=i;renderChapter(false)}
-$('#chapter-select').addEventListener('change',e=>goToChapter(Number(e.target.value)));$('#previous').addEventListener('click',()=>goToChapter(chapterPos-1));$('#next').addEventListener('click',()=>goToChapter(chapterPos+1));
-async function persistProgressNow(){if(!currentBook)return;clearTimeout(saveTimer);const scroll_top=$('#original').scrollTop;await api('/api/books/'+currentBook.id+'/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({chapter_index:chapterPos,scroll_top})});currentBook.current_location=JSON.stringify({chapter_index:chapterPos,scroll_top})}
+async function openBook(id,preferred=0,preferredPage=0){try{
+ const books=await api('/api/books');currentBook=books.find(b=>b.id===id);if(!currentBook)throw new Error('No se encontró la novela');
+ chapters=await api('/api/books/'+id+'/chapters');if(!chapters.length)throw new Error('La novela no contiene secciones legibles');
+ let position={};try{position=JSON.parse(currentBook.current_location||'{}')}catch{}
+ chapterPagePositions=position.chapter_pages&&typeof position.chapter_pages==='object'?{...position.chapter_pages}:{};
+ chapterPos=Math.max(0,Math.min(preferred,chapters.length-1));
+ pageIndex=Number.isInteger(chapterPagePositions[String(chapterPos)])?chapterPagePositions[String(chapterPos)]:(position.chapter_index===chapterPos&&Number.isInteger(position.page_index)?position.page_index:preferredPage);
+ $('#book-title').textContent=currentBook.title;
+ $('#chapter-select').innerHTML=chapters.map((c,i)=>'<option value="'+i+'">'+(i+1)+'. '+esc(c.title)+'</option>').join('');
+ $('#library').classList.add('hidden');$('#reader').style.display='block';await renderChapter(true)
+ }catch(e){$('#status').textContent=e.message}}
+async function renderChapter(restore){
+ const c=chapters[chapterPos];if(!c)return;translationDirty=false;$('#chapter-select').value=String(chapterPos);
+ try{
+  const data=await api('/api/chapters/'+c.id+'/reader-pages');readerPages=data.pages||[];
+  if(!readerPages.length)throw new Error('El capítulo no contiene páginas legibles.');
+  translationPages=readerPages.map(page=>page.translated_text||'');
+  if(restore){let p={};try{p=JSON.parse(currentBook.current_location||'{}')}catch{};const remembered=chapterPagePositions[String(chapterPos)];if(Number.isInteger(remembered))pageIndex=remembered;else if(p.chapter_index===chapterPos&&Number.isInteger(p.page_index))pageIndex=p.page_index;else pageIndex=0}
+  if(pageIndex<0)pageIndex=readerPages.length-1;pageIndex=Math.max(0,Math.min(pageIndex,readerPages.length-1));
+  $('#save-status').textContent='';renderPage();saveProgress()
+ }catch(e){$('#page-status').textContent='No se pudo cargar el capítulo: '+e.message;throw e}
+}
+function renderPage(){
+ const p=readerPages[pageIndex];if(!p)return;
+ $('#original').textContent=p.original_text;$('#translation').value=translationPages[pageIndex]||'';
+ $('#page-indicator').textContent='Página '+(pageIndex+1)+' de '+readerPages.length+' · Capítulo '+(chapterPos+1)+' de '+chapters.length;
+ $('#previous').disabled=chapterPos===0&&pageIndex===0;
+ $('#next').disabled=chapterPos===chapters.length-1&&pageIndex===readerPages.length-1;
+ chapterPagePositions[String(chapterPos)]=pageIndex;
+ $('#page-status').textContent='';
+ if($('#read-page-modal').open)refreshReadPageModal()
+}
+async function goToChapter(i,pagePreference='saved'){
+ if(i<0||i>=chapters.length)return;
+ if(translationDirty&&!confirm('Hay cambios de traducción sin guardar. ¿Descartarlos y cambiar de capítulo?'))return;
+ translationDirty=false;try{await persistProgressNow()}catch(e){$('#save-status').textContent='No se pudo guardar el progreso: '+e.message;return}
+ chapterPos=i;
+ if(pagePreference==='last')pageIndex=-1;
+ else if(pagePreference==='first')pageIndex=0;
+ else pageIndex=Number.isInteger(chapterPagePositions[String(i)])?chapterPagePositions[String(i)]:0;
+ try{await renderChapter(false);if(pagePreference==='last'){pageIndex=readerPages.length-1;renderPage();await persistProgressNow()}}catch(e){$('#page-status').textContent=e.message}
+}
+async function goToPage(nextIndex){
+ if(nextIndex<0){if(chapterPos>0)await goToChapter(chapterPos-1,'last');return}
+ if(nextIndex>=readerPages.length){if(chapterPos<chapters.length-1)await goToChapter(chapterPos+1,'first');return}
+ pageIndex=nextIndex;chapterPagePositions[String(chapterPos)]=pageIndex;renderPage();saveProgress()
+}
+$('#chapter-select').addEventListener('change',e=>goToChapter(Number(e.target.value)));
+$('#previous').addEventListener('click',()=>goToPage(pageIndex-1));
+$('#next').addEventListener('click',()=>goToPage(pageIndex+1));
+async function persistProgressNow(){
+ if(!currentBook||!readerPages.length)return;clearTimeout(saveTimer);chapterPagePositions[String(chapterPos)]=pageIndex;
+ const payload={chapter_index:chapterPos,scroll_top:0,page_index:pageIndex,page_count:readerPages.length,chapter_pages:chapterPagePositions};
+ await api('/api/books/'+currentBook.id+'/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+ currentBook.current_location=JSON.stringify({...payload})
+}
 function saveProgress(){if(!currentBook)return;clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{try{await persistProgressNow()}catch(e){$('#save-status').textContent='No se pudo guardar el progreso: '+e.message}},250)}
-$('#original').addEventListener('scroll',saveProgress);
 $('#export-epub').addEventListener('click',async()=>{if(!currentBook)return;const button=$('#export-epub');button.disabled=true;$('#save-status').textContent='Preparando EPUB…';try{const response=await fetch('/api/books/'+currentBook.id+'/export/epub');let result={};if(!response.ok){try{result=await response.json()}catch{}throw new Error(result.detail||'No se pudo exportar el EPUB')}const blob=await response.blob();const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=(currentBook.title||'NovelTrad')+'-es.epub';document.body.appendChild(anchor);anchor.click();anchor.remove();URL.revokeObjectURL(url);$('#save-status').textContent='EPUB de traducción exportado.'}catch(e){$('#save-status').textContent='Exportación: '+e.message}finally{button.disabled=false}});
-$('#save-translation').addEventListener('click',async()=>{const c=chapters[chapterPos];$('#save-status').textContent='Guardando…';try{const result=await api('/api/chapters/'+c.id+'/translation',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({translated_text:$('#translation').value})});c.translated_text=result.translated_text;translationDirty=false;$('#save-status').textContent='Guardado en este equipo.'}catch(e){$('#save-status').textContent='Error: '+e.message}});
+async function persistTranslationPages(){
+ const c=chapters[chapterPos];if(!c||!readerPages.length)return;
+ translationPages[pageIndex]=$('#translation').value;
+ const pages=readerPages.map((page,index)=>({page_index:index,source_hash:page.source_hash,translated_text:translationPages[index]||''}));
+ const result=await api('/api/chapters/'+c.id+'/reader-pages/translations',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({pages})});
+ c.translated_text=result.translated_text;translationPages=(result.pages||pages).map(page=>page.translated_text||'');
+ readerPages=readerPages.map((page,index)=>({...page,translated_text:translationPages[index]||''}));
+ translationDirty=false;renderPage()
+}
+$('#save-translation').addEventListener('click',async()=>{const button=$('#save-translation');button.disabled=true;$('#save-status').textContent='Guardando traducción y páginas…';try{await persistTranslationPages();$('#save-status').textContent='Traducción y páginas guardadas en este equipo.'}catch(e){$('#save-status').textContent='Error: '+e.message}finally{button.disabled=false}});
+function refreshReadPageModal(){
+ const p=readerPages[pageIndex];if(!p)return;
+ $('#read-page-title').textContent=(currentBook?.title||'Novela')+' · '+(chapters[chapterPos]?.title||'Capítulo')+' · Página '+(pageIndex+1)+' de '+readerPages.length;
+ $('#read-page-original').textContent=p.original_text;
+ $('#read-page-translation').textContent=translationPages[pageIndex]||'Todavía no hay traducción guardada para esta página.';
+ $('#read-page-original').style.fontSize=readPageFontSize+'px';$('#read-page-translation').style.fontSize=readPageFontSize+'px';
+ $('#read-page-previous').disabled=chapterPos===0&&pageIndex===0;
+ $('#read-page-next').disabled=chapterPos===chapters.length-1&&pageIndex===readerPages.length-1;
+}
+$('#read-page').addEventListener('click',()=>{refreshReadPageModal();$('#read-page-modal').showModal()});
+$('#read-page-close').addEventListener('click',()=>$('#read-page-modal').close());
+$('#read-page-previous').addEventListener('click',()=>goToPage(pageIndex-1));
+$('#read-page-next').addEventListener('click',()=>goToPage(pageIndex+1));
+$('#read-page-smaller').addEventListener('click',()=>{readPageFontSize=Math.max(14,readPageFontSize-2);refreshReadPageModal()});
+$('#read-page-larger').addEventListener('click',()=>{readPageFontSize=Math.min(38,readPageFontSize+2);refreshReadPageModal()});
+async function buildPageTranslationPrompt(){
+ const p=readerPages[pageIndex];if(!p)throw new Error('No se encontró la página actual.');
+ const provider=$('#page-translation-provider').value;
+ const glossary=await api('/api/books/'+currentBook.id+'/glossary');
+ const approved=glossary.filter(item=>item.approved).map(item=>'- '+item.source_term+' => '+item.preferred_term+' ['+item.rule+']');
+ const prompt='Translate the following light-novel page into natural Spanish. Preserve every fact, paragraph break, name, honorific, game term, joke, and ambiguity. Do not summarize or omit content. Return only the Spanish translation. This is page '+(pageIndex+1)+' of '+readerPages.length+' in chapter '+chapters[chapterPos].title+'. Keep boundary paragraph breaks so the page can be stitched back into the chapter.\n\nApproved glossary:\n'+(approved.join('\n')||'(none)')+'\n\nORIGINAL PAGE:\n'+p.original_text;
+ $('#page-translation-prompt').value=prompt;$('#page-translation-answer').value=translationPages[pageIndex]||'';
+ $('#page-translation-provider').value=provider||'chatgpt';
+ $('#page-translate-status').textContent='Copiá el prompt y pegá la respuesta del proveedor. NovelTrad no puede recuperar esa respuesta automáticamente desde la web.';
+ $('#translate-page-title').textContent='Traducir · Página '+(pageIndex+1)+' de '+readerPages.length;
+ $('#translate-page-modal').showModal()
+}
+$('#translate-page').addEventListener('click',async()=>{try{await buildPageTranslationPrompt()}catch(e){$('#page-status').textContent='No se pudo preparar la página: '+e.message}});
+$('#translate-page-close').addEventListener('click',()=>$('#translate-page-modal').close());
+$('#page-copy-prompt').addEventListener('click',async()=>{const prompt=$('#page-translation-prompt');try{await navigator.clipboard.writeText(prompt.value);$('#page-translate-status').textContent='Prompt copiado. Pegalo en el proveedor seleccionado.'}catch(e){prompt.focus();prompt.select();$('#page-translate-status').textContent='No se pudo copiar automáticamente; el prompt quedó seleccionado para copiarlo manualmente.'}});
+$('#page-open-provider').addEventListener('click',async()=>{const provider=$('#page-translation-provider').value;const url=provider==='gemini'?'https://gemini.google.com/app':'https://chatgpt.com/';try{await api('/api/premium-browser/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider})});$('#page-translate-status').textContent='Se solicitó abrir Chromium con el proveedor elegido. Pegá el prompt manualmente.'}catch(e){window.open(url,'_blank','noopener,noreferrer');$('#page-translate-status').textContent='Se abrió el proveedor en una pestaña. Pegá el prompt manualmente; la respuesta no se recupera automáticamente.'}});
+$('#page-save-translation').addEventListener('click',async()=>{
+ const answer=$('#page-translation-answer').value;
+ if(!answer.trim()){$('#page-translate-status').textContent='Pegá primero una respuesta traducida no vacía.';return}
+ const p=readerPages[pageIndex],source=p.original_text,boundary=source.match(/(\r?\n[ \t]*\r?\n)$/);
+ let translated=answer;
+ if(boundary&&!translated.endsWith(boundary[1]))translated=translated.replace(/[ \t\r\n]+$/,'')+boundary[1];
+ translationPages[pageIndex]=translated;$('#translation').value=translated;translationDirty=true;
+ const button=$('#page-save-translation');button.disabled=true;$('#page-translate-status').textContent='Guardando esta página y sincronizando el capítulo…';
+ try{await persistTranslationPages();$('#page-translate-status').textContent='Traducción guardada en la página '+(pageIndex+1)+'.';$('#save-status').textContent='Traducción y páginas guardadas en este equipo.';$('#translate-page-modal').close()}
+ catch(e){$('#page-translate-status').textContent='No se pudo guardar la página: '+e.message}
+ finally{button.disabled=false}
+});
 let offlinePreviewText=null;
 $('#premium-open-browser').addEventListener('click',async()=>{const button=$('#premium-open-browser');button.disabled=true;$('#premium-browser-status').textContent='Abriendo Chromium…';try{const result=await api('/api/premium-browser/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:$('#premium-provider').value})});$('#premium-browser-status').textContent=result.message+' Perfil: '+result.profile_dir;}catch(e){$('#premium-browser-status').textContent='No se pudo abrir el navegador: '+e.message}finally{button.disabled=false}});
 $('#offline-rules-open').addEventListener('click',()=>{$('#offline-rules-panel').classList.remove('hidden');$('#offline-status').textContent='El original se mantiene intacto. Generá una vista previa para ver las sustituciones.'});
@@ -3067,11 +3339,32 @@ $('#offline-run').addEventListener('click',async()=>{
  catch(e){$('#offline-status').textContent='No se pudo generar la vista previa: '+e.message;$('#offline-result').textContent=''}
  finally{button.disabled=false}
 });
-$('#offline-apply').addEventListener('click',()=>{if(offlinePreviewText===null)return;$('#translation').value=offlinePreviewText;translationDirty=true;$('#save-status').textContent='Vista previa copiada al editor; revisá y guardá manualmente.';$('#offline-status').textContent='Resultado transferido al editor, todavía sin guardar.'});
+function splitTextToCountClient(text,count){
+ const chars=Array.from(text||'');if(!chars.length)return Array(count).fill('');if(count<=1)return[text||''];
+ const pieces=[];let start=0;const n=chars.length;
+ for(let index=0;index<count-1;index++){
+  const target=Math.round(n*(index+1)/count),remaining=count-index,average=Math.max(1,Math.round((n-start)/remaining));
+  const low=Math.max(start+1,target-Math.max(1,Math.floor(average/2))),high=Math.min(n,target+Math.max(1,Math.floor(average/2)));
+  let end=target,found=false;
+  for(const separator of ['\r\n\r\n','\n\n','\r\n','\n',' ','\t']){
+   const sep=Array.from(separator),candidates=[];
+   for(let at=Math.max(start,low-sep.length);at<=high-sep.length;at++){
+    if(at<start)continue;
+    if(sep.every((ch,j)=>chars[at+j]===ch)){const cut=at+sep.length;if(cut>=low&&cut<=high)candidates.push(cut)}
+   }
+   if(candidates.length){end=candidates.reduce((a,b)=>Math.abs(a-target)<=Math.abs(b-target)?a:b);found=true;break}
+  }
+  if(!found)end=Math.max(start,Math.min(n,target));
+  if(n-start>=remaining&&end<=start)end=Math.min(n,start+1);
+  pieces.push(chars.slice(start,end).join(''));start=end
+ }
+ pieces.push(chars.slice(start).join(''));return pieces
+}
+$('#offline-apply').addEventListener('click',()=>{if(offlinePreviewText===null)return;translationPages=splitTextToCountClient(offlinePreviewText,readerPages.length);renderPage();translationDirty=true;$('#save-status').textContent='Vista previa distribuida en páginas; revisá y guardá para persistir.';$('#offline-status').textContent='Resultado transferido al lector, todavía sin guardar.'});
 async function loadHistory(){const c=chapters[chapterPos];try{const versions=await api('/api/chapters/'+c.id+'/translation/versions');$('#history-list').innerHTML=versions.length?versions.map(v=>'<article class="book"><div class="bookinfo"><strong>Versión '+v.version_number+'</strong><div class="sub small">'+esc(v.created_at)+'</div><div style="white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px">'+esc(v.translated_text||'(Traducción vacía)')+'</div></div><button class="secondary" type="button" data-restore="'+v.version_number+'">Restaurar</button></article>').join(''):'<p class="empty">Todavía no hay versiones anteriores.</p>'}catch(e){$('#history-status').textContent=e.message}}
 $('#show-history').addEventListener('click',async()=>{$('#translation-history').classList.toggle('hidden');if(!$('#translation-history').classList.contains('hidden'))await loadHistory()});
 $('#history-list').addEventListener('click',async e=>{const button=e.target.closest('[data-restore]');if(!button)return;if(translationDirty&&!confirm('Hay cambios sin guardar. ¿Descartarlos y restaurar la versión elegida?'))return;if(!confirm('¿Restaurar esta versión? La traducción actual guardada se conservará en el historial.'))return;const c=chapters[chapterPos];$('#history-status').textContent='Restaurando…';try{const result=await api('/api/chapters/'+c.id+'/translation/restore/'+button.dataset.restore,{method:'POST'});$('#translation').value=result.translated_text;c.translated_text=result.translated_text;translationDirty=false;$('#save-status').textContent='Versión restaurada.';$('#history-status').textContent='La versión se restauró y el texto anterior quedó guardado.';await loadHistory()}catch(err){$('#history-status').textContent='Error: '+err.message}});
-$('#translation').addEventListener('input',()=>{translationDirty=true;$('#save-status').textContent='Cambios sin guardar';});
+$('#translation').addEventListener('input',()=>{translationPages[pageIndex]=$('#translation').value;translationDirty=true;$('#save-status').textContent='Cambios sin guardar';if($('#read-page-modal').open)refreshReadPageModal()});
 window.addEventListener('beforeunload',e=>{if(translationDirty){e.preventDefault();e.returnValue=''}});
 function resetGlossaryForm(){editingGlossaryId=null;$('#glossary-form').reset();$('#glossary-submit').textContent='Guardar término';$('#glossary-cancel').classList.add('hidden')}
 async function loadGlossary(){if(!currentBook)return;try{const entries=await api('/api/books/'+currentBook.id+'/glossary');$('#glossary-list').innerHTML=entries.length?'<div>'+entries.map(g=>'<article class="book"><div class="bookinfo"><strong>'+esc(g.source_term)+' → '+esc(g.preferred_term)+'</strong><div class="sub small">'+esc(g.rule)+' · '+(g.approved?'Aprobado':'Pendiente')+(g.notes?' · '+esc(g.notes):'')+'</div></div>'+(g.book_id===null?'':'<div class="reader-actions"><button class="secondary" type="button" data-edit-glossary="'+esc(g.id)+'">Editar</button><button class="quiet" type="button" data-delete-glossary="'+esc(g.id)+'">Eliminar</button></div>')+'</article>').join('')+'</div>':'<p class="empty">Todavía no hay términos definidos para esta novela.</p>'}catch(e){$('#glossary-status').textContent=e.message}}
@@ -3123,8 +3416,8 @@ $('#glossary-candidates-list').addEventListener('click',async e=>{
     }
   }catch(err){$('#glossary-candidate-status').textContent='No se pudo guardar: '+err.message}
 });
-$('#font-size').addEventListener('change',e=>{const size=Number(e.target.value);$('#original').style.fontSize=size+'px';$('#translation').style.fontSize=size+'px'});
-$('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay cambios de traducción sin guardar. ¿Salir sin guardarlos?'))return;try{await persistProgressNow()}catch(e){$('#save-status').textContent='No se pudo guardar el progreso: '+e.message;return}translationDirty=false;$('#reader').style.display='none';$('#library').classList.remove('hidden');await refresh()});
+$('#font-size').addEventListener('change',e=>{const size=Number(e.target.value);$('#original').style.fontSize=size+'px';$('#translation').style.fontSize=size+'px';if($('#read-page-modal').open){readPageFontSize=size;refreshReadPageModal()}});
+$('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay cambios de traducción sin guardar. ¿Salir sin guardarlos?'))return;try{await persistProgressNow()}catch(e){$('#save-status').textContent='No se pudo guardar el progreso: '+e.message;return}translationDirty=false;if($('#read-page-modal').open)$('#read-page-modal').close();if($('#translate-page-modal').open)$('#translate-page-modal').close();$('#reader').style.display='none';$('#library').classList.remove('hidden');await refresh()});
 
 /* Manual narrative-assistance micro-window: no network calls or provider-session automation. */
 (function installNarrativeAssistant() {
