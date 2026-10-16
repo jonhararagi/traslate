@@ -1,5 +1,20 @@
 # NovelTrad Brain — Continuity and Recovery
 
+## User-requested queue controls and prompt options — 2026-10-16
+
+PR #16 remains open and Draft; work only on `feat/offline-linguistic-narrative-core`. Do not change `main` or merge the PR.
+
+### Implementation
+- Code and focused tests were committed on implementation SHA `5909d619fdff37dbdfe25cbfb699164676ba3c0f`; later commits add README/documentation and this continuity note.
+- Queue prompt options: `faithful_natural`, `gamer_terms`, `fluent_spanish`, `literal_review`.
+- Optional user instruction is validated to a maximum of 2,000 characters and is included only in the next manually copied prompt. It does not modify the original, glossary, or canon.
+- Quick action selector: `Seguir` requests the next prompt/resumes a paused job; `Parar` pauses without deleting saved progress; `Enviar` executes the selected action within NovelTrad, with the send-response choice saving the pasted response as unreviewed.
+- No prompt is automatically submitted to ChatGPT or Gemini. Provider use remains visible/manual.
+- Tests added in `tests/test_translation_jobs.py` and `tests/test_frontend.py` cover prompt style/custom instruction, rejection of unknown styles before reserving a chunk, and the controls in the HTML.
+- User documentation: `docs/OPCIONES_TRADUCCION_Y_CONTROLES_RAPIDOS.md`.
+- Implementation SHA CI run IDs: Tests `38983810048`; Windows Portable Build `38983810012`. Ubuntu full tests were observed successful while Windows jobs were still running at the time of the check. Re-check the final branch head's workflows before reporting verified status; do not transfer CI results between SHAs.
+
+
 ## PR #16 close-out status — 2026-10-16 (active; supersedes prior pending notes)
 
 PR: https://github.com/jonhararagi/traslate/pull/16. Keep open and draft; do not merge or close.
