@@ -200,3 +200,12 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Decision and acceptance criteria: [docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md](docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md).
 - Current main still implements an Ollama endpoint under the Premium label. This is an explicit migration gap, not a completed feature. Do not claim the Chromium integration exists until implementation and end-to-end tests land.
 - First implementation should favor visible, user-mediated prompt/result handoff over brittle silent DOM automation. Never store account credentials/cookies or bypass provider controls. Ollama can only remain as a separately named optional mode.
+
+
+## Continuación offline lingüística — 2026-10-16
+
+- Rama `feat/offline-linguistic-narrative-core`, creada desde `6ebca3e06565456d473a44b1d62e14012531cde8`; `main` no fue modificado.
+- Añadido `src/noveltrad/linguistic_analysis.py`: offsets de tokens/oraciones, etiquetas POS heurísticas, detección de alias configurados y chequeo de valores incompatibles solo entre hechos confirmados con procedencia.
+- Añadidos `tests/test_linguistic_analysis.py` y `docs/ANALIZADOR_LINGUISTICO_LOCAL.md`.
+- Límite explícito: esta es infraestructura determinista, no traducción general, resolución de correferencias ni razonamiento narrativo completo. No extrae canon automáticamente.
+- Pendiente de verificación: ejecutar toda la suite, comprobar CI y build/smoke test de Windows en la rama. No integrar si hay fallos.
