@@ -13,6 +13,17 @@ When the user says "Eres el cerebro de NovelTrad":
 5. Report evidence with links/SHA/test results. Distinguish implemented, tested, merged, and released.
 6. Do not claim a capability works until the implementation and relevant tests verify it. Update this file whenever architecture or project state materially changes.
 
+## Active implementation status — 2026-10-16 (supersedes older status notes below)
+
+- Working branch: `feat/chromium-account-premium`; draft PR #14 targets `main`. Do not merge or build a user-facing release until the user explicitly approves and current CI/build/manual checks pass.
+- Product constraint: Local mode remains deterministic and lightweight. Account-based Premium uses the user's own ChatGPT/Gemini account in a visible, persistent Chromium-family profile. NovelTrad must not auto-submit source text or read/store provider credentials/cookies.
+- The chapter-level manual prompt flow is implemented on this branch.
+- The persistent whole-book queue has now been changed from automatic Ollama inference to a manual handoff flow: jobs store provider; `next-prompt` reserves one pending chunk and returns a bounded prompt; the user copies it to the provider and pastes the answer back; `submit` persists it as completed but unreviewed. Review and apply remain separate; apply must still require every chunk to be completed and reviewed.
+- Queue schema migration adds a `provider` column with `chatgpt` default for existing databases. Queue startup recovery returns interrupted running chunks to pending and pauses their job. Pause/resume/retry behavior needs integration-test confirmation after this migration.
+- SQLite-backed route tests now cover prompt construction, provider validation, chunk reservation, response persistence as unreviewed, pause/resume, retry-failed, restart recovery, and refusal to apply unreviewed output. GitHub Actions passed Windows and Ubuntu tests on code SHA `bc599d2010f07696bdd9cbf768ed93dd8261391a`; the portable build was still running at the last check. Because this status-note edit creates a new branch SHA, recheck CI/build against the new exact head before claiming package readiness.
+- Docs were updated in README.md, docs/MODO_LOCAL_Y_MODO_PREMIUM.md, and docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md. Keep older notes below as project history, not current implementation status.
+- Still required before a PC package: inspect latest CI; fix failures; run Windows portable build from the exact approved branch SHA; verify artifact/source SHA; then manual smoke test on the user's Windows PC. Do not merge PR #14 or provide a stale ZIP as final.
+
 ## Product goal
 
 NovelTrad is a local-first Windows reader and translation workspace for EPUB/PDF novels. Primary direction: English/Japanese/Korean source text to Spanish, offline-first, no paid API, safe originals, versioned translations, reliable backups, consistent per-novel terminology, and manual review before saving.
@@ -21,10 +32,10 @@ NovelTrad is a local-first Windows reader and translation workspace for EPUB/PDF
 
 - PC: AMD Ryzen 5 5600G, 16 GB RAM.
 - Prefer the deterministic local mode for routine glossary/phrase work. It must use negligible additional RAM and never load a neural model.
-- Premium mode is a distinct **local neural model**, not a cloud subscription/API. It must be opt-in per action, never run automatically, avoid parallel model calls, use a conservative context/memory profile, and unload the model after use where supported.
-- Never download model weights automatically. Explain model disk/RAM cost and require the user to install/configure it.
-- Never call external translation APIs or silently upload book text. Only loopback/local inference is allowed unless the user explicitly changes the policy.
-- The user does not want the neural mode running continuously. Default to Local.
+- Premium mode is intended to use a visible Chromium window signed into the user's own ChatGPT or Gemini account. NovelTrad generates the prompt and manages bounded chunks; it must not collect or store provider passwords, cookies, or tokens.
+- The initial safe implementation should use explicit user-mediated prompt/result handoff. Browser automation is optional future work, must be visible and opt-in, and must stop at login, CAPTCHA, consent, rate limits, or unexpected pages.
+- Ollama is not the account-based Premium mode. If retained, it must be labeled as a separate optional local-neural mode and must never run continuously or download model weights automatically.
+- Do not silently transmit book text. The user must explicitly start each provider translation job and know which provider receives the selected text. Default to Local.
 
 ## Permanent safety and data rules
 
@@ -44,9 +55,19 @@ Novel profile: `data/novels/i_became_the_academy_villains_daughter.json`. Glossa
 ## Modes
 
 - **Modo local**: deterministic approved glossary/phrase rules and typography normalization; no neural inference, no network, minimal RAM. It cannot translate unknown sentences.
-- **Modo premium**: optional local neural translation through a local runtime such as Ollama on loopback. No remote API. It is more RAM/CPU intensive and must be manually invoked. Use conservative request limits and unload after a call. If the local runtime/model is absent, show setup guidance; never silently fall back to cloud.
-- Both modes must keep preview-only behavior; user manually transfers result to editor and saves.
-- Never label Premium as ready until the runtime call is implemented and tested end-to-end. Document limitations and hardware cost honestly.
+- **Modo premium (objetivo de producto)**: translation through a visible Chromium window signed into the user's ChatGPT or Gemini account. NovelTrad constructs the prompt from approved glossary rules, the novel's style guide, relevant continuity context, and a bounded source chunk. Initial delivery must support a transparent manual handoff; browser automation must not be assumed implemented.
+- Ollama-backed inference currently exists in main under the old Premium label and is an architecture mismatch to migrate. It must either be moved to a separately named optional local-neural mode or removed after equivalent account-based flow is tested.
+- Both modes must keep source text immutable, persist provisional chunk results, and require review before applying. Never label account-based Premium ready until its UI, prompt generation, handoff, queue recovery, privacy boundaries, and tests work end-to-end.
+
+## Latest continuation — Chromium Premium first implementation (draft PR #14)
+
+- Branch: `feat/chromium-account-premium`; PR [#14](https://github.com/jonhararagi/traslate/pull/14) remains draft/open/unmerged. `main` is not modified.
+- Commit `753a0f48ea1fdfff1f375dbc05441eccb41caeab` adds the first functional chapter-level account handoff in `src/noveltrad/main.py`.
+- UI: Premium provider selector (ChatGPT/Gemini), button to open a dedicated persistent browser profile, and per-fragment copy-prompt + paste-result fields. Editor transfer stays disabled until every fragment has a non-empty result.
+- Browser launcher finds an already installed Chrome/Chromium/Edge and does not download a browser. It uses a provider-specific profile under NovelTrad's local data directory and starts with image loading disabled plus reduced background activity. The user signs in directly on the provider site. NovelTrad does not collect credentials or cookies and does not auto-submit source text.
+- Prompts contain the approved glossary with rule hints, editorial style selection, source delimiters, bounded chunks, and a limited prior-source context excerpt. Source chapters remain unchanged; preview is not saved automatically.
+- Limitations: focused tests and manual Windows validation are not yet confirmed. The persistent whole-book queue still uses the old Ollama endpoint and is not migrated. Do not describe Premium as release-ready until queue integration, tests, and Windows/translation-quality checks pass.
+- GitHub Actions were triggered for commit `753a0f48ea1fdfff1f375dbc05441eccb41caeab`; check their final conclusions before the next status report.
 
 ## Current known project state (verify before relying on it)
 
@@ -201,3 +222,11 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Premium prompt now sends explicit instruction labels for approved `protect`, `preserve`, `translate`, and `contextual` rules. Persistent queue glossary snapshots contain the rule alongside source/preferred term.
 - Quality warnings check whether a preferred form for a mandatory rule is present in output when its source term appears in the chunk. Missing `Oknodie`, `Steal skill`, or approved translations such as `farm => farmear` are flagged; `contextual` terms such as `tsundere` are not forced. Checks run after model output and after manual edits, but are literal/conservative and non-blocking.
 - Tests cover missing mandatory terms, non-mandatory contextual terms, queue rule snapshots and prompt directives. Clean-Windows manual smoke test and real authorized-chapter translation benchmark remain outstanding.
+
+
+## Architecture correction — account-based Chromium Premium (2026-10-16)
+
+- User clarified that Premium must use a Chromium window signed into the user's own ChatGPT or Gemini account, with NovelTrad generating the translation prompt and rules. It is not Ollama and not an API key integration.
+- Decision and acceptance criteria: [docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md](docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md).
+- Current main still implements an Ollama endpoint under the Premium label. This is an explicit migration gap, not a completed feature. Do not claim the Chromium integration exists until implementation and end-to-end tests land.
+- First implementation should favor visible, user-mediated prompt/result handoff over brittle silent DOM automation. Never store account credentials/cookies or bypass provider controls. Ollama can only remain as a separately named optional mode.
