@@ -3265,7 +3265,7 @@ $('#next').addEventListener('click',()=>goToPage(pageIndex+1));
 async function persistProgressNow(){
  if(!currentBook||!readerPages.length)return;clearTimeout(saveTimer);chapterPagePositions[String(chapterPos)]=pageIndex;
  const payload={chapter_index:chapterPos,scroll_top:0,page_index:pageIndex,page_count:readerPages.length,chapter_pages:chapterPagePositions};
- await api('/api/books/'+currentBook.id+'/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+ await api('/api/books/'+currentBook.id+'/progress',{method:'PUT',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
  currentBook.current_location=JSON.stringify({...payload})
 }
 function saveProgress(){if(!currentBook)return;clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{try{await persistProgressNow()}catch(e){$('#save-status').textContent='No se pudo guardar el progreso: '+e.message}},250)}
@@ -3309,9 +3309,11 @@ async function buildPageTranslationPrompt(){
  $('#translate-page-modal').showModal()
 }
 $('#translate-page').addEventListener('click',async()=>{try{await buildPageTranslationPrompt()}catch(e){$('#page-status').textContent='No se pudo preparar la página: '+e.message}});
-$('#translate-page-close').addEventListener('click',()=>$('#translate-page-modal').close());
+
 $('#page-copy-prompt').addEventListener('click',async()=>{const prompt=$('#page-translation-prompt');try{await navigator.clipboard.writeText(prompt.value);$('#page-translate-status').textContent='Prompt copiado. Pegalo en el proveedor seleccionado.'}catch(e){prompt.focus();prompt.select();$('#page-translate-status').textContent='No se pudo copiar automáticamente; el prompt quedó seleccionado para copiarlo manualmente.'}});
 $('#page-open-provider').addEventListener('click',async()=>{const provider=$('#page-translation-provider').value;const url=provider==='gemini'?'https://gemini.google.com/app':'https://chatgpt.com/';try{await api('/api/premium-browser/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider})});$('#page-translate-status').textContent='Se solicitó abrir Chromium con el proveedor elegido. Pegá el prompt manualmente.'}catch(e){window.open(url,'_blank','noopener,noreferrer');$('#page-translate-status').textContent='Se abrió el proveedor en una pestaña. Pegá el prompt manualmente; la respuesta no se recupera automáticamente.'}});
+$('#page-translation-answer').addEventListener('input',()=>{if($('#page-translation-answer').value!== (translationPages[pageIndex]||''))translationDirty=true});
+$('#translate-page-close').addEventListener('click',()=>{const answer=$('#page-translation-answer').value;if(answer!==(translationPages[pageIndex]||'')&&answer.trim()&&!confirm('Hay una traducción pegada que todavía no se guardó. ¿Cerrar y descartarla?'))return;$('#translate-page-modal').close()});
 $('#page-save-translation').addEventListener('click',async()=>{
  const answer=$('#page-translation-answer').value;
  if(!answer.trim()){$('#page-translate-status').textContent='Pegá primero una respuesta traducida no vacía.';return}
