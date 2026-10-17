@@ -23,6 +23,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 from noveltrad.narrative_rules import TermRule, apply_offline_rules, get_profile
+from noveltrad.learning_store import LEARNING_FILES, TranslationLearningStore
 from noveltrad.reader_pages import page_source_hash, preserve_source_page_boundary, split_reader_pages, split_text_to_count
 
 APP_NAME = "NovelTrad"
@@ -829,6 +830,100 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=APP_NAME, version="0.1.0", docs_url="/api/docs", lifespan=lifespan)
+
+class LearningDecisionRequest(BaseModel):
+    category: str
+    source: str = Field(min_length=1, max_length=300)
+    target: str = Field(min_length=1, max_length=300)
+    decision_type: str = Field(min_length=1, max_length=100)
+    context: str = Field(min_length=1, max_length=2000)
+    chapter_index: int = Field(ge=0)
+    evidence: str = Field(min_length=1, max_length=2000)
+    status: str = "candidate"
+    notes: str = Field(default="", max_length=2000)
+
+
+@app.get("/api/books/{book_id}/learning")
+def get_translation_learning(book_id: str) -> dict[str, object]:
+    with connection() as conn:
+        book = conn.execute("SELECT id FROM books WHERE id = ?", (book_id,)).fetchone()
+        if not book:
+            raise HTTPException(status_code=404, detail="Novela no encontrada.")
+    store = TranslationLearningStore(data_dir() / "projects" / book_id)
+    store.export_learning_index()
+    counts: dict[str, object] = {}
+    for category, filename in LEARNING_FILES.items():
+        payload = store._load_category(category)
+        counts[category] = {
+            "file": filename,
+            "total": len(payload["entries"]),
+            "confirmed": sum(1 for item in payload["entries"] if item.get("status") == "confirmed"),
+            "candidates": sum(1 for item in payload["entries"] if item.get("status") == "candidate"),
+            "rejected": sum(1 for item in payload["entries"] if item.get("status") == "rejected"),
+        }
+    return {"book_id": book_id, "translation_directory": "traduccion", "learning_directory": "aprendizaje", "categories": counts}
+
+
+@app.post("/api/books/{book_id}/learning/decisions")
+def record_translation_learning(book_id: str, request: LearningDecisionRequest) -> dict[str, object]:
+    with connection() as conn:
+        book = conn.execute("SELECT id FROM books WHERE id = ?", (book_id,)).fetchone()
+        if not book:
+            raise HTTPException(status_code=404, detail="Novela no encontrada.")
+        chapter = conn.execute(
+            "SELECT original_text FROM chapters WHERE book_id = ? AND chapter_index = ?",
+            (book_id, request.chapter_index),
+        ).fetchone()
+        if not chapter:
+            raise HTTPException(status_code=404, detail="Capítulo no encontrado en esta novela.")
+        if request.evidence.strip() not in chapter["original_text"]:
+            raise HTTPException(status_code=422, detail="La evidencia debe ser un fragmento literal del original del capítulo.")
+    store = TranslationLearningStore(data_dir() / "projects" / book_id)
+    try:
+        result = store.record_decision(
+            category=request.category, source=request.source, target=request.target,
+            decision_type=request.decision_type, context=request.context,
+            chapter=request.chapter_index + 1, evidence=request.evidence,
+            status=request.status, notes=request.notes,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {"saved": True, **result}
+
+
+@app.post("/api/books/{book_id}/learning/export-markdown")
+def export_translation_markdown(book_id: str) -> dict[str, object]:
+    with connection() as conn:
+        book = conn.execute("SELECT id FROM books WHERE id = ?", (book_id,)).fetchone()
+        if not book:
+            raise HTTPException(status_code=404, detail="Novela no encontrada.")
+        chapters = conn.execute(
+            "SELECT chapter_index, title, translated_text, status FROM chapters "
+            "WHERE book_id = ? ORDER BY chapter_index", (book_id,),
+        ).fetchall()
+    if not chapters:
+        raise HTTPException(status_code=422, detail="La novela no contiene capítulos.")
+    translated = [row for row in chapters if str(row["translated_text"] or "").strip()]
+    if not translated:
+        raise HTTPException(status_code=422, detail="No hay capítulos traducidos para exportar.")
+    store = TranslationLearningStore(data_dir() / "projects" / book_id)
+    exported = []
+    for row in translated:
+        path = store.save_chapter(int(row["chapter_index"]) + 1, str(row["title"] or ""), str(row["translated_text"]))
+        exported.append(path.name)
+    index_path = store.export_learning_index()
+    return {
+        "saved": True,
+        "book_id": book_id,
+        "translated_chapters_exported": len(exported),
+        "chapters_without_translation": len(chapters) - len(translated),
+        "translation_directory": str(store.translation_dir),
+        "learning_directory": str(store.learning_dir),
+        "learning_index": index_path.name,
+        "chapter_files": exported,
+    }
+
+
 
 
 @app.post("/api/chapters/{chapter_id}/offline-rules")
