@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
@@ -73,6 +74,12 @@ def test_extraction_cites_original_evidence_and_requires_explicit_approval(monke
             assert len(item["evidence"]) <= 3
             assert item["evidence"][0]["chapter_title"] == "Chapter One"
             assert item["source_term"] in item["evidence"][0]["snippet"]
+            assert item["requires_human_review"] is True
+            assert item["suggested_rule"] in {"preserve", "translate", "contextual", "protect"}
+        assert candidates["oknodie"]["suggested_rule"] == "protect"
+        assert candidates["farm"]["suggested_target"] == "farmear"
+        assert candidates["farm"]["suggested_rule"] == "contextual"
+        assert candidates["farm"]["profile_candidate"] is True
 
         # Merely extracting candidates cannot alter the glossary or chapter source.
         glossary = client.get(f"/api/books/{original_book_id}/glossary").json()
@@ -139,3 +146,89 @@ def test_ignored_candidate_stays_ignored_after_a_rescan(monkeypatch, tmp_path):
             f"/api/books/{book_id}/glossary/candidates?status=ignored"
         ).json()
         assert any(item["id"] == tsundere["id"] for item in ignored_list)
+
+
+def test_profile_seed_requires_chapter_evidence_before_human_confirmation(monkeypatch, tmp_path):
+    monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path / "noveltrad-data"))
+    main.init_db()
+    source = ("Oknodie picked the Steal skill and began to farm for resources. " * 4)
+    book_id = _add_book(source)
+    profile = json.loads(main.NOVEL_PROFILE_PATH.read_text(encoding="utf-8"))
+
+    with main.connection() as conn:
+        conn.execute("UPDATE books SET title = ? WHERE id = ?", (profile["display_title"], book_id))
+        seeded_count = main._seed_novel_profile_candidates(conn, book_id, profile["display_title"])
+        seeded = conn.execute(
+            "SELECT id, source_term, preferred_term, rule, notes, approved FROM glossary_entries "
+            "WHERE book_id = ? AND source_term = 'Oknodie' COLLATE NOCASE",
+            (book_id,),
+        ).fetchone()
+    assert seeded_count == len(profile["terminology_candidates"])
+    assert seeded is not None
+    assert seeded["approved"] in (False, 0)
+    assert seeded["rule"] == "protect"
+    assert "ocurrencia literal" in seeded["notes"].lower()
+
+    now = "2026-10-17T00:00:00+00:00"
+    empty_candidate_id = str(uuid4())
+    with main.connection() as conn:
+        conn.execute(
+            "INSERT INTO glossary_candidates(id, book_id, normalized_term, source_term, category, occurrences, "
+            "evidence_json, candidate_notes, status, created_at, updated_at) "
+            "VALUES(?,?,?,?,?,?,?,?,'pending',?,?)",
+            (
+                empty_candidate_id, book_id, "oknodie", "Oknodie", "character", 0, "[]",
+                "Synthetic empty-evidence row for the guard test.", now, now,
+            ),
+        )
+
+    with TestClient(main.app) as client:
+        strip_provenance = client.put(
+            f"/api/books/{book_id}/glossary/{seeded['id']}",
+            json={
+                "source_term": "Oknodie", "preferred_term": "Oknodie",
+                "rule": "protect", "notes": "Sin referencia de origen", "approved": False,
+            },
+        )
+        assert strip_provenance.status_code == 422
+        bypass = client.put(
+            f"/api/books/{book_id}/glossary/{seeded['id']}",
+            json={
+                "source_term": "Oknodie", "preferred_term": "Oknodie",
+                "rule": "protect", "notes": seeded["notes"], "approved": True,
+            },
+        )
+        assert bypass.status_code == 422
+        no_evidence_approval = client.post(
+            f"/api/books/{book_id}/glossary/candidates/{empty_candidate_id}/approve",
+            json={"preferred_term": "Oknodie", "rule": "protect", "notes": "Confirmado en el original."},
+        )
+        assert no_evidence_approval.status_code == 422
+
+        extracted = client.post(f"/api/books/{book_id}/glossary/candidates/extract")
+        assert extracted.status_code == 200, extracted.text
+        assert extracted.json()["approved_automatically"] == 0
+        candidates = client.get(f"/api/books/{book_id}/glossary/candidates").json()
+        oknodie = next(item for item in candidates if item["source_term"].casefold() == "oknodie")
+        assert oknodie["id"] == empty_candidate_id
+        assert oknodie["evidence"] and oknodie["suggested_rule"] == "protect"
+
+        approved = client.post(
+            f"/api/books/{book_id}/glossary/candidates/{empty_candidate_id}/approve",
+            json={
+                "preferred_term": "Oknodie",
+                "rule": "protect",
+                "notes": "Nombre propio; grafía revisada en la muestra literal del capítulo.",
+            },
+        )
+        assert approved.status_code == 200, approved.text
+        assert approved.json()["status"] == "approved"
+        assert approved.json()["glossary_entry"]["approved"] in (True, 1)
+
+    with main.connection() as conn:
+        final_entry = conn.execute(
+            "SELECT preferred_term, rule, approved FROM glossary_entries WHERE id = ?", (seeded["id"],)
+        ).fetchone()
+    assert final_entry["preferred_term"] == "Oknodie"
+    assert final_entry["rule"] == "protect"
+    assert final_entry["approved"] in (True, 1)

@@ -112,19 +112,80 @@ def test_reading_progress_persists_and_validates_chapter(client):
     book = imported_response.json()
     saved = client.put(
         f"/api/books/{book['id']}/progress",
-        json={"chapter_index": 0, "scroll_top": 430.5},
+        json={
+            "chapter_index": 0,
+            "scroll_top": 430.5,
+            "page_index": 2,
+            "page_count": 5,
+            "chapter_pages": {"0": 2},
+        },
     )
     assert saved.status_code == 200, saved.text
     assert saved.json()["saved"] is True
 
     listed = client.get("/api/books").json()[0]
     assert '"scroll_top":430.5' in listed["current_location"]
+    assert '"page_index":2' in listed["current_location"]
+    assert '"page_count":5' in listed["current_location"]
+    assert '"chapter_pages":{"0":2}' in listed["current_location"]
 
     invalid = client.put(
         f"/api/books/{book['id']}/progress",
         json={"chapter_index": 4, "scroll_top": 0},
     )
     assert invalid.status_code == 422
+
+
+def test_reader_page_translation_persists_by_source_page_and_updates_chapter_text(client):
+    imported_response = client.post(
+        "/api/books/import",
+        files={"file": ("sample.pdf", pdf_bytes(), "application/pdf")},
+    )
+    book = imported_response.json()
+    chapter = client.get(f"/api/books/{book['id']}/chapters").json()[0]
+    endpoint = f"/api/chapters/{chapter['id']}/reader-pages"
+
+    opened = client.get(endpoint)
+    assert opened.status_code == 200, opened.text
+    payload = opened.json()
+    assert payload["page_count"] >= 1
+    page = payload["pages"][0]
+    translated = "Oknodie alcanzó el nivel 10."
+
+    saved = client.put(
+        endpoint + "/translations",
+        json={"pages": [{
+            "page_index": page["page_index"],
+            "source_hash": page["source_hash"],
+            "translated_text": translated,
+        }]},
+    )
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["translated_text"] == translated
+    assert saved.json()["saved"] is True
+
+    reread = client.get(endpoint).json()
+    assert reread["pages"][0]["translated_text"] == translated
+    chapter_after = client.get(f"/api/books/{book['id']}/chapters").json()[0]
+    assert chapter_after["translated_text"] == translated
+
+    restored = client.post(
+        f"/api/chapters/{chapter['id']}/translation/restore/1"
+    )
+    assert restored.status_code == 200, restored.text
+    assert restored.json()["translated_text"] == ""
+    after_restore = client.get(endpoint).json()
+    assert after_restore["pages"][0]["translated_text"] == ""
+
+    stale = client.put(
+        endpoint + "/translations",
+        json={"pages": [{
+            "page_index": 0,
+            "source_hash": "0" * 64,
+            "translated_text": "No debe guardarse.",
+        }]},
+    )
+    assert stale.status_code == 409
 
 
 def test_translation_saves_separate_from_original_and_keeps_versions(client):

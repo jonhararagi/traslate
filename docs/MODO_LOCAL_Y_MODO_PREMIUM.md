@@ -79,3 +79,8 @@ Estas verificaciones son heurísticas y deliberadamente no bloquean una revisió
 ## Coherencia de reglas aprobadas del glosario (función integrada)
 
 Las reglas aprobadas `protect`, `preserve` y `translate` se envían al modelo con instrucciones explícitas. Además, después de traducir y después de guardar la revisión, NovelTrad comprueba si la forma preferida aparece en el resultado cuando el término fuente estaba en el fragmento original. Si falta, crea una advertencia visible en la revisión. Las reglas `contextual` no generan una alerta por ausencia, porque no deben imponerse en todos los usos. Esta comprobación es un detector conservador de términos ausentes, no una prueba de equivalencia semántica: puede haber falsos positivos si cambia la flexión o el término no debe aparecer en la traducción final.
+
+
+## Perfil terminológico inicial de la primera novela
+
+La lista de términos es orientativa y todos los candidatos comienzan pendientes. El análisis extrae muestras literales del texto importado; solo la tarjeta con evidencia permite aprobar los términos sembrados desde el perfil. Las referencias editoriales, convenciones gamer y términos pedidos por el usuario no equivalen a evidencia de capítulo. Véase [Perfil terminológico inicial](PERFIL_TERMINOLOGICO_INICIAL.md) para la lista, reglas sugeridas, riesgos y pruebas de aceptación.

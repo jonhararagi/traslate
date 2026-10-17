@@ -35,6 +35,53 @@ def test_embedded_reader_javascript_parses():
 
 
 
+
+def test_persistent_reader_has_page_navigation_zoom_and_manual_translation_handoff():
+    page = home()
+    for control in (
+        'id="page-indicator"',
+        'id="previous"',
+        'id="next"',
+        'id="chapter-select"',
+        'id="read-page"',
+        'id="translate-page"',
+        'id="read-page-modal"',
+        'id="read-page-larger"',
+        'id="page-translation-prompt"',
+        'id="page-translation-answer"',
+        'id="page-save-translation"',
+    ):
+        assert control in page
+
+    assert "async function goToPage(nextIndex)" in page
+    assert "chapterPagePositions[String(chapterPos)]" in page
+    assert "chapter_pages:chapterPagePositions" in page
+    assert "/reader-pages/translations" in page
+    assert "recuperar esa respuesta automáticamente desde la web" in page
+    assert "function persistTranslationPages()" in page
+
+def test_learning_review_is_available_in_reader_and_uses_explicit_review_states():
+    page = home()
+    for control in (
+        'id="toggle-learning"',
+        'id="learning-panel"',
+        'id="learning-form"',
+        'id="learning-category"',
+        'id="learning-chapter"',
+        'id="learning-evidence"',
+        'id="learning-entries-list"',
+        'data-learning-action="confirmed"',
+        'data-learning-action="rejected"',
+    ):
+        assert control in page
+    assert "Solo las confirmadas se reutilizan en prompts posteriores" in page
+    assert "chapter_index:Number(evidence.chapter)-1" in page
+    assert "learning/decisions" in page
+    assert "saved.status==='rejected'" in page
+    assert "saved.status==='confirmed'" in page
+    assert "saved.created" in page
+
+
 def test_manual_narrative_assistant_exposes_consent_gated_workflow():
     page = home()
     assert "Microventana de asistencia narrativa" in page
@@ -82,3 +129,40 @@ def test_manual_narrative_assistant_has_no_network_or_persistence_side_channels(
     assert "window.open(url, '_blank', 'noopener,noreferrer')" in assistant
     assert "openProvider('https://chatgpt.com/')" in assistant
     assert "openProvider('https://gemini.google.com/app')" in assistant
+
+def test_translation_queue_offers_style_choices_and_quick_continue_stop_send():
+    page = home()
+    expected_controls = (
+        'id="queue-translation-style"',
+        'value="faithful_natural"',
+        'value="gamer_terms"',
+        'value="fluent_spanish"',
+        'value="literal_review"',
+        'id="queue-custom-instruction"',
+        'id="queue-quick-action"',
+        'value="continue"',
+        'value="pause"',
+        'value="submit"',
+        'id="queue-quick-send"',
+        '>Enviar</button>',
+    )
+    for control in expected_controls:
+        assert control in page
+
+    assert "Seguir: preparar el siguiente prompt" in page
+    assert "Parar: conservar el progreso y pausar" in page
+    assert "Enviar: guardar la respuesta pegada" in page
+    assert "no envía el prompt por ti a ChatGPT/Gemini" in page
+    assert "translation_style:$('#queue-translation-style').value" in page
+    assert "custom_instruction:$('#queue-custom-instruction').value.trim()" in page
+    assert "function refreshQueueQuickControl()" in page
+
+
+
+def test_glossary_candidate_ui_prefills_profile_suggestions_and_requires_evidence_review():
+    page = home()
+    assert "Las sugerencias del perfil no son prueba del sentido" in page
+    assert "c.profile_evidence_label" in page
+    assert "c.suggested_target||c.source_term" in page
+    assert "c.suggested_rule==='protect'" in page
+    assert "Confirmar y aprobar" in page

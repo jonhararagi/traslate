@@ -48,5 +48,7 @@ jobs:
             }
             Write-Host "PowerShell syntax OK: $script"
           }
-      - name: Run tests
-        run: pytest -q
+      - name: Run focused linguistic analysis tests
+        run: python -m pytest -q tests/test_linguistic_analysis.py
+      - name: Run full test suite
+        run: python -m pytest -q
