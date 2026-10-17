@@ -167,6 +167,42 @@ def test_confirmed_learning_is_reused_in_next_manual_prompt(monkeypatch, tmp_pat
         assert "resource or XP grinding" in prompt_text
 
 
+def test_confirmed_learning_is_reused_in_page_premium_prompt(monkeypatch, tmp_path):
+    monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path))
+    main.init_db()
+    book_id = _add_book()
+    with main.connection() as conn:
+        chapter = conn.execute(
+            "SELECT id FROM chapters WHERE book_id = ?", (book_id,)
+        ).fetchone()
+    assert chapter is not None
+
+    with TestClient(main.app) as client:
+        decision = client.post(f"/api/books/{book_id}/learning/decisions", json={
+            "category": "terminology",
+            "source": "farm",
+            "target": "farmear",
+            "decision_type": "contextual-gamer-verb",
+            "context": "resource or XP grinding",
+            "chapter_index": 0,
+            "evidence": "to farm for XP",
+            "status": "confirmed",
+        })
+        assert decision.status_code == 200, decision.text
+
+        response = client.post(
+            f"/api/chapters/{chapter['id']}/premium-browser-prompts/chunked",
+            json={"provider": "chatgpt", "profile_id": "light_novel_es", "chunk_size": 3500, "context_chars": 1200},
+        )
+        assert response.status_code == 200, response.text
+        result = response.json()
+        assert result["sent_to_provider"] is False
+        prompt = result["chunks"][0]["prompt"]
+        assert "DECISIONES DE TRADUCCIÓN CONFIRMADAS POR CAPÍTULOS ANTERIORES" in prompt
+        assert "farm => farmear [contextual-gamer-verb]" in prompt
+        assert "resource or XP grinding" in prompt
+
+
 def test_downloadable_zip_contains_separate_translation_and_learning_folders(monkeypatch, tmp_path):
     import io
     import zipfile
