@@ -53,6 +53,31 @@ def test_repeated_evidence_does_not_duplicate_and_rejected_rule_is_not_promoted(
     assert len(payload["entries"][0]["evidence"]) == 1
 
 
+def test_new_evidence_is_persisted_for_rejected_rule_without_promoting_it(tmp_path):
+    store = TranslationLearningStore(tmp_path)
+    store.record_decision(
+        category="ambiguities", source="Steal", target="Steal",
+        decision_type="protected-skill-name", context="Skill label",
+        chapter=3, evidence="The Steal skill activated.", status="rejected",
+    )
+    result = store.record_decision(
+        category="ambiguities", source="Steal", target="Steal",
+        decision_type="protected-skill-name", context="Different skill context",
+        chapter=4, evidence="Steal was displayed in the system menu.", status="confirmed",
+        notes="New occurrence does not override the rejection.",
+    )
+
+    assert result["created"] is False
+    assert result["status"] == "rejected"
+    payload = json.loads((tmp_path / "aprendizaje" / LEARNING_FILES["ambiguities"]).read_text())
+    entry = payload["entries"][0]
+    assert entry["status"] == "rejected"
+    assert len(entry["evidence"]) == 2
+    assert entry["evidence"][1]["chapter"] == 4
+    assert entry["evidence"][1]["excerpt"] == "Steal was displayed in the system menu."
+    assert "New occurrence does not override the rejection." in entry["notes"]
+
+
 def test_chapter_markdown_export_is_separate_and_safe(tmp_path):
     store = TranslationLearningStore(tmp_path)
     chapter = store.save_chapter(1, "../../ Oknodie: Start!", "La protagonista entra en la academia.")
