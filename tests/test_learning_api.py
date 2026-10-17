@@ -97,3 +97,36 @@ def test_learning_api_returns_not_found_for_unknown_book(monkeypatch, tmp_path):
     with TestClient(main.app) as client:
         response = client.get("/api/books/does-not-exist/learning")
     assert response.status_code == 404
+
+
+def test_confirmed_learning_is_reused_in_next_manual_prompt(monkeypatch, tmp_path):
+    monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path))
+    main.init_db()
+    book_id = _add_book()
+
+    with TestClient(main.app) as client:
+        decision = client.post(f"/api/books/{book_id}/learning/decisions", json={
+            "category": "terminology",
+            "source": "farm",
+            "target": "farmear",
+            "decision_type": "contextual-gamer-verb",
+            "context": "resource or XP grinding",
+            "chapter_index": 0,
+            "evidence": "to farm for XP",
+            "status": "confirmed",
+        })
+        assert decision.status_code == 200, decision.text
+
+        job = client.post(f"/api/books/{book_id}/translation-jobs", json={
+            "chunk_size": 1000, "context_chars": 0, "provider": "chatgpt",
+        })
+        assert job.status_code == 200, job.text
+        prompt = client.post(
+            f"/api/translation-jobs/{job.json()['id']}/next-prompt",
+            json={"translation_style": "gamer_terms"},
+        )
+        assert prompt.status_code == 200, prompt.text
+        prompt_text = prompt.json()["prompt"]
+        assert "DECISIONES DE TRADUCCIÓN CONFIRMADAS POR CAPÍTULOS ANTERIORES" in prompt_text
+        assert "farm => farmear [contextual-gamer-verb]" in prompt_text
+        assert "resource or XP grinding" in prompt_text
