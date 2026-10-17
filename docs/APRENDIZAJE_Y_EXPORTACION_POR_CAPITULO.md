@@ -18,6 +18,10 @@ NovelTrad mantiene el texto traducido y las decisiones reutilizables en carpetas
 
 El esquema de decisión usa `category` (`names`, `terminology`, `symbols`, `rules` o `ambiguities`), `source`, `target`, `decision_type`, `context`, `chapter_index`, `evidence`, `status` y `notes`. Los estados son `candidate`, `confirmed` y `rejected`. Las reglas rechazadas no se promueven. Solo las decisiones confirmadas se incorporan al prompt manual de fragmentos futuros; las candidatas no se tratan como instrucciones confirmadas.
 
+## Revisión desde la interfaz
+
+En el lector, el botón **Aprendizaje** abre un formulario para registrar una decisión candidata con categoría, capítulo, término original, tratamiento propuesto, contexto y evidencia literal. La lista muestra el estado y la evidencia de cada entrada, y permite confirmar o rechazar candidatas sin llamar a la API manualmente. La interfaz no convierte candidatas en reglas automáticamente; una decisión rechazada permanece rechazada.
+
 ## Contrato de aprendizaje
 
 La deduplicación usa término original, tratamiento en español y tipo de decisión, con normalización Unicode, mayúsculas y espacios. Una coincidencia no crea una nueva regla; puede agregar evidencia contextual de otro capítulo. El fragmento de evidencia y el contexto deben ser útiles para distinguir usos contextuales como el verbo gamer `farm` frente a un uso literal.
