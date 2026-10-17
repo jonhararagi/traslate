@@ -122,8 +122,10 @@ class TranslationLearningStore:
                 prior.append(evidence_item)
             if notes.strip() and notes.strip() not in existing.setdefault("notes", []):
                 existing["notes"].append(notes.strip())
-            # Never silently promote an uncertain candidate.
+            # A rejected rule stays rejected, but new provenance must not be lost.
             if existing.get("status") == "rejected":
+                existing["updated_at"] = _now()
+                _atomic_json(self.learning_dir / LEARNING_FILES[category], data)
                 return {"created": False, "entry": existing, "status": "rejected"}
             if status == "confirmed":
                 existing["status"] = "confirmed"
