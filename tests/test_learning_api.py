@@ -130,3 +130,27 @@ def test_confirmed_learning_is_reused_in_next_manual_prompt(monkeypatch, tmp_pat
         assert "DECISIONES DE TRADUCCIÓN CONFIRMADAS POR CAPÍTULOS ANTERIORES" in prompt_text
         assert "farm => farmear [contextual-gamer-verb]" in prompt_text
         assert "resource or XP grinding" in prompt_text
+
+
+def test_downloadable_zip_contains_separate_translation_and_learning_folders(monkeypatch, tmp_path):
+    import io
+    import zipfile
+
+    monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path))
+    main.init_db()
+    book_id = _add_book()
+    with main.connection() as conn:
+        conn.execute(
+            "UPDATE chapters SET translated_text = ?, status = 'translated' WHERE book_id = ?",
+            ("Oknodie usó Steal.", book_id),
+        )
+
+    with TestClient(main.app) as client:
+        response = client.get(f"/api/books/{book_id}/learning/export.zip")
+        assert response.status_code == 200, response.text
+        assert response.headers["content-type"].startswith("application/zip")
+        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+            names = set(archive.namelist())
+        assert "traduccion/capitulo-001-chapter-one.md" in names
+        assert "aprendizaje/README.md" in names
+        assert "aprendizaje/terminologia-otaku-gamer.json" not in names
