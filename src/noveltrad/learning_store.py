@@ -175,6 +175,9 @@ class TranslationLearningStore:
                  "Las entradas candidatas no son reglas confirmadas. La prosa traducida está en `../traduccion/`.", ""]
         for category, filename in LEARNING_FILES.items():
             data = self._load_category(category)
+            category_path = self.learning_dir / filename
+            if not category_path.exists():
+                _atomic_json(category_path, data)
             confirmed = sum(1 for entry in data["entries"] if entry.get("status") == "confirmed")
             candidates = sum(1 for entry in data["entries"] if entry.get("status") == "candidate")
             lines.append(f"- **{filename}**: {len(data['entries'])} entradas; {confirmed} confirmadas; {candidates} candidatas.")
