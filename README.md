@@ -41,7 +41,7 @@ On other platforms, create a virtual environment, install `.[test]`, and run `no
 
 ## Recovery and project continuity
 
-Read [BRAIN.md](BRAIN.md) first when resuming work after a lost conversation. It defines the recovery protocol, product boundaries, hardware constraints, and priority queue. The first novel profile and unapproved terminology candidates live in `data/novels/i_became_the_academy_villains_daughter.json`.
+Read [BRAIN.md](BRAIN.md) first when resuming work after a lost conversation. It defines the recovery protocol, product boundaries, hardware constraints, and priority queue. The first novel profile and unapproved terminology candidates live in [the terminology review guide](docs/PERFIL_TERMINOLOGICO_INICIAL.md) and  `data/novels/i_became_the_academy_villains_daughter.json`.
 
 ## Cross-branch status
 

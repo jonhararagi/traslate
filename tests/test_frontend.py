@@ -157,3 +157,12 @@ def test_translation_queue_offers_style_choices_and_quick_continue_stop_send():
     assert "custom_instruction:$('#queue-custom-instruction').value.trim()" in page
     assert "function refreshQueueQuickControl()" in page
 
+
+
+def test_glossary_candidate_ui_prefills_profile_suggestions_and_requires_evidence_review():
+    page = home()
+    assert "Las sugerencias del perfil no son prueba del sentido" in page
+    assert "c.profile_evidence_label" in page
+    assert "c.suggested_target||c.source_term" in page
+    assert "c.suggested_rule==='protect'" in page
+    assert "Confirmar y aprobar" in page

@@ -144,7 +144,7 @@ def _normalized_novel_title(value: str) -> str:
 
 
 def _seed_novel_profile_candidates(conn: sqlite3.Connection, book_id: str, title: str) -> int:
-    """Copy known candidate terms into a new book glossary without approving them."""
+    """Copy starter terminology into a book without approving it or treating metadata as chapter evidence."""
     try:
         profile = json.loads(NOVEL_PROFILE_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -171,19 +171,32 @@ def _seed_novel_profile_candidates(conn: sqlite3.Connection, book_id: str, title
             continue
         entity_type = str(candidate.get("type", "term"))
         evidence = str(candidate.get("evidence", ""))
+        evidence_class = str(candidate.get("evidence_class", "general_reference_only"))
+        suggested_rule = str(candidate.get("suggested_rule", "contextual"))
+        if suggested_rule not in {"preserve", "translate", "contextual", "protect"}:
+            suggested_rule = "contextual"
+        review_requirements = candidate.get("review_requirements", [])
+        if isinstance(review_requirements, list):
+            review_text = "; ".join(str(item).strip() for item in review_requirements if str(item).strip())
+        else:
+            review_text = str(review_requirements).strip()
         notes = (
             f"Candidato importado del perfil de novela; tipo: {entity_type}. "
-            f"No aprobado: verificar contra la edición importada. {evidence}"
+            f"Regla sugerida (no aprobada): {suggested_rule}. "
+            f"Clase de referencia inicial: {evidence_class}. "
+            "Pendiente: buscar una ocurrencia literal en el original importado y revisar su contexto. "
+            "Los metadatos editoriales y las convenciones generales no sustituyen evidencia del capítulo "
+            "ni autorizan una regla automática. "
+            f"Comprobaciones humanas: {review_text}. Base del candidato: {evidence}"
         ).strip()
         conn.execute(
             "INSERT INTO glossary_entries(id,book_id,source_term,preferred_term,rule,notes,approved,created_at) "
             "VALUES(?,?,?,?,?,?,0,?)",
-            (str(uuid4()), book_id, source, target, "preserve", notes,
+            (str(uuid4()), book_id, source, target, suggested_rule, notes,
              datetime.now(timezone.utc).isoformat()),
         )
         inserted += 1
     return inserted
-
 
 def data_dir() -> Path:
     """Return a per-user data directory; tests can override NOVELTRAD_HOME."""
@@ -2746,10 +2759,32 @@ def update_glossary_entry(book_id: str, entry_id: str, entry: GlossaryInput) -> 
         if not conn.execute("SELECT 1 FROM books WHERE id = ?", (book_id,)).fetchone():
             raise HTTPException(status_code=404, detail="No se encontró la novela.")
         existing = conn.execute(
-            "SELECT id FROM glossary_entries WHERE id = ? AND book_id = ?", (entry_id, book_id)
+            "SELECT id, source_term, notes FROM glossary_entries WHERE id = ? AND book_id = ?", (entry_id, book_id)
         ).fetchone()
         if not existing:
             raise HTTPException(status_code=404, detail="No se encontró el término en esta novela.")
+        if entry.approved and str(existing["notes"] or "").startswith("Candidato importado del perfil de novela"):
+            candidate = conn.execute(
+                "SELECT status, evidence_json FROM glossary_candidates WHERE book_id = ? AND normalized_term = ?",
+                (book_id, _normalize_candidate_term(str(existing["source_term"]))),
+            ).fetchone()
+            try:
+                evidence_items = json.loads(candidate["evidence_json"] or "[]") if candidate else []
+            except (json.JSONDecodeError, TypeError):
+                evidence_items = []
+            has_literal_evidence = isinstance(evidence_items, list) and any(
+                isinstance(item, dict) and str(item.get("snippet", "")).strip()
+                for item in evidence_items
+            )
+            if not candidate or candidate["status"] != "approved" or not has_literal_evidence:
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        "Este término proviene del perfil inicial y todavía no tiene una aprobación respaldada "
+                        "por evidencia. Busca candidatos en el texto original y confirma la tarjeta que muestra "
+                        "las ocurrencias del capítulo."
+                    ),
+                )
         duplicate = conn.execute(
             "SELECT 1 FROM glossary_entries WHERE book_id = ? AND source_term = ? COLLATE NOCASE AND id != ?",
             (book_id, entry.source_term, entry_id),
@@ -2762,7 +2797,6 @@ def update_glossary_entry(book_id: str, entry_id: str, entry: GlossaryInput) -> 
             (entry.source_term, entry.preferred_term, entry.rule, entry.notes, int(entry.approved), entry_id, book_id),
         )
     return {"id": entry_id, **entry.model_dump()}
-
 
 @app.delete("/api/books/{book_id}/glossary/{entry_id}")
 def delete_glossary_entry(book_id: str, entry_id: str) -> dict[str, object]:
@@ -2816,7 +2850,7 @@ def _candidate_literal_pattern(value: str) -> re.Pattern[str]:
 
 
 def _load_candidate_specs() -> dict[str, dict[str, object]]:
-    """Load novel-profile terms and common gamer terms without approving any rule."""
+    """Load novel-profile suggestions and common gamer terms; suggestions never imply approval."""
     try:
         profile = json.loads(NOVEL_PROFILE_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -2825,17 +2859,27 @@ def _load_candidate_specs() -> dict[str, dict[str, object]]:
     for candidate in profile.get("terminology_candidates", []):
         source = str(candidate.get("source", "")).strip()
         if source:
+            suggested_rule = str(candidate.get("suggested_rule", "contextual"))
+            if suggested_rule not in {"preserve", "translate", "contextual", "protect"}:
+                suggested_rule = "contextual"
             specs[_normalize_candidate_term(source)] = {
                 "term": source, "category": str(candidate.get("type", "perfil de novela")),
-                "minimum": 1, "notes": str(candidate.get("notes", "")),
+                "minimum": max(1, int(candidate.get("minimum_occurrences", 1))),
+                "notes": str(candidate.get("notes", "")),
+                "suggested_target": str(candidate.get("target", source)),
+                "suggested_rule": suggested_rule,
+                "evidence_class": str(candidate.get("evidence_class", "general_reference_only")),
+                "profile_candidate": True,
             }
     for source in _BUILTIN_GAMER_TERMS:
         specs.setdefault(_normalize_candidate_term(source), {
-            "term": source, "category": "término gamer/otaku (contextual)", "minimum": 2,
+            "term": source, "category": "término gamer/otaku (contextual)",
+            "minimum": 2,
             "notes": "Candidato heurístico: verifica el significado en el capítulo antes de aprobar una regla.",
+            "suggested_target": source, "suggested_rule": "contextual",
+            "evidence_class": "literal_chapter_occurrence_only", "profile_candidate": False,
         })
     return specs
-
 
 def _record_candidate_hit(
     hits: dict[str, dict[str, object]], key: str, actual_term: str,
@@ -2965,8 +3009,27 @@ def list_glossary_candidates(book_id: str, status: str = "pending") -> list[dict
                 "SELECT * FROM glossary_candidates WHERE book_id = ? AND status = ? ORDER BY occurrences DESC, source_term COLLATE NOCASE",
                 (book_id, status),
             ).fetchall()
-        return [_candidate_row(row) for row in rows]
+        items = [_candidate_row(row) for row in rows]
 
+    specs = _load_candidate_specs()
+    evidence_labels = {
+        "publisher_metadata_only": "Metadatos editoriales únicamente; no confirma el uso dentro del capítulo.",
+        "user_requested_term": "Término solicitado como candidato; aún debe comprobarse en la edición importada.",
+        "genre_convention_only": "Convención general de juegos/otaku; no demuestra el sentido de esta aparición.",
+        "literal_chapter_occurrence_only": "Detección literal en el capítulo; el sentido aún requiere revisión humana.",
+    }
+    for item in items:
+        spec = specs.get(str(item.get("normalized_term", "")), {})
+        item["suggested_target"] = str(spec.get("suggested_target") or item.get("source_term") or "")
+        item["suggested_rule"] = str(spec.get("suggested_rule") or "contextual")
+        item["profile_candidate"] = bool(spec.get("profile_candidate", False))
+        evidence_class = str(spec.get("evidence_class", "literal_chapter_occurrence_only"))
+        item["profile_evidence_class"] = evidence_class
+        item["profile_evidence_label"] = evidence_labels.get(
+            evidence_class, "Referencia inicial; revisa las muestras del capítulo antes de confirmar."
+        )
+        item["requires_human_review"] = True
+    return items
 
 @app.post("/api/books/{book_id}/glossary/candidates/{candidate_id}/approve")
 def approve_glossary_candidate(book_id: str, candidate_id: str, payload: GlossaryCandidateApprovalInput) -> dict[str, object]:
@@ -2982,6 +3045,18 @@ def approve_glossary_candidate(book_id: str, candidate_id: str, payload: Glossar
             raise HTTPException(status_code=404, detail="No se encontró el candidato.")
         if candidate["status"] != "pending":
             raise HTTPException(status_code=409, detail="Solo se pueden aprobar candidatos pendientes.")
+        try:
+            evidence_items = json.loads(candidate["evidence_json"] or "[]")
+        except (json.JSONDecodeError, TypeError):
+            evidence_items = []
+        if not isinstance(evidence_items, list) or not any(
+            isinstance(item, dict) and str(item.get("snippet", "")).strip()
+            for item in evidence_items
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="No se puede aprobar un término sin una muestra literal del capítulo importado.",
+            )
         existing = conn.execute(
             "SELECT id, approved FROM glossary_entries WHERE book_id = ? AND source_term = ? COLLATE NOCASE",
             (book_id, candidate["source_term"]),
@@ -3009,7 +3084,6 @@ def approve_glossary_candidate(book_id: str, candidate_id: str, payload: Glossar
             (entry_id,),
         ).fetchone()
         return {"candidate_id": candidate_id, "status": "approved", "glossary_entry": dict(row)}
-
 
 @app.post("/api/books/{book_id}/glossary/candidates/{candidate_id}/ignore")
 def ignore_glossary_candidate(book_id: str, candidate_id: str) -> dict[str, object]:
@@ -3311,7 +3385,7 @@ def home() -> str:
 <div class="reader-actions"><button id="read-page" class="secondary" type="button">Leer página</button><button id="translate-page" class="primary" type="button">Traducir página</button><span id="page-status" class="sub small" role="status" aria-live="polite"></span></div>
 <div class="reader-grid"><section class="reading-pane"><h3>Original</h3><div id="original" class="original-text" tabindex="0"></div></section><section class="reading-pane"><h3>Traducción</h3><p class="sub small">El original permanece intacto. Editá y guardá la traducción correspondiente a la página actual.</p><textarea id="translation" class="translation-text" aria-label="Traducción de la página actual" placeholder="Pegá o editá la traducción de esta página…"></textarea><div class="reader-actions"><button id="save-translation" class="primary" type="button">Guardar traducción</button><button id="offline-rules-open" class="secondary" type="button">Reglas offline</button><button id="export-epub" class="secondary" type="button">Exportar EPUB</button><button id="export-learning" class="secondary" type="button">Exportar capítulos + aprendizaje</button><button id="show-history" class="secondary" type="button">Historial</button><span id="save-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">Cada guardado conserva una versión anterior.</p>
 <div id="offline-rules-panel" class="panel hidden"><h3>Motor de traducción</h3><p class="sub small">Elegí un modo por operación. Ambos generan una vista previa y nunca guardan por su cuenta.</p><label>Modo <select id="translation-mode" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="local">Modo local — reglas, glosario y formato (RAM mínima)</option><option value="premium">Modo Premium — ChatGPT o Gemini en Chromium</option></select></label><p id="premium-info" class="sub small">Premium abre un perfil Chromium persistente para iniciar sesión en ChatGPT o Gemini. Se bloquean las imágenes para reducir carga; NovelTrad no envía texto automáticamente. Genera fragmentos secuenciales de hasta 3.500 caracteres. Copiá cada prompt, pegá la respuesta y revisá todos los fragmentos antes de pasarlos al editor.</p><label>Proveedor Premium <select id="premium-provider" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="chatgpt">ChatGPT</option><option value="gemini">Gemini</option></select></label><div class="reader-actions"><button id="premium-open-browser" class="secondary" type="button">Abrir Chromium / iniciar sesión</button><span id="premium-browser-status" class="sub small" role="status" aria-live="polite"></span></div><label>Perfil editorial <select id="offline-profile" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="light_novel_es">Novela ligera en español</option><option value="faithful_literary_es">Traducción literaria fiel</option><option value="webnovel_es">Novela web en español</option></select></label><label>Mapa de frases, una por línea: original =&gt; traducción<textarea id="offline-phrase-map" rows="4" style="display:block;width:100%;padding:9px;margin:6px 0 12px" placeholder="reached =&gt; alcanzó&#10;magic stone =&gt; piedra mágica"></textarea></label><div class="reader-actions"><button id="offline-run" class="primary" type="button">Generar vista previa</button><button id="offline-apply" class="secondary" type="button" disabled>Pasar al editor</button><button id="offline-close" class="quiet" type="button">Cerrar</button></div><p id="offline-status" class="sub small" role="status" aria-live="polite"></p><pre id="offline-result" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:32rem;overflow:auto"></pre><div id="offline-chunks" class="reader-grid" style="margin-top:14px"></div></div><div id="translation-history" class="hidden"><h4>Versiones guardadas</h4><div id="history-list"></div><p id="history-status" class="sub small" role="status" aria-live="polite"></p></div></section></div>
-<section id="glossary-panel" class="panel hidden"><div class="reader-head"><h2>Glosario de esta novela</h2><button id="close-glossary" class="quiet" type="button">Cerrar</button></div><p class="sub small">Protegé nombres y fijá términos para mantener la coherencia. Las reglas se guardan por novela.</p><div class="reader-actions"><button id="extract-glossary-candidates" class="secondary" type="button">Buscar candidatos en el texto original</button><span id="glossary-candidate-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">El análisis local busca términos del perfil, vocabulario gamer/otaku y nombres potenciales. Cada candidato muestra evidencia; nada se aprueba ni se aplica automáticamente.</p><div id="glossary-candidates-list"></div><form id="glossary-form"><div class="reader-grid"><label>Término original<input id="glossary-source" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label><label>Forma preferida<input id="glossary-target" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label></div><div class="reader-actions"><label>Regla <select id="glossary-rule" style="padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)"><option value="protect">Proteger nombre/término</option><option value="preserve">Conservar exactamente</option><option value="translate">Traducir siempre así</option><option value="contextual">Depende del contexto</option></select></label><label><input id="glossary-approved" type="checkbox"> Aprobado</label><button id="glossary-submit" class="primary" type="submit">Guardar término</button><button id="glossary-cancel" class="secondary hidden" type="button">Cancelar edición</button></div><label>Notas opcionales<textarea id="glossary-notes" rows="2" maxlength="2000" style="display:block;width:100%;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Nombre propio; no traducir."></textarea></label><p id="glossary-status" class="sub small" role="status" aria-live="polite"></p></form><div id="glossary-list"></div></section>
+<section id="glossary-panel" class="panel hidden"><div class="reader-head"><h2>Glosario de esta novela</h2><button id="close-glossary" class="quiet" type="button">Cerrar</button></div><p class="sub small">Protegé nombres y fijá términos para mantener la coherencia. Las reglas se guardan por novela.</p><div class="reader-actions"><button id="extract-glossary-candidates" class="secondary" type="button">Buscar candidatos en el texto original</button><span id="glossary-candidate-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">El análisis local busca términos del perfil, vocabulario gamer/otaku y nombres potenciales. Cada tarjeta muestra evidencia literal; las sugerencias del perfil no son prueba del sentido. La aprobación manual exige revisar la muestra del capítulo y confirmar explícitamente la regla.</p><div id="glossary-candidates-list"></div><form id="glossary-form"><div class="reader-grid"><label>Término original<input id="glossary-source" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label><label>Forma preferida<input id="glossary-target" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label></div><div class="reader-actions"><label>Regla <select id="glossary-rule" style="padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)"><option value="protect">Proteger nombre/término</option><option value="preserve">Conservar exactamente</option><option value="translate">Traducir siempre así</option><option value="contextual">Depende del contexto</option></select></label><label><input id="glossary-approved" type="checkbox"> Aprobado</label><button id="glossary-submit" class="primary" type="submit">Guardar término</button><button id="glossary-cancel" class="secondary hidden" type="button">Cancelar edición</button></div><label>Notas opcionales<textarea id="glossary-notes" rows="2" maxlength="2000" style="display:block;width:100%;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Nombre propio; no traducir."></textarea></label><p id="glossary-status" class="sub small" role="status" aria-live="polite"></p></form><div id="glossary-list"></div></section>
 <section id="learning-panel" class="panel hidden">
   <div class="reader-head"><h2>Aprendizaje de traducción</h2><button id="close-learning" class="quiet" type="button">Cerrar</button></div>
   <p class="sub small">Registrá una decisión a partir de una frase literal del original. Las candidatas requieren revisión. Solo las confirmadas se reutilizan en prompts posteriores. Las rechazadas nunca se promueven automáticamente.</p>
@@ -3771,7 +3845,10 @@ async function loadGlossaryCandidates(){
     const candidates=await api('/api/books/'+currentBook.id+'/glossary/candidates');
     $('#glossary-candidates-list').innerHTML=candidates.length?candidates.map(c=>{
       const evidence=(c.evidence||[]).map(item=>'<li><strong>'+esc(item.chapter_title)+' ('+(Number(item.chapter_index)+1)+')</strong>: '+esc(item.snippet)+'</li>').join('');
-      return '<article class="book"><div class="bookinfo"><strong>'+esc(c.source_term)+' <span class="sub small">· '+c.occurrences+' apariciones</span></strong><div class="sub small">'+esc(c.category)+' · Pendiente de verificación</div>'+(c.candidate_notes?'<p class="sub small">'+esc(c.candidate_notes)+'</p>':'')+'<details><summary>Ver evidencia en el original ('+(c.evidence||[]).length+' muestras)</summary><ul>'+evidence+'</ul></details></div><div style="min-width:min(100%,260px);display:grid;gap:8px"><label>Forma preferida<input data-candidate-target="'+esc(c.id)+'" value="'+esc(c.source_term)+'" maxlength="300" style="display:block;width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)"></label><label>Regla<select data-candidate-rule="'+esc(c.id)+'" style="display:block;width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)"><option value="contextual" selected>Depende del contexto</option><option value="protect">Proteger nombre/término</option><option value="preserve">Conservar exactamente</option><option value="translate">Traducir siempre así</option></select></label><label>Notas<textarea data-candidate-notes="'+esc(c.id)+'" rows="2" maxlength="2000" style="display:block;width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)">'+esc(c.candidate_notes||'')+'</textarea></label><div class="reader-actions"><button class="primary" type="button" data-approve-candidate="'+esc(c.id)+'">Aprobar regla</button><button class="quiet" type="button" data-ignore-candidate="'+esc(c.id)+'">Ignorar</button></div></div></article>';
+      const suggestion=c.profile_candidate
+        ? '<p class="sub small"><strong>Sugerencia del perfil:</strong> '+esc(c.suggested_target||c.source_term)+' · regla sugerida: '+esc(c.suggested_rule||'contextual')+'. '+esc(c.profile_evidence_label||'')+' La muestra del capítulo es la evidencia que debes revisar antes de confirmar.</p>'
+        : '<p class="sub small"><strong>Sugerencia:</strong> '+esc(c.suggested_target||c.source_term)+' · regla sugerida: '+esc(c.suggested_rule||'contextual')+'. El significado de esta aparición requiere revisión humana.</p>';
+      return '<article class="book"><div class="bookinfo"><strong>'+esc(c.source_term)+' <span class="sub small">· '+c.occurrences+' apariciones</span></strong><div class="sub small">'+esc(c.category)+' · Pendiente de verificación</div>'+(c.candidate_notes?'<p class="sub small">'+esc(c.candidate_notes)+'</p>':'')+suggestion+'<details><summary>Ver evidencia en el original ('+(c.evidence||[]).length+' muestras)</summary><ul>'+evidence+'</ul></details></div><div style="min-width:min(100%,260px);display:grid;gap:8px"><label>Forma preferida<input data-candidate-target="'+esc(c.id)+'" value="'+esc(c.suggested_target||c.source_term)+'" maxlength="300" style="display:block;width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)"></label><label>Regla<select data-candidate-rule="'+esc(c.id)+'" style="display:block;width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)"><option value="contextual"'+(c.suggested_rule==='contextual'?' selected':'')+'>Depende del contexto</option><option value="protect"'+(c.suggested_rule==='protect'?' selected':'')+'>Proteger nombre/término</option><option value="preserve"'+(c.suggested_rule==='preserve'?' selected':'')+'>Conservar exactamente</option><option value="translate"'+(c.suggested_rule==='translate'?' selected':'')+'>Traducir siempre así</option></select></label><label>Notas<textarea data-candidate-notes="'+esc(c.id)+'" rows="2" maxlength="2000" style="display:block;width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)">'+esc(c.candidate_notes||'')+'</textarea></label><div class="reader-actions"><button class="primary" type="button" data-approve-candidate="'+esc(c.id)+'">Confirmar y aprobar</button><button class="quiet" type="button" data-ignore-candidate="'+esc(c.id)+'">Ignorar</button></div></div></article>';
     }).join(''):'<p class="empty">No hay candidatos pendientes. Pulsa «Buscar candidatos en el texto original» para analizar la novela importada.</p>';
   }catch(err){$('#glossary-candidate-status').textContent='No se pudo cargar el análisis: '+err.message}
 }
