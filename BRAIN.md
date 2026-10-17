@@ -1,5 +1,17 @@
 # NovelTrad Brain — Continuity and Recovery
 
+## Initial terminology profile and evidence-gated approvals — 2026-10-17
+
+PR #16 remains open and Draft. Authorized branch: `feat/offline-linguistic-narrative-core`. Do not merge or write to `main`. Main SHA remains `6ebca3e06565456d473a44b1d62e14012531cde8`.
+
+- Initial implementation SHA: `aea36be4c1dcec544422e977693eb0f820c8066f`; its first CI run reported three test failures (UI assertion casing/punctuation, missing `json` import, stale expected `preserve` value for Oknodie). This follow-up fixes those test issues; only CI on this follow-up SHA may be used as current evidence.
+- The first-novel profile carries 19 unapproved candidates, including `lvl`, each with proposed rule, evidence class, evidence status, chapter-evidence requirement, and a human-review checklist. The display title is metadata, not a glossary term.
+- Provisional rule suggestions: `Oknodie` → `protect`; `Graduate from the Academy by Luck` and `tsundere` → `preserve`; context-sensitive terms such as `farm`, `farmed`, `level`, `steal`, `Steal skill`, and `lvl` → `contextual`. All remain unapproved.
+- The candidate API exposes suggested target/rule and evidence origin. The review UI pre-fills suggestions but states they are not proof of meaning. Approval requires a nonempty literal excerpt collected from the imported chapter. The general edit endpoint blocks directly approving a seeded profile entry until the evidence-backed candidate review has been approved.
+- Documentation: `docs/PERFIL_TERMINOLOGICO_INICIAL.md`. Tests cover profile metadata and review requirements, UI prefill, evidence-gated approval, and source text preservation.
+- The novel's actual chapter text has not been supplied for this phase. No proposed target or term sense is claimed verified against the exact edition. Scanning a user-authorized import and human approval remain necessary.
+- Windows portable build and full cross-platform tests must complete successfully on the follow-up SHA before calling this phase technically verified.
+
 ## User-requested queue controls and prompt options — 2026-10-16
 
 PR #16 remains open and Draft; work only on `feat/offline-linguistic-narrative-core`. Do not change `main` or merge the PR.
