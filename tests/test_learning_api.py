@@ -153,4 +153,6 @@ def test_downloadable_zip_contains_separate_translation_and_learning_folders(mon
             names = set(archive.namelist())
         assert "traduccion/capitulo-001-chapter-one.md" in names
         assert "aprendizaje/README.md" in names
-        assert "aprendizaje/terminologia-otaku-gamer.json" in names
+        assert {
+            f"aprendizaje/{filename}" for filename in LEARNING_FILES.values()
+        }.issubset(names)
