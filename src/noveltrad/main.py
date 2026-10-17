@@ -1742,7 +1742,7 @@ def _translation_job_prompt(
         if source and target and decision_type:
             suffix = f" (contexto: {context_hint})" if context_hint else ""
             learned_lines.append(f"- {source} => {target} [{decision_type}]{suffix}")
-    learned_block = "\\n".join(learned_lines[:80]) or "(Todavía no hay decisiones de aprendizaje confirmadas.)"
+    learned_block = "\n".join(learned_lines[:80]) or "(Todavía no hay decisiones de aprendizaje confirmadas.)"
     style_options = {
         "faithful_natural": (
             "Fiel y natural",
