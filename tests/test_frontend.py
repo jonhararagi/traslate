@@ -60,6 +60,25 @@ def test_persistent_reader_has_page_navigation_zoom_and_manual_translation_hando
     assert "recuperar esa respuesta automáticamente desde la web" in page
     assert "function persistTranslationPages()" in page
 
+def test_learning_review_is_available_in_reader_and_uses_explicit_review_states():
+    page = home()
+    for control in (
+        'id="toggle-learning"',
+        'id="learning-panel"',
+        'id="learning-form"',
+        'id="learning-category"',
+        'id="learning-chapter"',
+        'id="learning-evidence"',
+        'id="learning-entries-list"',
+        'data-learning-action="confirmed"',
+        'data-learning-action="rejected"',
+    ):
+        assert control in page
+    assert "Solo las confirmadas se reutilizan en prompts posteriores" in page
+    assert "chapter_index:Number(evidence.chapter)-1" in page
+    assert "learning/decisions" in page
+
+
 def test_manual_narrative_assistant_exposes_consent_gated_workflow():
     page = home()
     assert "Microventana de asistencia narrativa" in page
