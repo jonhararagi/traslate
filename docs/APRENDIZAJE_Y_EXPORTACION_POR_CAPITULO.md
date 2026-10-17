@@ -24,7 +24,7 @@ En el lector, el botón **Aprendizaje** abre un formulario para registrar una de
 
 ## Contrato de aprendizaje
 
-La deduplicación usa término original, tratamiento en español y tipo de decisión, con normalización Unicode, mayúsculas y espacios. Una coincidencia no crea una nueva regla; puede agregar evidencia contextual de otro capítulo. El fragmento de evidencia y el contexto deben ser útiles para distinguir usos contextuales como el verbo gamer `farm` frente a un uso literal.
+La deduplicación usa término original, tratamiento en español y tipo de decisión, con normalización Unicode, mayúsculas y espacios. Una coincidencia no crea una nueva regla; puede agregar evidencia contextual de otro capítulo. Al construir prompts, NovelTrad combina los contextos distintos de la decisión y sus evidencias (máximo 500 caracteres por regla), y limita el bloque completo a 80 reglas y 12.000 caracteres. El fragmento de evidencia y el contexto deben ser útiles para distinguir usos contextuales como el verbo gamer `farm` frente a un uso literal.
 
 Una acción narrativa recurrente no se convierte automáticamente en una regla terminológica. Se registra solo si define una convención reutilizable, una decisión de estilo o una ambigüedad real. No se extrae ni se aprueba aprendizaje automáticamente a partir de una traducción sin revisión.
 

@@ -77,6 +77,9 @@ def test_learning_review_is_available_in_reader_and_uses_explicit_review_states(
     assert "Solo las confirmadas se reutilizan en prompts posteriores" in page
     assert "chapter_index:Number(evidence.chapter)-1" in page
     assert "learning/decisions" in page
+    assert "saved.status==='rejected'" in page
+    assert "saved.status==='confirmed'" in page
+    assert "saved.created" in page
 
 
 def test_manual_narrative_assistant_exposes_consent_gated_workflow():

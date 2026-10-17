@@ -1238,6 +1238,49 @@ def open_premium_browser(payload: PremiumBrowserOpenInput) -> dict[str, object]:
     }
 
 
+def _learning_context_hint(entry: dict[str, object], max_chars: int = 500) -> str:
+    """Combine distinct reviewed contexts for a learning entry within a small budget."""
+    contexts: list[str] = []
+    original_context = entry.get("context")
+    if isinstance(original_context, str) and original_context.strip():
+        contexts.append(original_context.strip())
+    evidence_items = entry.get("evidence")
+    if isinstance(evidence_items, list):
+        for item in evidence_items:
+            if isinstance(item, dict):
+                value = item.get("context")
+                if isinstance(value, str) and value.strip():
+                    contexts.append(value.strip())
+
+    unique: list[str] = []
+    seen: set[str] = set()
+    for context in contexts:
+        normalized = " ".join(context.split())
+        key = normalized.casefold()
+        if normalized and key not in seen:
+            seen.add(key)
+            unique.append(normalized)
+    combined = " | ".join(unique)
+    if len(combined) > max_chars:
+        return combined[: max(0, max_chars - 1)].rstrip() + "…"
+    return combined
+
+
+def _bounded_learning_block(lines: list[str], max_count: int = 80, max_chars: int = 12_000) -> str:
+    """Bound confirmed-learning hints so they cannot overwhelm the source passage."""
+    selected: list[str] = []
+    used_chars = 0
+    for line in lines[:max_count]:
+        separator_cost = 1 if selected else 0
+        if used_chars + separator_cost + len(line) > max_chars:
+            if not selected and max_chars > 0:
+                selected.append(line[:max_chars])
+            break
+        selected.append(line)
+        used_chars += separator_cost + len(line)
+    return "\n".join(selected) or "(Todavía no hay decisiones de aprendizaje confirmadas.)"
+
+
 @app.post("/api/chapters/{chapter_id}/premium-browser-prompts/chunked")
 def preview_premium_browser_prompts(
     chapter_id: str, payload: PremiumBrowserInput
@@ -1290,11 +1333,11 @@ def preview_premium_browser_prompts(
             source = str(entry.get("source") or "").strip()
             target = str(entry.get("target") or "").strip()
             decision_type = str(entry.get("decision_type") or "").strip()
-            context_hint = str(entry.get("context") or "").strip()
+            context_hint = _learning_context_hint(entry)
             if source and target and decision_type:
                 suffix = f" (contexto: {context_hint})" if context_hint else ""
                 learned_lines.append(f"- {source} => {target} [{decision_type}]{suffix}")
-    learned_block = "\n".join(learned_lines[:80]) or "(Todavía no hay decisiones de aprendizaje confirmadas.)"
+    learned_block = _bounded_learning_block(learned_lines)
     profile_styles = {
         "light_novel_es": "Español natural de novela ligera; conserva ritmo, diálogos, humor, honoríficos y voz de personajes.",
         "faithful_literary_es": "Traducción literaria fiel, precisa y legible; conserva matices, tono y estructura.",
@@ -1788,7 +1831,7 @@ def _translation_job_prompt(
         if source and target and decision_type:
             suffix = f" (contexto: {context_hint})" if context_hint else ""
             learned_lines.append(f"- {source} => {target} [{decision_type}]{suffix}")
-    learned_block = "\n".join(learned_lines[:80]) or "(Todavía no hay decisiones de aprendizaje confirmadas.)"
+    learned_block = _bounded_learning_block(learned_lines)
     style_options = {
         "faithful_natural": (
             "Fiel y natural",
@@ -1940,7 +1983,7 @@ def next_translation_job_prompt(
                         "source": str(entry.get("source") or ""),
                         "target": str(entry.get("target") or ""),
                         "decision_type": str(entry.get("decision_type") or ""),
-                        "context": str(entry.get("context") or ""),
+                        "context": _learning_context_hint(entry),
                     })
         prompt_options = options or TranslationPromptOptions()
         prompt = _translation_job_prompt(
@@ -3705,7 +3748,7 @@ $('#learning-form').addEventListener('submit',async e=>{
  e.preventDefault();if(!currentBook)return;
  const button=$('#learning-save');button.disabled=true;$('#learning-status').textContent='Guardando decisión candidata…';
  const payload={category:$('#learning-category').value,source:$('#learning-source').value.trim(),target:$('#learning-target').value.trim(),decision_type:$('#learning-type').value.trim(),context:$('#learning-context').value.trim(),chapter_index:Number($('#learning-chapter').value),evidence:$('#learning-evidence').value.trim(),status:'candidate',notes:$('#learning-notes').value.trim()};
- try{await api('/api/books/'+currentBook.id+'/learning/decisions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});$('#learning-form').reset();$('#learning-category').value='terminology';await loadLearning();$('#learning-status').textContent='Candidata guardada; todavía no se aplicará a prompts futuros.'}
+ try{const saved=await api('/api/books/'+currentBook.id+'/learning/decisions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});$('#learning-form').reset();$('#learning-category').value='terminology';await loadLearning();$('#learning-status').textContent=saved.status==='rejected'?'Esta decisión ya estaba rechazada; se conservó ese estado y no se reactivó.':saved.status==='confirmed'?'La decisión ya estaba confirmada; se conservó y seguirá disponible en prompts futuros.':saved.created?'Candidata guardada; todavía no se aplicará a prompts futuros.':'La candidata ya existía; se evitó duplicar la regla y se conservaron sus registros.'}
  catch(err){$('#learning-status').textContent='No se guardó: '+err.message}
  finally{button.disabled=false}
 });

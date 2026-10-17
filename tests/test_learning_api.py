@@ -151,6 +151,17 @@ def test_confirmed_learning_is_reused_in_next_manual_prompt(monkeypatch, tmp_pat
             "status": "confirmed",
         })
         assert decision.status_code == 200, decision.text
+        repeated_context = client.post(f"/api/books/{book_id}/learning/decisions", json={
+            "category": "terminology",
+            "source": "farm",
+            "target": "farmear",
+            "decision_type": "contextual-gamer-verb",
+            "context": "collecting upgrade materials before a raid",
+            "chapter_index": 0,
+            "evidence": "to farm for XP",
+            "status": "confirmed",
+        })
+        assert repeated_context.status_code == 200, repeated_context.text
 
         job = client.post(f"/api/books/{book_id}/translation-jobs", json={
             "chunk_size": 1000, "context_chars": 0, "provider": "chatgpt",
@@ -165,6 +176,7 @@ def test_confirmed_learning_is_reused_in_next_manual_prompt(monkeypatch, tmp_pat
         assert "DECISIONES DE TRADUCCIÓN CONFIRMADAS POR CAPÍTULOS ANTERIORES" in prompt_text
         assert "farm => farmear [contextual-gamer-verb]" in prompt_text
         assert "resource or XP grinding" in prompt_text
+        assert "collecting upgrade materials before a raid" in prompt_text
 
 
 def test_confirmed_learning_is_reused_in_page_premium_prompt(monkeypatch, tmp_path):
@@ -189,6 +201,17 @@ def test_confirmed_learning_is_reused_in_page_premium_prompt(monkeypatch, tmp_pa
             "status": "confirmed",
         })
         assert decision.status_code == 200, decision.text
+        repeated_context = client.post(f"/api/books/{book_id}/learning/decisions", json={
+            "category": "terminology",
+            "source": "farm",
+            "target": "farmear",
+            "decision_type": "contextual-gamer-verb",
+            "context": "collecting upgrade materials before a raid",
+            "chapter_index": 0,
+            "evidence": "to farm for XP",
+            "status": "confirmed",
+        })
+        assert repeated_context.status_code == 200, repeated_context.text
 
         response = client.post(
             f"/api/chapters/{chapter['id']}/premium-browser-prompts/chunked",
@@ -201,6 +224,7 @@ def test_confirmed_learning_is_reused_in_page_premium_prompt(monkeypatch, tmp_pa
         assert "DECISIONES DE TRADUCCIÓN CONFIRMADAS POR CAPÍTULOS ANTERIORES" in prompt
         assert "farm => farmear [contextual-gamer-verb]" in prompt
         assert "resource or XP grinding" in prompt
+        assert "collecting upgrade materials before a raid" in prompt
 
 
 def test_downloadable_zip_contains_separate_translation_and_learning_folders(monkeypatch, tmp_path):
