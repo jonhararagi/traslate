@@ -66,6 +66,41 @@ def test_learning_api_requires_literal_source_evidence_and_deduplicates(monkeypa
     assert len(data["entries"][0]["evidence"]) == 1
 
 
+def test_learning_candidate_can_be_rejected_but_not_later_promoted(monkeypatch, tmp_path):
+    monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path))
+    main.init_db()
+    book_id = _add_book()
+    payload = {
+        "category": "terminology",
+        "source": "farm",
+        "target": "farmear",
+        "decision_type": "contextual-gamer-verb",
+        "context": "farm for XP",
+        "chapter_index": 0,
+        "evidence": "to farm for XP",
+        "status": "candidate",
+    }
+
+    with TestClient(main.app) as client:
+        created = client.post(f"/api/books/{book_id}/learning/decisions", json=payload)
+        assert created.status_code == 200, created.text
+        rejected = client.post(f"/api/books/{book_id}/learning/decisions", json={
+            **payload, "status": "rejected"
+        })
+        assert rejected.status_code == 200, rejected.text
+        assert rejected.json()["status"] == "rejected"
+        attempted_promotion = client.post(f"/api/books/{book_id}/learning/decisions", json={
+            **payload, "status": "confirmed"
+        })
+        assert attempted_promotion.status_code == 200, attempted_promotion.text
+        assert attempted_promotion.json()["status"] == "rejected"
+
+        summary = client.get(f"/api/books/{book_id}/learning")
+        assert summary.status_code == 200, summary.text
+        assert summary.json()["categories"]["terminology"]["rejected"] == 1
+        assert summary.json()["entries"][0]["status"] == "rejected"
+
+
 def test_markdown_export_separates_translated_chapters_and_learning(monkeypatch, tmp_path):
     monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path))
     main.init_db()
