@@ -183,6 +183,14 @@ def test_profile_seed_requires_chapter_evidence_before_human_confirmation(monkey
         )
 
     with TestClient(main.app) as client:
+        strip_provenance = client.put(
+            f"/api/books/{book_id}/glossary/{seeded['id']}",
+            json={
+                "source_term": "Oknodie", "preferred_term": "Oknodie",
+                "rule": "protect", "notes": "Sin referencia de origen", "approved": False,
+            },
+        )
+        assert strip_provenance.status_code == 422
         bypass = client.put(
             f"/api/books/{book_id}/glossary/{seeded['id']}",
             json={

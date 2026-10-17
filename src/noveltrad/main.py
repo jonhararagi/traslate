@@ -181,7 +181,7 @@ def _seed_novel_profile_candidates(conn: sqlite3.Connection, book_id: str, title
         else:
             review_text = str(review_requirements).strip()
         notes = (
-            f"Candidato importado del perfil de novela; tipo: {entity_type}. "
+            f"Candidato importado del perfil de novela; no aprobado por el usuario; tipo: {entity_type}. "
             f"Regla sugerida (no aprobada): {suggested_rule}. "
             f"Clase de referencia inicial: {evidence_class}. "
             "Pendiente: buscar una ocurrencia literal en el original importado y revisar su contexto. "
@@ -2763,7 +2763,10 @@ def update_glossary_entry(book_id: str, entry_id: str, entry: GlossaryInput) -> 
         ).fetchone()
         if not existing:
             raise HTTPException(status_code=404, detail="No se encontró el término en esta novela.")
-        if entry.approved and str(existing["notes"] or "").startswith("Candidato importado del perfil de novela"):
+
+        seeded_prefix = "Candidato importado del perfil de novela"
+        seeded_profile_entry = str(existing["notes"] or "").startswith(seeded_prefix)
+        if seeded_profile_entry:
             candidate = conn.execute(
                 "SELECT status, evidence_json FROM glossary_candidates WHERE book_id = ? AND normalized_term = ?",
                 (book_id, _normalize_candidate_term(str(existing["source_term"]))),
@@ -2776,7 +2779,8 @@ def update_glossary_entry(book_id: str, entry_id: str, entry: GlossaryInput) -> 
                 isinstance(item, dict) and str(item.get("snippet", "")).strip()
                 for item in evidence_items
             )
-            if not candidate or candidate["status"] != "approved" or not has_literal_evidence:
+            evidence_approved = bool(candidate and candidate["status"] == "approved" and has_literal_evidence)
+            if entry.approved and not evidence_approved:
                 raise HTTPException(
                     status_code=422,
                     detail=(
@@ -2785,6 +2789,15 @@ def update_glossary_entry(book_id: str, entry_id: str, entry: GlossaryInput) -> 
                         "las ocurrencias del capítulo."
                     ),
                 )
+            if not entry.notes.startswith(seeded_prefix) and not evidence_approved:
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        "No se puede quitar el origen del candidato del perfil mientras esté pendiente. "
+                        "Revisa primero una muestra literal del capítulo y confirma la decisión."
+                    ),
+                )
+
         duplicate = conn.execute(
             "SELECT 1 FROM glossary_entries WHERE book_id = ? AND source_term = ? COLLATE NOCASE AND id != ?",
             (book_id, entry.source_term, entry_id),
