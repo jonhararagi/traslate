@@ -16,7 +16,7 @@ NovelTrad mantiene el texto traducido y las decisiones reutilizables en carpetas
 - `POST /api/books/{book_id}/learning/decisions`: registra una decisión. El campo `evidence` debe ser una subcadena literal de `original_text` en el capítulo señalado por `chapter_index` (índice desde cero).
 - `POST /api/books/{book_id}/learning/export-markdown`: exporta capítulos con traducción no vacía a Markdown y actualiza el índice de aprendizaje.
 
-El esquema de decisión usa `category` (`names`, `terminology`, `symbols`, `rules` o `ambiguities`), `source`, `target`, `decision_type`, `context`, `chapter_index`, `evidence`, `status` y `notes`. Los estados son `candidate`, `confirmed` y `rejected`. Las reglas rechazadas no se promueven. Solo las decisiones confirmadas se incorporan al prompt manual de fragmentos futuros; las candidatas no se tratan como instrucciones confirmadas.
+El esquema de decisión usa `category` (`names`, `terminology`, `symbols`, `rules` o `ambiguities`), `source`, `target`, `decision_type`, `context`, `chapter_index`, `evidence`, `status` y `notes`. Los estados son `candidate`, `confirmed` y `rejected`. Las reglas rechazadas no se promueven. Solo las decisiones confirmadas se incorporan tanto a los prompts de la cola de fragmentos como a los prompts Premium por página; las candidatas no se tratan como instrucciones confirmadas.
 
 ## Revisión desde la interfaz
 
