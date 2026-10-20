@@ -14,7 +14,7 @@
 | Editorial/plataforma original | Novelpia | Ficha oficial de Novelpia |
 | Estado de la obra original | Marcada como completa | Ficha oficial de Novelpia |
 | Recuento mostrado por Novelpia | 1.566 entregas | Ficha oficial consultada el 2026-10-20 |
-| Recuento de Novel Updates | 1.563 capítulos; marca la traducción como completa y señala Novelpia Global como editorial inglesa | Agregador comunitario; verificar en la tienda editorial |
+| Edición inglesa oficial en Novelpia Global | Ficha marcada como completa; muestra 1.567 capítulos | Ficha editorial oficial inglesa consultada el 2026-10-20 |\n| Recuento de Novel Updates | 1.563 capítulos; marca la traducción como completa y señala Novelpia Global como editorial inglesa | Agregador comunitario; dato secundario con recuento diferente |
 | Adaptación de Tapas | Cómic; la ficha consultada muestra 38 episodios | Ficha editorial de Tapas, consultada el 2026-10-20 |
 
 ### Fuentes consultadas
