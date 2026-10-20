@@ -32,11 +32,18 @@
 
 **Distinción de formatos:** Tapas publica una adaptación en cómic y no debe emplearse como sustituto de la prosa de la novela.
 
-## 2. Sinopsis editorial — alcance permitido
+## 2. Sinopsis editorial y etiquetas — alcance permitido
 
-Las fichas editoriales describen una comedia fantástica con elementos de juego y academia. El protagonista entra en el cuerpo de Oknodie, un personaje femenino inicialmente débil de un juego de realidad virtual llamado *Graduate the Academy by Luck*. La progresión gira en torno a la optimización de estadísticas y a sobrevivir/progresar en una jerarquía ligada a la suerte. La lectura estratégica que hace la protagonista y la interpretación dramática que los demás personajes hacen de sus circunstancias producen malentendidos cómicos.
+La ficha oficial inglesa de Novelpia Global describe una comedia de academia y fantasía basada en una protagonista obsesionada con optimizar estadísticas como una jugadora veterana. La protagonista no presta demasiada atención a cómo los demás interpretan sus actos; por eso, quienes la rodean la malinterpretan como una niña digna de lástima criada por una organización malvada. La ficha coreana presenta también la obra como una comedia de malentendidos, progresión de personaje, academia y juego.
 
-Esto es un resumen de metadatos editoriales, no una reconstrucción de capítulos. No demuestra relaciones, acontecimientos, habilidades concretas ni continuidad de capítulos posteriores.
+**Etiquetas mostradas en la ficha inglesa oficial:** Fantasy, Gender Bender, Obsession, Unreliable Narrator, Academy, Transmigration, Character Growth, Angst, Comedy, Game.
+
+**Etiquetas mostradas en la ficha coreana:** fantasía, academia, juego, malentendido, comedia, cambio de sexo, crecimiento, posesión/transmigración, sufrimiento y obsesión.
+
+**Criterio de interpretación para la traducción:** los malentendidos forman parte del planteamiento cómico, y la optimización de estadísticas forma parte del enfoque de la protagonista. Al traducir escenas reales habrá que distinguir entre lo que el personaje intenta hacer y lo que otros creen que está haciendo. Esta es una guía editorial derivada de la sinopsis, no evidencia de ningún acontecimiento concreto de capítulo.
+
+Las fichas públicas no bastan para establecer relaciones entre personajes secundarios, nombres de habilidades, mecánicas exactas ni la continuidad capítulo por capítulo. Esos datos deben extraerse del texto de la edición de trabajo y conservar una referencia al capítulo.
+
 
 ## 3. Glosario de trabajo provisional
 
