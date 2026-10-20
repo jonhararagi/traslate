@@ -14,6 +14,9 @@ def test_first_novel_profile_links_official_sources_and_keeps_terms_unapproved()
     sources = {item["format"]: item for item in profile["source_catalog"]}
     assert sources["original_web_novel"]["url"] == "https://novelpia.com/novel/96311"
     assert sources["licensed_comic_adaptation"]["url"].startswith("https://tapas.io/")
+    assert sources["licensed_english_web_novel"]["url"] == "https://global.novelpia.com/novel/41?sid=main1"
+    assert sources["licensed_english_web_novel"]["chapter_count_observed"] == 1567
+    assert sources["licensed_english_web_novel"]["completion_status_observed"] == "completed"
     candidates = {item["source"]: item for item in profile["terminology_candidates"]}
     for term in ("Oknodie", "farm", "farmed", "farming", "steal", "Steal skill", "level", "tsundere", "min-maxing"):
         assert term in candidates
