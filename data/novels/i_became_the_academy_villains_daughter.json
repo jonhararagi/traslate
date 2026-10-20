@@ -38,6 +38,16 @@
       "publisher": "Novelpia Global (as listed by Novel Updates)",
       "url": "https://www.novelupdates.com/series/i-became-the-daughter-of-the-academys-villain/",
       "usage_note": "Discovery/metadata listing, not a chapter file. Verify current publisher access before treating it as a downloadable English novel."
+    },
+    {
+      "language": "en",
+      "format": "licensed_english_web_novel",
+      "title": "I Became the Academy Villain's Daughter",
+      "publisher": "Novelpia Global",
+      "url": "https://global.novelpia.com/novel/41?sid=main1",
+      "chapter_count_observed": 1567,
+      "completion_status_observed": "completed",
+      "usage_note": "Official English-language prose novel listing. The publisher page currently labels it Completed and reports 1,567 chapters. Verify account/access and the exact downloadable/exportable edition before importing. Do not scrape or redistribute chapter text; import only a copy the user is authorized to use."
     }
   ],
   "notes": [
@@ -47,7 +57,8 @@
     "Keep pun-based names and game terminology intact unless the user approves a Spanish rendering.",
     "The novel's defining mechanic is veteran-style stat optimization inside a VR game, alongside comic misunderstandings: distinguish gamer intent from literal dictionary meanings.",
     "All starter terms remain unapproved until verified in the imported edition. Context-sensitive words must not be translated globally.",
-    "El título de la obra es metadato, no un término del glosario. Los candidatos iniciales son solo sugerencias; cada regla exige muestra literal en el capítulo importado y confirmación humana."
+    "El título de la obra es metadato, no un término del glosario. Los candidatos iniciales son solo sugerencias; cada regla exige muestra literal en el capítulo importado y confirmación humana.",
+    "La ficha oficial inglesa de Novelpia Global (https://global.novelpia.com/novel/41?sid=main1) fue comprobada el 2026-10-20: figura como completa y muestra 1.567 capítulos. La ficha coreana muestra 1.566 entregas y Novel Updates 1.563 capítulos; la causa de la diferencia no está confirmada. El conteo del corpus a traducir debe hacerse al importar la edición de trabajo."
   ],
   "terminology_candidates": [
     {
