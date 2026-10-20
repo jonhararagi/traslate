@@ -14,19 +14,23 @@
 | Editorial/plataforma original | Novelpia | Ficha oficial de Novelpia |
 | Estado de la obra original | Marcada como completa | Ficha oficial de Novelpia |
 | Recuento mostrado por Novelpia | 1.566 entregas | Ficha oficial consultada el 2026-10-20 |
-| Edición inglesa oficial en Novelpia Global | Ficha marcada como completa; muestra 1.567 capítulos | Ficha editorial oficial inglesa consultada el 2026-10-20 |\n| Recuento de Novel Updates | 1.563 capítulos; marca la traducción como completa y señala Novelpia Global como editorial inglesa | Agregador comunitario; dato secundario con recuento diferente |
+| Edición inglesa oficial en Novelpia Global | Ficha marcada como completa; muestra 1.567 capítulos | Ficha editorial oficial inglesa consultada el 2026-10-20 |
+| Recuento de Novel Updates | 1.563 capítulos; marca la traducción como completa y señala Novelpia Global como editorial inglesa | Agregador comunitario; dato secundario con recuento diferente |
 | Adaptación de Tapas | Cómic; la ficha consultada muestra 38 episodios | Ficha editorial de Tapas, consultada el 2026-10-20 |
 
 ### Fuentes consultadas
 
 1. Novelpia, ficha de la obra original: https://novelpia.com/novel/96311
-2. Novel Updates, ficha editorial/comunitaria: https://www.novelupdates.com/series/i-became-the-daughter-of-the-academys-villain/
-3. Tapas, ficha de la adaptación en cómic: https://tapas.io/series/i-became-the-villains-daughter-at-the-academy/info
-4. Índice de títulos de Novelpia Global en Novel Updates: https://www.novelupdates.com/epublisher/novelpia-global/
+2. Novelpia Global, ficha oficial inglesa de la novela en prosa: https://global.novelpia.com/novel/41?sid=main1
+3. Novel Updates, ficha editorial/comunitaria: https://www.novelupdates.com/series/i-became-the-daughter-of-the-academys-villain/
+4. Tapas, ficha de la adaptación en cómic: https://tapas.io/series/i-became-the-villains-daughter-at-the-academy/info
+5. Índice de títulos de Novelpia Global en Novel Updates: https://www.novelupdates.com/epublisher/novelpia-global/
 
-**Discrepancia por resolver:** Novelpia muestra 1.566 entregas y Novel Updates 1.563 capítulos. Puede haber diferencias de numeración, avisos, extras u otra organización editorial; todavía no está demostrado cuál es la causa. El objetivo de 500 capítulos del usuario puede referirse a una edición o archivo concreto y no debe equipararse automáticamente al total de la obra coreana.
+**Discrepancia por resolver:** el 2026-10-20, la ficha oficial coreana muestra 1.566 entregas, la ficha oficial inglesa de Novelpia Global muestra 1.567 capítulos y Novel Updates muestra 1.563. No está demostrada la causa. No normalizar esos contadores ni inferir que todos usan la misma numeración. El objetivo de 500 capítulos del usuario puede corresponder a un archivo o segmento específico; habrá que contar el corpus importado y conservar la numeración fuente.
 
-**Distinción de formatos:** la publicación de Tapas es un cómic adaptado y no debe emplearse como sustituto del texto de la novela. La ficha de Novel Updates indica licencia y traducción inglesa completa, pero ese registro secundario no demuestra por sí solo la disponibilidad, numeración, integridad ni permiso de uso de un archivo descargable específico. Verificar el catálogo oficial de Novelpia Global antes de elegir la edición de trabajo.
+**Fuente inglesa confirmada:** la ficha oficial de Novelpia Global identifica *I Became the Academy Villain's Daughter*, el autor como huigwihantedibeeo (희귀한테디베어), el estado `Completed` y 1.567 capítulos. Es el enlace editorial pertinente para comprobar el acceso a la edición inglesa de prosa. La página de metadatos no demuestra que el usuario tenga un archivo local ni autoriza una extracción masiva o redistribución del texto.
+
+**Distinción de formatos:** Tapas publica una adaptación en cómic y no debe emplearse como sustituto de la prosa de la novela.
 
 ## 2. Sinopsis editorial — alcance permitido
 
