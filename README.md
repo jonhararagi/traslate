@@ -18,7 +18,7 @@ NovelTrad is a local-first Windows-friendly reader and translation workspace for
 
 - Python 3.11 or newer.
 - Internet is only needed to install dependencies initially. EPUB/PDF import and local storage run on the computer.
-- The reader exposes **Modo local**, which applies only approved deterministic rules without a model and uses minimal extra RAM. **Modo Premium** opens a dedicated persistent Chromium-family profile for ChatGPT or Gemini and supports manual prompt/response handoff for chapter previews and the persistent whole-book queue. NovelTrad never auto-submits source text or reads/stores provider credentials or cookies. The queue reserves one chunk at a time, persists pasted responses as unreviewed, supports pause/resume/retry/restart recovery, and blocks final application until every chunk is reviewed. PR #14 is merged. The exact `main` SHA `ca7eadf7c1847a64d95997c0ad98f6e062ca45d0` passed Ubuntu/Windows tests and the Windows portable-build plus packaged smoke test; manual sign-in, real-PC workflow, and real-chapter quality validation remain outstanding. See [the mode and hardware guide](docs/MODO_LOCAL_Y_MODO_PREMIUM.md), [the Chromium Premium architecture decision](docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md), and [the cross-branch audit and remaining work](docs/AUDITORIA_RAMAS_Y_PENDIENTES.md).
+- The reader exposes **Modo local**, which applies only approved deterministic rules without a model and uses minimal extra RAM. **Modo Premium** opens a dedicated persistent Chromium-family profile for ChatGPT or Gemini and supports manual prompt/response handoff for chapter previews and the persistent whole-book queue. NovelTrad never auto-submits source text or reads/stores provider credentials or cookies. The queue reserves one chunk at a time, lets the user choose a translation style and add a fragment-specific instruction, and offers quick Seguir/Parar/Enviar controls. Pasted responses remain unreviewed, pause/resume/retry/restart recovery is supported, and final application is blocked until every chunk is reviewed. The Enviar control acts inside NovelTrad; provider submission remains manual. PR #14 is merged. The exact `main` SHA `ca7eadf7c1847a64d95997c0ad98f6e062ca45d0` passed Ubuntu/Windows tests and the Windows portable-build plus packaged smoke test; manual sign-in, real-PC workflow, and real-chapter quality validation remain outstanding. See [the mode and hardware guide](docs/MODO_LOCAL_Y_MODO_PREMIUM.md), [the Chromium Premium architecture decision](docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md), and [the cross-branch audit and remaining work](docs/AUDITORIA_RAMAS_Y_PENDIENTES.md).
 
 ## Run on Windows
 
@@ -41,7 +41,7 @@ On other platforms, create a virtual environment, install `.[test]`, and run `no
 
 ## Recovery and project continuity
 
-Read [BRAIN.md](BRAIN.md) first when resuming work after a lost conversation. It defines the recovery protocol, product boundaries, hardware constraints, and priority queue. The first novel profile and unapproved terminology candidates live in `data/novels/i_became_the_academy_villains_daughter.json`.
+Read [BRAIN.md](BRAIN.md) first when resuming work after a lost conversation. It defines the recovery protocol, product boundaries, hardware constraints, and priority queue. The [terminology review guide](docs/PERFIL_TERMINOLOGICO_INICIAL.md) explains the first novel's unapproved starter terms; the machine-readable profile is in `data/novels/i_became_the_academy_villains_daughter.json`.
 
 ## Cross-branch status
 

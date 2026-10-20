@@ -38,6 +38,16 @@
       "publisher": "Novelpia Global (as listed by Novel Updates)",
       "url": "https://www.novelupdates.com/series/i-became-the-daughter-of-the-academys-villain/",
       "usage_note": "Discovery/metadata listing, not a chapter file. Verify current publisher access before treating it as a downloadable English novel."
+    },
+    {
+      "language": "en",
+      "format": "licensed_english_web_novel",
+      "title": "I Became the Academy Villain's Daughter",
+      "publisher": "Novelpia Global",
+      "url": "https://global.novelpia.com/novel/41?sid=main1",
+      "chapter_count_observed": 1567,
+      "completion_status_observed": "completed",
+      "usage_note": "Official English-language prose novel listing. The publisher page currently labels it Completed and reports 1,567 chapters. Verify account/access and the exact downloadable/exportable edition before importing. Do not scrape or redistribute chapter text; import only a copy the user is authorized to use."
     }
   ],
   "notes": [
@@ -46,7 +56,9 @@
     "Verify spellings and terminology against the exact imported edition and user-approved source text.",
     "Keep pun-based names and game terminology intact unless the user approves a Spanish rendering.",
     "The novel's defining mechanic is veteran-style stat optimization inside a VR game, alongside comic misunderstandings: distinguish gamer intent from literal dictionary meanings.",
-    "All starter terms remain unapproved until verified in the imported edition. Context-sensitive words must not be translated globally."
+    "All starter terms remain unapproved until verified in the imported edition. Context-sensitive words must not be translated globally.",
+    "El título de la obra es metadato, no un término del glosario. Los candidatos iniciales son solo sugerencias; cada regla exige muestra literal en el capítulo importado y confirmación humana.",
+    "La ficha oficial inglesa de Novelpia Global (https://global.novelpia.com/novel/41?sid=main1) fue comprobada el 2026-10-20: figura como completa y muestra 1.567 capítulos. La ficha coreana muestra 1.566 entregas y Novel Updates 1.563 capítulos; la causa de la diferencia no está confirmada. El conteo del corpus a traducir debe hacerse al importar la edición de trabajo."
   ],
   "terminology_candidates": [
     {
@@ -56,7 +68,15 @@
       "status": "candidate",
       "approved": false,
       "evidence": "Official English Tapas series synopsis and publisher metadata; verify against the exact imported edition.",
-      "notes": "Protected proper name. Never translate, respell as 'OK NO DIE', or normalize without explicit user approval."
+      "notes": "Protected proper name. Never translate, respell as 'OK NO DIE', or normalize without explicit user approval.",
+      "suggested_rule": "protect",
+      "evidence_class": "publisher_metadata_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comprobar la grafía exacta en el texto importado.",
+        "Confirmar que es el nombre propio y no modificarlo por juegos fonéticos o segmentación."
+      ]
     },
     {
       "source": "Graduate from the Academy by Luck",
@@ -65,16 +85,15 @@
       "status": "candidate",
       "approved": false,
       "evidence": "Official English Tapas series synopsis.",
-      "notes": "Keep source title until an approved Spanish rendering is chosen."
-    },
-    {
-      "source": "I Became the Academy Villain's Daughter",
-      "target": "I Became the Academy Villain's Daughter",
-      "type": "work title",
-      "status": "candidate",
-      "approved": false,
-      "evidence": "English series metadata; alternate official localization may vary by edition.",
-      "notes": "Display title, not an in-story term."
+      "notes": "Keep source title until an approved Spanish rendering is chosen.",
+      "suggested_rule": "preserve",
+      "evidence_class": "publisher_metadata_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comprobar si el título aparece literalmente en el texto de la edición importada.",
+        "Conservarlo solo si no hay una localización española aprobada por el usuario."
+      ]
     },
     {
       "source": "level",
@@ -83,7 +102,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "General gaming vocabulary; must be verified in actual chapter context.",
-      "notes": "Could mean character level, stage/floor, volume, or degree. Do not apply a global replacement."
+      "notes": "Could mean character level, stage/floor, volume, or degree. Do not apply a global replacement.",
+      "suggested_rule": "contextual",
+      "evidence_class": "genre_convention_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Determinar si significa nivel de personaje, piso, etapa, volumen o grado."
+      ]
     },
     {
       "source": "level up",
@@ -92,7 +118,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "General gaming vocabulary; candidate translation only.",
-      "notes": "Approve only after checking whether the source uses it as a UI/system label or narration."
+      "notes": "Approve only after checking whether the source uses it as a UI/system label or narration.",
+      "suggested_rule": "contextual",
+      "evidence_class": "genre_convention_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comprobar si funciona como acción narrativa, etiqueta de interfaz o mensaje del sistema."
+      ]
     },
     {
       "source": "farm",
@@ -101,7 +134,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "User's requested gamer terminology; not verified against a chapter yet.",
-      "notes": "When it means repeatedly defeating enemies/collecting resources or experience, 'farmear' may fit. Elsewhere it can mean granja/cultivar and must be translated by context."
+      "notes": "When it means repeatedly defeating enemies/collecting resources or experience, 'farmear' may fit. Elsewhere it can mean granja/cultivar and must be translated by context.",
+      "suggested_rule": "contextual",
+      "evidence_class": "user_requested_term",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Distinguir el verbo gamer de granja, cultivar u otros sentidos no relacionados con videojuegos."
+      ]
     },
     {
       "source": "farming",
@@ -110,7 +150,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "User's requested gamer terminology; not verified against a chapter yet.",
-      "notes": "Use only when it refers to repetitive resource/experience gathering."
+      "notes": "Use only when it refers to repetitive resource/experience gathering.",
+      "suggested_rule": "contextual",
+      "evidence_class": "user_requested_term",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Confirmar que describe la recolección repetitiva de recursos o experiencia y ajustar la forma a la frase."
+      ]
     },
     {
       "source": "grind",
@@ -119,7 +166,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "General gaming vocabulary; candidate translation only.",
-      "notes": "May mean repetitive progression work; elsewhere it means grind/crush/friction. Never replace globally without context."
+      "notes": "May mean repetitive progression work; elsewhere it means grind/crush/friction. Never replace globally without context.",
+      "suggested_rule": "contextual",
+      "evidence_class": "genre_convention_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Distinguir progresión repetitiva de los sentidos físicos o figurados ajenos a los videojuegos."
+      ]
     },
     {
       "source": "min-maxing",
@@ -128,7 +182,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "Series metadata describes a protagonist obsessed with stat-building; verify exact term in the user's edition.",
-      "notes": "Possible Spanish rendering; gamer loanword 'min-maxing' may be retained if the user prefers it."
+      "notes": "Possible Spanish rendering; gamer loanword 'min-maxing' may be retained if the user prefers it.",
+      "suggested_rule": "contextual",
+      "evidence_class": "genre_convention_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Confirmar que describe la optimización estratégica de atributos; decidir entre traducción y préstamo."
+      ]
     },
     {
       "source": "stats",
@@ -137,7 +198,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "General RPG terminology; candidate only.",
-      "notes": "Distinguish character attributes/stat points from statistics in ordinary prose."
+      "notes": "Distinguish character attributes/stat points from statistics in ordinary prose.",
+      "suggested_rule": "contextual",
+      "evidence_class": "genre_convention_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Confirmar que son atributos/estadísticas de un sistema de juego."
+      ]
     },
     {
       "source": "build",
@@ -146,7 +214,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "General gaming vocabulary; candidate only.",
-      "notes": "Keep as 'build' if it means a character's configuration; otherwise translate by sentence meaning."
+      "notes": "Keep as 'build' if it means a character's configuration; otherwise translate by sentence meaning.",
+      "suggested_rule": "contextual",
+      "evidence_class": "genre_convention_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Confirmar que significa configuración de personaje y no construcción u otro sentido."
+      ]
     },
     {
       "source": "steal",
@@ -155,7 +230,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "User's requested terminology; not verified against a chapter yet.",
-      "notes": "Translate as 'robar' when it is the ordinary verb. If capitalized as a named skill/UI label, preserve pending confirmation."
+      "notes": "Translate as 'robar' when it is the ordinary verb. If capitalized as a named skill/UI label, preserve pending confirmation.",
+      "suggested_rule": "contextual",
+      "evidence_class": "user_requested_term",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Distinguir el verbo común de un nombre de habilidad o etiqueta de sistema."
+      ]
     },
     {
       "source": "Steal skill",
@@ -164,7 +246,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "Candidate distinction based on capitalization only; no chapter evidence yet.",
-      "notes": "Candidate phrase only; verify in the imported edition. A capitalization difference alone does not prove that a word is a skill name."
+      "notes": "Candidate phrase only; verify in the imported edition. A capitalization difference alone does not prove that a word is a skill name.",
+      "suggested_rule": "contextual",
+      "evidence_class": "user_requested_term",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comprobar en el contexto si Steal es realmente un nombre de habilidad; la capitalización por sí sola no basta."
+      ]
     },
     {
       "source": "skill",
@@ -173,7 +262,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "General RPG terminology; candidate only.",
-      "notes": "Use 'habilidad' unless the exact system/edition establishes a different convention."
+      "notes": "Use 'habilidad' unless the exact system/edition establishes a different convention.",
+      "suggested_rule": "contextual",
+      "evidence_class": "genre_convention_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Confirmar que corresponde a una habilidad del sistema y no a destreza en sentido común."
+      ]
     },
     {
       "source": "quest",
@@ -182,7 +278,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "General gaming vocabulary; candidate only.",
-      "notes": "Use 'misión' for a game objective; verify if the text distinguishes quests from tasks."
+      "notes": "Use 'misión' for a game objective; verify if the text distinguishes quests from tasks.",
+      "suggested_rule": "contextual",
+      "evidence_class": "genre_convention_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Confirmar que designa una misión de juego y comprobar la convención usada en la edición."
+      ]
     },
     {
       "source": "drop",
@@ -191,7 +294,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "General gaming vocabulary; candidate only.",
-      "notes": "In game context may mean loot/drop; as a verb can mean dejar caer, soltar, bajar, or abandonar."
+      "notes": "In game context may mean loot/drop; as a verb can mean dejar caer, soltar, bajar, or abandonar.",
+      "suggested_rule": "contextual",
+      "evidence_class": "genre_convention_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Distinguir el verbo «soltar/dejar caer» del sustantivo gamer relacionado con objetos o botín."
+      ]
     },
     {
       "source": "reroll",
@@ -200,7 +310,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "General gaming vocabulary; candidate only.",
-      "notes": "Could refer to rerolling a character/stat/attempt; select rendering from the exact mechanic."
+      "notes": "Could refer to rerolling a character/stat/attempt; select rendering from the exact mechanic.",
+      "suggested_rule": "contextual",
+      "evidence_class": "genre_convention_only",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Identificar la mecánica concreta antes de elegir una equivalencia española."
+      ]
     },
     {
       "source": "tsundere",
@@ -209,7 +326,14 @@
       "status": "candidate",
       "approved": false,
       "evidence": "User's requested otaku terminology; not verified against a chapter yet.",
-      "notes": "Usually retain 'tsundere' as a genre/archetype term; do not flatten it to 'fría' or 'antipática'."
+      "notes": "Usually retain 'tsundere' as a genre/archetype term; do not flatten it to 'fría' or 'antipática'.",
+      "suggested_rule": "preserve",
+      "evidence_class": "user_requested_term",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Confirmar que se usa como arquetipo otaku y no sustituirlo por un único rasgo como «fría»."
+      ]
     },
     {
       "source": "farmed",
@@ -218,7 +342,30 @@
       "status": "candidate",
       "approved": false,
       "evidence": "User-requested gamer terminology; not verified against a chapter yet.",
-      "notes": "Potential past-tense form when it means repeated resource/experience gathering. Do not use a global substitution without checking context."
+      "notes": "Potential past-tense form when it means repeated resource/experience gathering. Do not use a global substitution without checking context.",
+      "suggested_rule": "contextual",
+      "evidence_class": "user_requested_term",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Confirmar el sentido gamer y conjugar naturalmente en español; no reemplazar globalmente por el infinitivo."
+      ]
+    },
+    {
+      "source": "lvl",
+      "target": "lvl",
+      "type": "abreviatura gamer contextual",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "Término pedido como ejemplo de jerga gamer; todavía no verificado en un capítulo de la edición importada.",
+      "notes": "Puede ser una etiqueta abreviada del nivel en estadísticas o interfaz. Conservar en rótulos solo si la edición usa esta abreviatura; en prosa puede convenir «nivel» según contexto.",
+      "suggested_rule": "contextual",
+      "evidence_class": "user_requested_term",
+      "evidence_status": "profile-only-not-verified-in-imported-chapter",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comprobar si aparece como abreviatura de interfaz/estadísticas o dentro de prosa narrativa."
+      ]
     }
   ],
   "characters": [],
@@ -233,5 +380,13 @@
     "Populate named characters, organizations, ranks, skills, items, and honorifics from actual chapters; do not infer them from summaries.",
     "Run the translation benchmark against a user-authorized EPUB/PDF from the exact edition; the official English Tapas source is a comic adaptation and scanned/image content currently requires OCR, which is not implemented.",
     "Review each context-sensitive gamer term before approving any glossary rule."
-  ]
+  ],
+  "candidate_review_policy": {
+    "status": "candidate-unapproved-until-verified",
+    "principle": "Ninguna sugerencia de perfil, metadato editorial o convención general demuestra por sí misma el sentido en el capítulo importado.",
+    "required_evidence": "Al menos una muestra literal no vacía, con título de capítulo y ubicación obtenidos del original importado.",
+    "human_confirmation": "El usuario revisa la muestra, edita forma preferida y regla, y pulsa la acción explícita de confirmación.",
+    "automatic_approval": false,
+    "do_not_use_for_glossary": "El título de la novela se conserva como metadato de perfil y no como entrada del glosario."
+  }
 }

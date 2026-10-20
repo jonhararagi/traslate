@@ -14,6 +14,9 @@ def test_first_novel_profile_links_official_sources_and_keeps_terms_unapproved()
     sources = {item["format"]: item for item in profile["source_catalog"]}
     assert sources["original_web_novel"]["url"] == "https://novelpia.com/novel/96311"
     assert sources["licensed_comic_adaptation"]["url"].startswith("https://tapas.io/")
+    assert sources["licensed_english_web_novel"]["url"] == "https://global.novelpia.com/novel/41?sid=main1"
+    assert sources["licensed_english_web_novel"]["chapter_count_observed"] == 1567
+    assert sources["licensed_english_web_novel"]["completion_status_observed"] == "completed"
     candidates = {item["source"]: item for item in profile["terminology_candidates"]}
     for term in ("Oknodie", "farm", "farmed", "farming", "steal", "Steal skill", "level", "tsundere", "min-maxing"):
         assert term in candidates
@@ -43,3 +46,31 @@ def test_unapproved_novel_candidates_do_not_mutate_text():
         normalize_typography=False,
     )
     assert result.text == "Oknodie farmed monsters and tried to steal a key."
+
+
+def test_profile_terms_have_evidence_class_suggestions_and_human_review_requirements():
+    profile = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
+    assert profile["candidate_review_policy"]["automatic_approval"] is False
+    assert "metadato" in profile["candidate_review_policy"]["principle"].lower()
+    assert all(item["approved"] is False for item in profile["terminology_candidates"])
+    candidates = {item["source"]: item for item in profile["terminology_candidates"]}
+    assert "I Became the Academy Villain's Daughter" not in candidates
+    assert "lvl" in candidates
+    for term, expected_rule in {
+        "Oknodie": "protect",
+        "farm": "contextual",
+        "farmed": "contextual",
+        "farming": "contextual",
+        "steal": "contextual",
+        "Steal skill": "contextual",
+        "level": "contextual",
+        "tsundere": "preserve",
+    }.items():
+        candidate = candidates[term]
+        assert candidate["suggested_rule"] == expected_rule
+        assert candidate["evidence_class"] in {
+            "publisher_metadata_only", "user_requested_term", "genre_convention_only"
+        }
+        assert candidate["chapter_evidence_required"] is True
+        assert candidate["evidence_status"] == "profile-only-not-verified-in-imported-chapter"
+        assert candidate["review_requirements"]

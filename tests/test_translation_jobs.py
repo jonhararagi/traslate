@@ -206,3 +206,59 @@ def test_interrupted_running_work_is_recovered_as_paused_and_pending(monkeypatch
         detail = client.get(f"/api/translation-jobs/{job_id}/chunks/{chunk_id}").json()
         assert detail["status"] == "pending"
         assert "cerró durante este fragmento" in detail["error"]
+
+def test_next_prompt_accepts_selected_style_and_custom_instruction(monkeypatch, tmp_path):
+    monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path))
+    main.init_db()
+    book_id, _ = add_book([
+        ("Chapter 1", "Oknodie uses the Steal skill to farm items and gain levels.")
+    ])
+
+    with TestClient(main.app) as client:
+        created = client.post(
+            f"/api/books/{book_id}/translation-jobs",
+            json={"chunk_size": 1000, "context_chars": 0, "provider": "chatgpt"},
+        )
+        assert created.status_code == 200, created.text
+        job_id = created.json()["id"]
+
+        response = client.post(
+            f"/api/translation-jobs/{job_id}/next-prompt",
+            json={
+                "translation_style": "gamer_terms",
+                "custom_instruction": "Conserva la grafía Oknodie y no traduzcas Steal si funciona como nombre de habilidad.",
+            },
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["translation_style"] == "gamer_terms"
+        assert body["has_custom_instruction"] is True
+        assert "Preferencia elegida: Priorizar jerga otaku/gamer" in body["prompt"]
+        assert "Conserva la grafía Oknodie" in body["prompt"]
+        assert "<USER_INSTRUCTION>" in body["prompt"]
+        assert "<SOURCE_TEXT>" in body["prompt"]
+        assert body["message"].find("No se envió nada automáticamente") >= 0
+
+
+def test_next_prompt_rejects_unknown_translation_style(monkeypatch, tmp_path):
+    monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path))
+    main.init_db()
+    book_id, _ = add_book([("Chapter 1", "Oknodie levels up.")])
+
+    with TestClient(main.app) as client:
+        created = client.post(
+            f"/api/books/{book_id}/translation-jobs",
+            json={"chunk_size": 1000, "context_chars": 0, "provider": "chatgpt"},
+        )
+        assert created.status_code == 200, created.text
+        job_id = created.json()["id"]
+        response = client.post(
+            f"/api/translation-jobs/{job_id}/next-prompt",
+            json={"translation_style": "magic", "custom_instruction": ""},
+        )
+        assert response.status_code == 422, response.text
+        # Validation failed before reserving a fragment.
+        state = client.get(f"/api/translation-jobs/{job_id}").json()
+        assert state["pending_chunks"] == 1
+        assert state["completed_chunks"] == 0
+

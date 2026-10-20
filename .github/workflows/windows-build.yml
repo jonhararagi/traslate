@@ -20,6 +20,7 @@ on:
       - "data/**"
       - "scripts/**"
       - "pyproject.toml"
+      - "BRAIN.md"
       - ".github/workflows/windows-build.yml"
 
 permissions:

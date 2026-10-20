@@ -142,7 +142,7 @@ def test_importing_first_novel_seeds_only_unapproved_profile_candidates(offline_
     candidates = {entry["source_term"]: entry for entry in entries}
     assert "Oknodie" in candidates
     assert candidates["Oknodie"]["approved"] == 0
-    assert candidates["Oknodie"]["rule"] == "preserve"
+    assert candidates["Oknodie"]["rule"] == "protect"
     assert "no aprobado" in candidates["Oknodie"]["notes"].lower()
 
 
