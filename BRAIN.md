@@ -1,3 +1,33 @@
+## Auditoría de integración de aprendizaje — 2026-10-20
+
+Esta sección registra la revisión técnica del código de aprendizaje reutilizable y de la CI para el SHA de implementación `50d6d9a2e11332fc9187acd0862fba506421e3a1`. El PR #16 sigue abierto y en borrador; no fusionar ni modificar `main`.
+
+### Funciones comprobadas en el código
+
+- El lector expone el botón `Aprendizaje` y un panel para registrar decisiones con categoría, capítulo, término original, tratamiento, tipo, contexto, notas y evidencia literal.
+- `POST /api/books/{book_id}/learning/decisions` comprueba que la evidencia sea una subcadena literal del texto original del capítulo; si no lo es, responde HTTP 422.
+- Las decisiones viven separadas de la prosa traducida: `aprendizaje/` contiene cinco JSON por categoría y un `README.md`; las traducciones guardadas se exportan bajo `traduccion/`.
+- La deduplicación normaliza Unicode, mayúsculas y espacios, usando término original + tratamiento + tipo de decisión. Una decisión rechazada puede añadir evidencia nueva, pero permanece rechazada y no se promueve por una petición posterior.
+- Solo las entradas `confirmed` se agregan a la cola de prompts `/api/translation-jobs/{job_id}/next-prompt` y a los prompts Premium por página `/api/chapters/{chapter_id}/premium-browser-prompts/chunked`. Las candidatas/rechazadas se filtran por estado. El bloque está limitado a 80 reglas y 12.000 caracteres, con contexto por entrada acotado.
+- Premium conserva el traspaso manual: el prompt es una vista previa para copiar; la prueba de la ruta por página comprueba `sent_to_provider == false`.
+- La exportación ZIP separa `traduccion/` y `aprendizaje/`. La prueba de API exige el Markdown del capítulo, el índice y los cinco JSON de aprendizaje.
+- La prueba de interfaz comprueba que los controles de aprendizaje, confirmar y rechazar aparecen en el lector. Esto verifica el HTML/contrato de la interfaz, no sustituye una prueba manual de interacción en el PC del usuario.
+
+### CI verificada para el SHA de implementación
+
+- Tests: [ejecución 572](https://github.com/jonhararagi/traslate/actions/runs/39004931754). Ubuntu: 9 pruebas focalizadas y 154 pruebas completas aprobadas; Windows: 9 pruebas focalizadas y 154 pruebas completas aprobadas. Windows validó también la sintaxis de los scripts PowerShell de mantenimiento. Cada suite completa reportó un aviso no bloqueante de deprecación de Starlette/httpx TestClient.
+- Windows Portable Build: [ejecución 120](https://github.com/jonhararagi/traslate/actions/runs/39004931604). Pasaron las pruebas automatizadas, el empaquetado PyInstaller, el smoke test del ejecutable y la carga del artefacto.
+- Artefacto `NovelTrad-Windows-x64`: ID `12090587408`; tamaño 40.776.248 bytes; digest publicado por GitHub `sha256:bfef8e04217bbbe5b2a303969a0afb74bf99605b9c6e03f3dccd0ad6f54a6f1b`; vence el 31 de octubre de 2026 a las 05:06:31 UTC. El run identifica explícitamente el SHA `50d6d9a2e11332fc9187acd0862fba506421e3a1`.
+- El commit `d50df65aa1e287fe6ed9af9ebb0916810bd98079` es ancestro del SHA verificado: la comparación de GitHub muestra cuatro commits posteriores y ninguno divergente.
+
+### Límites que permanecen abiertos
+
+- La ejecución del paquete en CI no demuestra una prueba manual completa del flujo de aprendizaje en el PC del usuario.
+- No se ha evaluado la calidad de traducción contra un capítulo de la edición exacta autorizada por el usuario; las pruebas automatizadas usan muestras de prueba. No afirmar que los 500 capítulos estén traducidos ni que la traducción real esté validada.
+- Esta nota cambia `BRAIN.md`; verificar de nuevo la CI del nuevo SHA del PR antes de atribuirle una verificación propia. No fusionar el PR ni escribir en `main`.
+
+---
+
 # NovelTrad Brain — Continuity and Recovery
 
 ## Initial terminology profile and evidence-gated approvals — 2026-10-17
