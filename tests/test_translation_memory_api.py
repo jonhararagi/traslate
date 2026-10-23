@@ -18,6 +18,8 @@ def _page_pack(*, claimed_status="confirmed"):
             "id": "SYNTH-C001-P01",
             "chapter_id": "SYNTH-C001",
             "page_index": 1,
+            "chapter_page_count": 2,
+            "chapter_ends_with_page_separator": True,
             "source_text": "Synthetic opening page.",
             "target_text": "Página sintética inicial.",
             "status": claimed_status,
@@ -28,6 +30,8 @@ def _page_pack(*, claimed_status="confirmed"):
             "id": "SYNTH-C001-P02",
             "chapter_id": "SYNTH-C001",
             "page_index": 2,
+            "chapter_page_count": 2,
+            "chapter_ends_with_page_separator": True,
             "source_text": "Second synthetic page.",
             "target_text": "Segunda página sintética.",
             "status": claimed_status,
@@ -88,7 +92,7 @@ def test_preview_requires_complete_exact_chapter_match_and_is_never_automatic(tm
     assert body["complete"] is True
     assert body["coverage"] == 1.0
     assert body["memory_status"] == "draft"
-    assert body["proposed_text"] == "Página sintética inicial.\fSegunda página sintética."
+    assert body["proposed_text"] == "Página sintética inicial.\fSegunda página sintética.\f"
     assert body["preview_only"] is True
     assert body["saved"] is False
     assert body["auto_applied"] is False
@@ -160,3 +164,42 @@ def test_only_jsonl_or_ndjson_files_are_accepted(tmp_path):
         files={"file": ("sample.txt", _page_pack(), "text/plain")},
     )
     assert response.status_code == 415
+
+
+def test_import_rejects_incomplete_chapter_page_set(tmp_path):
+    client = _client(tmp_path)
+    incomplete = [
+        {
+            "id": "SYNTH-C002-P01",
+            "chapter_id": "SYNTH-C002",
+            "page_index": 1,
+            "chapter_page_count": 3,
+            "chapter_ends_with_page_separator": True,
+            "source_text": "Page one.",
+            "target_text": "Página uno.",
+            "status": "draft",
+        },
+        {
+            "id": "SYNTH-C002-P02",
+            "chapter_id": "SYNTH-C002",
+            "page_index": 2,
+            "chapter_page_count": 3,
+            "chapter_ends_with_page_separator": True,
+            "source_text": "Page two.",
+            "target_text": "Página dos.",
+            "status": "draft",
+        },
+    ]
+    response = client.post(
+        "/api/books/book-synthetic/translation-memory/import",
+        files={
+            "file": (
+                "incomplete.jsonl",
+                ("\n".join(json.dumps(record) for record in incomplete) + "\n").encode("utf-8"),
+                "application/jsonl",
+            )
+        },
+    )
+    assert response.status_code == 422
+    assert "incompleto" in response.json()["detail"]
+    assert client.get("/api/books/book-synthetic/translation-memory").json()["count"] == 0
