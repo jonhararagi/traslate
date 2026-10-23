@@ -179,6 +179,29 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
             "preview_only": True,
         }
 
+    @app.post("/api/books/{book_id}/translation-memory/{entry_id}/reject")
+    def reject_translation_memory_entry(book_id: str, entry_id: str):
+        """Explicitly reject one memory page; rejected entries are never used for matching."""
+        with memory_connection() as connection:
+            cursor = connection.execute(
+                """
+                UPDATE translation_memory_entries
+                SET status = 'rejected', review_status = 'rejected_by_user',
+                    imported_at = ?
+                WHERE book_id = ? AND id = ?
+                """,
+                (datetime.now(timezone.utc).isoformat(), book_id, entry_id),
+            )
+            if not cursor.rowcount:
+                raise HTTPException(status_code=404, detail="Entrada de memoria no encontrada.")
+        return {
+            "book_id": book_id,
+            "entry_id": entry_id,
+            "status": "rejected",
+            "applied_to_chapters": False,
+            "preview_only": True,
+        }
+
     @app.post("/api/books/{book_id}/translation-memory/preview")
     def preview_translation_memory(book_id: str, payload: TranslationMemoryPreviewInput):
         """Return a full exact-source match for review; partial pages never form a translation."""
