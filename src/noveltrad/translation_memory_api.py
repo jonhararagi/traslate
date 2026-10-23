@@ -23,6 +23,12 @@ from noveltrad.translation_memory import (
 )
 
 
+class TranslationMemoryPreviewInput(BaseModel):
+    source_text: str
+    chapter_ref: str | None = None
+    include_draft: bool = False
+
+
 def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -> None:
     """Register local-only translation-memory endpoints on the NovelTrad app."""
 
@@ -59,11 +65,6 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
         )
         connection.commit()
         return connection
-
-    class TranslationMemoryPreviewInput(BaseModel):
-        source_text: str
-        chapter_ref: str | None = None
-        include_draft: bool = False
 
     @app.post("/api/books/{book_id}/translation-memory/import")
     async def import_translation_memory(
