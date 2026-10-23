@@ -140,14 +140,14 @@ def choose_complete_memory_match(
         page_numbers = [int(item["page_index"]) for item in group]
         if page_numbers != list(range(1, len(group) + 1)):
             continue
-        joined_source = "\\f".join(str(item["source_text"]) for item in group)
+        joined_source = "\f".join(str(item["source_text"]) for item in group)
         if normalize_memory_text(joined_source) != normalized_original:
             continue
         matches.append({
             "chapter_ref": chapter_ref,
             "page_count": len(group),
             "status": "confirmed" if all(item.get("status") == "confirmed" for item in group) else "draft",
-            "proposed_text": "\\f".join(str(item["target_text"]) for item in group),
+            "proposed_text": "\f".join(str(item["target_text"]) for item in group),
             "source_hash": memory_source_hash(joined_source),
         })
 
