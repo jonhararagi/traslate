@@ -2845,8 +2845,19 @@ def home() -> str:
 <section class="panel"><h2>Copias automáticas</h2><p class="sub">La aplicación crea copias en segundo plano mientras está abierta. La programación y la retención se guardan en este equipo.</p><label><input id="backup-enabled" type="checkbox" checked> Activar copias automáticas</label><div class="reader-actions"><label for="backup-interval">Frecuencia (horas)<input id="backup-interval" type="number" min="1" max="720" value="24" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></label><label for="backup-retention">Copias a conservar<input id="backup-retention" type="number" min="1" max="100" value="14" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></label></div><button id="save-backup-settings" class="secondary" type="button">Guardar programación</button><button id="prune-backups" class="quiet" type="button">Aplicar retención ahora</button><div id="backup-settings-status" role="status" aria-live="polite"></div></section></section>
 <section id="reader"><div class="reader-head"><button id="back" class="quiet" type="button">← Biblioteca</button><h2 id="book-title">Leyendo</h2><button id="toggle-glossary" class="secondary" type="button">Glosario</button><label class="small">Texto <select id="font-size" aria-label="Tamaño del texto"><option value="17">Pequeño</option><option value="19" selected>Mediano</option><option value="22">Grande</option><option value="26">Muy grande</option></select></label></div>
 <div class="chapter-nav"><button id="previous" class="secondary" type="button">← Anterior</button><select id="chapter-select" aria-label="Elegir capítulo"></select><button id="next" class="secondary" type="button">Siguiente →</button></div>
-<div class="reader-grid"><section class="reading-pane"><h3>Original</h3><div id="original" class="original-text" tabindex="0"></div></section><section class="reading-pane"><h3>Traducción</h3><p class="sub small">El original permanece intacto. Tus cambios se guardan aparte.</p><textarea id="translation" class="translation-text" aria-label="Texto de traducción" placeholder="Escribí o pegá aquí tu traducción…"></textarea><div class="reader-actions"><button id="save-translation" class="primary" type="button">Guardar traducción</button><button id="offline-rules-open" class="secondary" type="button">Reglas offline</button><button id="export-epub" class="secondary" type="button">Exportar EPUB</button><button id="show-history" class="secondary" type="button">Historial</button><span id="save-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">Cada guardado conserva una versión anterior.</p>
+<div class="reader-grid"><section class="reading-pane"><h3>Original</h3><div id="original" class="original-text" tabindex="0"></div></section><section class="reading-pane"><h3>Traducción</h3><p class="sub small">El original permanece intacto. Tus cambios se guardan aparte.</p><textarea id="translation" class="translation-text" aria-label="Texto de traducción" placeholder="Escribí o pegá aquí tu traducción…"></textarea><div class="reader-actions"><button id="save-translation" class="primary" type="button">Guardar traducción</button><button id="offline-rules-open" class="secondary" type="button">Reglas offline</button><button id="export-epub" class="secondary" type="button">Exportar EPUB</button><button id="show-history" class="secondary" type="button">Historial</button><button id="translation-memory-open" class="secondary" type="button">Memoria de traducción</button><span id="save-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">Cada guardado conserva una versión anterior.</p>
 <div id="offline-rules-panel" class="panel hidden"><h3>Motor de traducción</h3><p class="sub small">Elegí un modo por operación. Ambos generan una vista previa y nunca guardan por su cuenta.</p><label>Modo <select id="translation-mode" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="local">Modo local — reglas, glosario y formato (RAM mínima)</option><option value="premium">Modo Premium — ChatGPT o Gemini en Chromium</option></select></label><p id="premium-info" class="sub small">Premium abre un perfil Chromium persistente para iniciar sesión en ChatGPT o Gemini. Se bloquean las imágenes para reducir carga; NovelTrad no envía texto automáticamente. Genera fragmentos secuenciales de hasta 3.500 caracteres. Copiá cada prompt, pegá la respuesta y revisá todos los fragmentos antes de pasarlos al editor.</p><label>Proveedor Premium <select id="premium-provider" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="chatgpt">ChatGPT</option><option value="gemini">Gemini</option></select></label><div class="reader-actions"><button id="premium-open-browser" class="secondary" type="button">Abrir Chromium / iniciar sesión</button><span id="premium-browser-status" class="sub small" role="status" aria-live="polite"></span></div><label>Perfil editorial <select id="offline-profile" style="display:block;width:100%;padding:9px;margin:6px 0 12px"><option value="light_novel_es">Novela ligera en español</option><option value="faithful_literary_es">Traducción literaria fiel</option><option value="webnovel_es">Novela web en español</option></select></label><label>Mapa de frases, una por línea: original =&gt; traducción<textarea id="offline-phrase-map" rows="4" style="display:block;width:100%;padding:9px;margin:6px 0 12px" placeholder="reached =&gt; alcanzó&#10;magic stone =&gt; piedra mágica"></textarea></label><div class="reader-actions"><button id="offline-run" class="primary" type="button">Generar vista previa</button><button id="offline-apply" class="secondary" type="button" disabled>Pasar al editor</button><button id="offline-close" class="quiet" type="button">Cerrar</button></div><p id="offline-status" class="sub small" role="status" aria-live="polite"></p><pre id="offline-result" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:32rem;overflow:auto"></pre><div id="offline-chunks" class="reader-grid" style="margin-top:14px"></div></div><div id="translation-history" class="hidden"><h4>Versiones guardadas</h4><div id="history-list"></div><p id="history-status" class="sub small" role="status" aria-live="polite"></p></div></section></div>
+<section id="translation-memory-panel" class="panel hidden">
+<div class="reader-head"><h2>Memoria de traducción</h2><button id="translation-memory-close" class="quiet" type="button">Cerrar</button></div>
+<p class="sub small">Importá un pack JSONL privado alineado por página. Las entradas importadas siempre quedan como borrador. Las coincidencias son sugerencias para revisar: no sobrescriben ni guardan la traducción actual.</p>
+<div class="reader-actions"><input id="translation-memory-file" type="file" accept=".jsonl,.ndjson,application/json" aria-label="Archivo de memoria de traducción"><button id="translation-memory-import" class="primary" type="button">Importar memoria</button><button id="translation-memory-refresh" class="secondary" type="button">Actualizar lista</button></div>
+<p id="translation-memory-status" class="sub small" role="status" aria-live="polite"></p>
+<div id="translation-memory-list"></div>
+<div class="panel"><h3>Vista previa del capítulo actual</h3><p class="sub small">Elegí un capítulo de memoria de la lista para comparar su fuente completa con el original que tenés abierto.</p>
+<pre id="translation-memory-preview" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:32rem;overflow:auto"></pre>
+<div class="reader-actions"><button id="translation-memory-apply" class="primary" type="button" disabled>Pasar propuesta al editor sin guardar</button></div>
+<p class="sub small">Después de revisar la propuesta, usá «Guardar traducción» solo si decidís conservarla. El sistema registra versiones anteriores al guardar.</p></div>
+</section>
 <section id="glossary-panel" class="panel hidden"><div class="reader-head"><h2>Glosario de esta novela</h2><button id="close-glossary" class="quiet" type="button">Cerrar</button></div><p class="sub small">Protegé nombres y fijá términos para mantener la coherencia. Las reglas se guardan por novela.</p><div class="reader-actions"><button id="extract-glossary-candidates" class="secondary" type="button">Buscar candidatos en el texto original</button><span id="glossary-candidate-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">El análisis local busca términos del perfil, vocabulario gamer/otaku y nombres potenciales. Cada candidato muestra evidencia; nada se aprueba ni se aplica automáticamente.</p><div id="glossary-candidates-list"></div><form id="glossary-form"><div class="reader-grid"><label>Término original<input id="glossary-source" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label><label>Forma preferida<input id="glossary-target" required maxlength="300" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Oknodie"></label></div><div class="reader-actions"><label>Regla <select id="glossary-rule" style="padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)"><option value="protect">Proteger nombre/término</option><option value="preserve">Conservar exactamente</option><option value="translate">Traducir siempre así</option><option value="contextual">Depende del contexto</option></select></label><label><input id="glossary-approved" type="checkbox"> Aprobado</label><button id="glossary-submit" class="primary" type="submit">Guardar término</button><button id="glossary-cancel" class="secondary hidden" type="button">Cancelar edición</button></div><label>Notas opcionales<textarea id="glossary-notes" rows="2" maxlength="2000" style="display:block;width:100%;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)" placeholder="Nombre propio; no traducir."></textarea></label><p id="glossary-status" class="sub small" role="status" aria-live="polite"></p></form><div id="glossary-list"></div></section>
 </section><p class="sub small">Modo local aplica reglas aprobadas, pero no traduce por sí solo frases desconocidas. Premium utiliza tu sesión de ChatGPT o Gemini en Chromium; requiere copiar el prompt y pegar la respuesta. Las vistas previas nunca se guardan automáticamente.</p></main>
 <script>
@@ -3220,6 +3231,106 @@ $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay
     }
   });
 })();
+
+  let translationMemoryProposal = '';
+  $('#translation-memory-open').addEventListener('click', async () => {
+    $('#translation-memory-panel').classList.remove('hidden');
+    await refreshTranslationMemory();
+  });
+  $('#translation-memory-close').addEventListener('click', () => {
+    $('#translation-memory-panel').classList.add('hidden');
+  });
+  $('#translation-memory-refresh').addEventListener('click', refreshTranslationMemory);
+  async function refreshTranslationMemory() {
+    if (!currentBook) return;
+    const status = $('#translation-memory-status');
+    const list = $('#translation-memory-list');
+    status.textContent = 'Leyendo la memoria local…';
+    try {
+      const payload = await api('/api/books/' + encodeURIComponent(currentBook.id) + '/translation-memory?limit=5000');
+      const grouped = new Map();
+      for (const entry of payload.entries) {
+        if (!grouped.has(entry.chapter_ref)) grouped.set(entry.chapter_ref, { pages: 0, draft: 0, confirmed: 0, rejected: 0 });
+        const item = grouped.get(entry.chapter_ref);
+        item.pages += 1;
+        if (Object.prototype.hasOwnProperty.call(item, entry.status)) item[entry.status] += 1;
+      }
+      list.innerHTML = grouped.size ? Array.from(grouped.entries()).map(([chapter, info]) =>
+        '<article class="book"><div class="bookinfo"><strong>' + esc(chapter) + '</strong><div class="sub small">' +
+        info.pages + ' páginas · ' + info.confirmed + ' confirmadas · ' + info.draft + ' borradores · ' + info.rejected + ' rechazadas</div></div>' +
+        '<button class="secondary" type="button" data-tm-preview="' + esc(chapter) + '">Previsualizar coincidencia</button></article>'
+      ).join('') : '<div class="empty">No hay memoria importada en esta novela.</div>';
+      status.textContent = 'Memoria local: ' + payload.count + ' segmentos. Los borradores requieren revisión explícita.';
+    } catch (error) {
+      status.textContent = 'No se pudo leer la memoria: ' + error.message;
+    }
+  }
+  $('#translation-memory-import').addEventListener('click', async () => {
+    if (!currentBook) return;
+    const input = $('#translation-memory-file');
+    const file = input.files && input.files[0];
+    if (!file) { $('#translation-memory-status').textContent = 'Seleccioná un archivo JSONL/NDJSON.'; return; }
+    const button = $('#translation-memory-import');
+    button.disabled = true;
+    $('#translation-memory-status').textContent = 'Importando al almacenamiento local…';
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const response = await fetch('/api/books/' + encodeURIComponent(currentBook.id) + '/translation-memory/import', { method: 'POST', body: form });
+      let result = {};
+      try { result = await response.json(); } catch (_) {}
+      if (!response.ok) throw new Error(result.detail || 'No se pudo importar el archivo.');
+      $('#translation-memory-status').textContent = 'Importación completada: ' + result.imported + ' segmentos nuevos; ' +
+        result.skipped_existing + ' repetidos. Todo quedó como BORRADOR y no se aplicó a ningún capítulo.';
+      input.value = '';
+      await refreshTranslationMemory();
+    } catch (error) {
+      $('#translation-memory-status').textContent = 'Importación: ' + error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+  $('#translation-memory-list').addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-tm-preview]');
+    if (!button || !currentBook) return;
+    const chapterRef = button.getAttribute('data-tm-preview');
+    const chapter = chapters[chapterPos];
+    if (!chapter) return;
+    button.disabled = true;
+    $('#translation-memory-status').textContent = 'Comparando el original completo; no se guardará nada…';
+    $('#translation-memory-preview').textContent = '';
+    $('#translation-memory-apply').disabled = true;
+    translationMemoryProposal = '';
+    try {
+      const result = await api('/api/books/' + encodeURIComponent(currentBook.id) + '/translation-memory/preview', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_text: chapter.original_text, chapter_ref: chapterRef, include_draft: true })
+      });
+      if (!result.matched || !result.complete) {
+        $('#translation-memory-status').textContent = 'Sin coincidencia completa para ' + chapterRef + '. No se ha usado una coincidencia parcial.';
+        $('#translation-memory-preview').textContent = 'No hay traducción propuesta. Revisá que el original importado sea el mismo que el de la memoria.';
+        return;
+      }
+      translationMemoryProposal = result.proposed_text || '';
+      $('#translation-memory-preview').textContent = 'Capítulo: ' + result.chapter_ref + '\nEstado: ' + result.memory_status +
+        '\nCobertura: 100 %\n\n' + translationMemoryProposal;
+      $('#translation-memory-status').textContent = 'Coincidencia completa encontrada. Es una propuesta, no una traducción validada ni guardada.';
+      $('#translation-memory-apply').disabled = !translationMemoryProposal;
+    } catch (error) {
+      $('#translation-memory-status').textContent = 'Vista previa: ' + error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+  $('#translation-memory-apply').addEventListener('click', () => {
+    if (!translationMemoryProposal || !chapters[chapterPos]) return;
+    if (translationDirty && !confirm('Hay cambios de traducción sin guardar. ¿Reemplazarlos por la propuesta de memoria?')) return;
+    $('#translation').value = translationMemoryProposal;
+    translationDirty = true;
+    $('#save-status').textContent = 'Propuesta de memoria transferida al editor; todavía no se guardó.';
+    $('#translation-memory-status').textContent = 'Propuesta transferida al editor. Revisala y guardala explícitamente cuando estés conforme.';
+  });
+
 </script></body></html>'''
 
 
