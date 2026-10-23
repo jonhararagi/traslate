@@ -45,6 +45,8 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
                 book_id TEXT NOT NULL,
                 chapter_ref TEXT NOT NULL,
                 page_index INTEGER NOT NULL,
+                chapter_page_count INTEGER NOT NULL DEFAULT 0,
+                chapter_ends_with_page_separator INTEGER NOT NULL DEFAULT 0 CHECK(chapter_ends_with_page_separator IN (0, 1)),
                 source_hash TEXT NOT NULL,
                 source_text TEXT NOT NULL,
                 target_text TEXT NOT NULL,
@@ -64,6 +66,11 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
             ON translation_memory_entries(book_id, chapter_ref, page_index, status)
             """
         )
+        columns = {row["name"] for row in connection.execute("PRAGMA table_info(translation_memory_entries)")}
+        if "chapter_page_count" not in columns:
+            connection.execute("ALTER TABLE translation_memory_entries ADD COLUMN chapter_page_count INTEGER NOT NULL DEFAULT 0")
+        if "chapter_ends_with_page_separator" not in columns:
+            connection.execute("ALTER TABLE translation_memory_entries ADD COLUMN chapter_ends_with_page_separator INTEGER NOT NULL DEFAULT 0")
         connection.commit()
         return connection
 
@@ -102,16 +109,18 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
                 cursor = connection.execute(
                     """
                     INSERT OR IGNORE INTO translation_memory_entries
-                    (id, book_id, chapter_ref, page_index, source_hash, source_text,
-                     target_text, status, review_status, source_blob_sha,
-                     translation_blob_sha, imported_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', 'imported_pending_review', ?, ?, ?)
+                    (id, book_id, chapter_ref, page_index, chapter_page_count,
+                     chapter_ends_with_page_separator, source_hash, source_text, target_text,
+                     status, review_status, source_blob_sha, translation_blob_sha, imported_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', 'imported_pending_review', ?, ?, ?)
                     """,
                     (
                         entry["id"],
                         book_id,
                         entry["chapter_ref"],
                         entry["page_index"],
+                        entry["chapter_page_count"],
+                        int(entry["chapter_ends_with_page_separator"]),
                         entry["source_hash"],
                         entry["source_text"],
                         entry["target_text"],
@@ -143,7 +152,8 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
         with memory_connection() as connection:
             rows = connection.execute(
                 """
-                SELECT id, chapter_ref, page_index, status, review_status,
+                SELECT id, chapter_ref, page_index, chapter_page_count,
+                       chapter_ends_with_page_separator, status, review_status,
                        length(source_text) AS source_chars,
                        length(target_text) AS target_chars, source_blob_sha,
                        translation_blob_sha, imported_at
@@ -215,7 +225,8 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
         with memory_connection() as connection:
             rows = connection.execute(
                 """
-                SELECT id, chapter_ref, page_index, source_hash, source_text, target_text,
+                SELECT id, chapter_ref, page_index, chapter_page_count,
+                       chapter_ends_with_page_separator, source_hash, source_text, target_text,
                        status, review_status, source_blob_sha, translation_blob_sha
                 FROM translation_memory_entries
                 WHERE book_id = ?
@@ -223,9 +234,14 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
                 """,
                 (book_id,),
             ).fetchall()
+        memory_entries = []
+        for row in rows:
+            entry = dict(row)
+            entry["chapter_ends_with_page_separator"] = bool(entry["chapter_ends_with_page_separator"])
+            memory_entries.append(entry)
         match = choose_complete_memory_match(
             payload.source_text,
-            [dict(row) for row in rows],
+            memory_entries,
             memory_chapter_ref=payload.chapter_ref,
             include_draft=payload.include_draft,
         )
