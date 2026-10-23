@@ -86,7 +86,7 @@ def parse_translation_memory_pack(raw: bytes) -> list[dict[str, Any]]:
             raise TranslationMemoryPackError(f"target_text está vacío en la línea {line_no}.")
         if len(source_text) > MAX_MEMORY_TEXT_CHARS or len(target_text) > MAX_MEMORY_TEXT_CHARS:
             raise TranslationMemoryPackError(f"Texto demasiado largo en la línea {line_no}.")
-        if status not in _ALLOWED_STATUSES:
+        if not isinstance(status, str) or status not in _ALLOWED_STATUSES:
             raise TranslationMemoryPackError(
                 f"Estado no admitido en la línea {line_no}; use draft, confirmed o rejected."
             )
