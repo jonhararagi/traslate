@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -66,6 +67,15 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
         connection.commit()
         return connection
 
+    @contextmanager
+    def memory_connection():
+        connection = connect_memory_db()
+        try:
+            with connection:
+                yield connection
+        finally:
+            connection.close()
+
     @app.post("/api/books/{book_id}/translation-memory/import")
     async def import_translation_memory(
         book_id: str,
@@ -87,7 +97,7 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
         inserted = 0
         skipped = 0
         imported_at = datetime.now(timezone.utc).isoformat()
-        with connect_memory_db() as connection:
+        with memory_connection() as connection:
             for entry in entries:
                 cursor = connection.execute(
                     """
@@ -130,7 +140,7 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
         """List local memory metadata without returning copyrighted chapter text."""
         if limit < 1 or limit > 5000:
             raise HTTPException(status_code=422, detail="limit debe estar entre 1 y 5000.")
-        with connect_memory_db() as connection:
+        with memory_connection() as connection:
             rows = connection.execute(
                 """
                 SELECT id, chapter_ref, page_index, status, review_status,
@@ -149,7 +159,7 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
     @app.post("/api/books/{book_id}/translation-memory/{entry_id}/approve")
     def approve_translation_memory_entry(book_id: str, entry_id: str):
         """Explicitly approve one memory page; approval still does not write a chapter."""
-        with connect_memory_db() as connection:
+        with memory_connection() as connection:
             cursor = connection.execute(
                 """
                 UPDATE translation_memory_entries
@@ -179,7 +189,7 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
         if payload.chapter_ref is not None and len(payload.chapter_ref) > 200:
             raise HTTPException(status_code=422, detail="chapter_ref es demasiado largo.")
 
-        with connect_memory_db() as connection:
+        with memory_connection() as connection:
             rows = connection.execute(
                 """
                 SELECT id, chapter_ref, page_index, source_hash, source_text, target_text,
