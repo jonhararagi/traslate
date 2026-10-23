@@ -15,7 +15,7 @@ MAX_TRANSLATION_MEMORY_UPLOAD_BYTES = 25 * 1024 * 1024
 MAX_TRANSLATION_MEMORY_ENTRIES = 50_000
 MAX_MEMORY_TEXT_CHARS = 100_000
 _ALLOWED_STATUSES = {"draft", "confirmed", "rejected"}
-_REQUIRED_FIELDS = {"id", "chapter_id", "page_index", "source_text", "target_text"}
+_REQUIRED_FIELDS = {"id", "chapter_id", "page_index", "chapter_page_count", "chapter_ends_with_page_separator", "source_text", "target_text"}
 
 
 class TranslationMemoryPackError(ValueError):
@@ -70,6 +70,8 @@ def parse_translation_memory_pack(raw: bytes) -> list[dict[str, Any]]:
         page_index = item.get("page_index")
         source_text = item.get("source_text")
         target_text = item.get("target_text")
+        chapter_page_count = item.get("chapter_page_count")
+        chapter_ends_with_page_separator = item.get("chapter_ends_with_page_separator")
         status = item.get("status", "draft")
         if not isinstance(entry_id, str) or not entry_id.strip() or len(entry_id) > 200:
             raise TranslationMemoryPackError(f"ID inválido en la línea {line_no}.")
@@ -80,6 +82,12 @@ def parse_translation_memory_pack(raw: bytes) -> list[dict[str, Any]]:
             raise TranslationMemoryPackError(f"chapter_id inválido en la línea {line_no}.")
         if isinstance(page_index, bool) or not isinstance(page_index, int) or page_index < 1:
             raise TranslationMemoryPackError(f"page_index debe ser un entero positivo en la línea {line_no}.")
+        if isinstance(chapter_page_count, bool) or not isinstance(chapter_page_count, int) or chapter_page_count < 1:
+            raise TranslationMemoryPackError(f"chapter_page_count debe ser un entero positivo en la línea {line_no}.")
+        if page_index > chapter_page_count:
+            raise TranslationMemoryPackError(f"page_index supera chapter_page_count en la línea {line_no}.")
+        if not isinstance(chapter_ends_with_page_separator, bool):
+            raise TranslationMemoryPackError(f"chapter_ends_with_page_separator debe ser booleano en la línea {line_no}.")
         if not isinstance(source_text, str) or not source_text.strip():
             raise TranslationMemoryPackError(f"source_text está vacío en la línea {line_no}.")
         if not isinstance(target_text, str) or not target_text.strip():
@@ -96,6 +104,8 @@ def parse_translation_memory_pack(raw: bytes) -> list[dict[str, Any]]:
             "id": entry_id,
             "chapter_ref": chapter_id.strip(),
             "page_index": page_index,
+            "chapter_page_count": chapter_page_count,
+            "chapter_ends_with_page_separator": chapter_ends_with_page_separator,
             "source_text": source_text,
             "target_text": target_text,
             "source_hash": memory_source_hash(source_text),
@@ -108,6 +118,28 @@ def parse_translation_memory_pack(raw: bytes) -> list[dict[str, Any]]:
         })
     if not records:
         raise TranslationMemoryPackError("No hay registros JSONL válidos para importar.")
+
+    # A pack is importable only when every referenced chapter is complete.
+    # This prevents a partial set of pages from masquerading as a whole chapter.
+    chapters: dict[str, list[dict[str, Any]]] = {}
+    for record in records:
+        chapters.setdefault(record["chapter_ref"], []).append(record)
+    for chapter_ref, chapter_records in chapters.items():
+        page_count = chapter_records[0]["chapter_page_count"]
+        terminal_separator = chapter_records[0]["chapter_ends_with_page_separator"]
+        page_indices = sorted(record["page_index"] for record in chapter_records)
+        if any(
+            record["chapter_page_count"] != page_count
+            or record["chapter_ends_with_page_separator"] != terminal_separator
+            for record in chapter_records
+        ):
+            raise TranslationMemoryPackError(
+                f"Metadatos de páginas incoherentes para el capítulo {chapter_ref}."
+            )
+        if page_indices != list(range(1, page_count + 1)):
+            raise TranslationMemoryPackError(
+                f"El capítulo {chapter_ref} está incompleto: se requieren las páginas 1–{page_count}."
+            )
     return records
 
 
@@ -138,16 +170,23 @@ def choose_complete_memory_match(
     for chapter_ref, group in groups.items():
         group.sort(key=lambda item: int(item["page_index"]))
         page_numbers = [int(item["page_index"]) for item in group]
-        if page_numbers != list(range(1, len(group) + 1)):
+        page_count = int(group[0].get("chapter_page_count", 0))
+        terminal_values = {item.get("chapter_ends_with_page_separator") for item in group}
+        if page_count != len(group) or page_numbers != list(range(1, page_count + 1)):
+            continue
+        if len(terminal_values) != 1 or not isinstance(next(iter(terminal_values)), bool):
             continue
         joined_source = "\f".join(str(item["source_text"]) for item in group)
         if normalize_memory_text(joined_source) != normalized_original:
             continue
+        proposed_text = "\f".join(str(item["target_text"]) for item in group)
+        if next(iter(terminal_values)):
+            proposed_text += "\f"
         matches.append({
             "chapter_ref": chapter_ref,
-            "page_count": len(group),
+            "page_count": page_count,
             "status": "confirmed" if all(item.get("status") == "confirmed" for item in group) else "draft",
-            "proposed_text": "\f".join(str(item["target_text"]) for item in group),
+            "proposed_text": proposed_text,
             "source_hash": memory_source_hash(joined_source),
         })
 
