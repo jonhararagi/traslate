@@ -79,7 +79,7 @@ def test_match_with_any_unconfirmed_page_is_draft_and_rejected_pages_are_exclude
         _record(2, "Second page.", "Segunda página."),
     ))
     mixed = [dict(pack[0], status="confirmed"), dict(pack[1], status="draft")]
-    match = choose_complete_memory_match("First page.\fSecond page.\f", mixed)
+    match = choose_complete_memory_match("First page.\fSecond page.\f", mixed, include_draft=True)
     assert match is not None
     assert match["status"] == "draft"
     rejected = [dict(item, status="rejected") for item in pack]
