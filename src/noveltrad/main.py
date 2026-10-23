@@ -23,6 +23,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 from noveltrad.narrative_rules import TermRule, apply_offline_rules, get_profile
+from noveltrad.translation_memory_api import install_translation_memory_routes
 
 APP_NAME = "NovelTrad"
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
@@ -786,6 +787,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=APP_NAME, version="0.1.0", docs_url="/api/docs", lifespan=lifespan)
+install_translation_memory_routes(app, data_dir)
 
 
 @app.post("/api/chapters/{chapter_id}/offline-rules")
