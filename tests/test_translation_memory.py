@@ -46,7 +46,7 @@ def test_parser_preserves_text_but_downgrades_claimed_confirmation():
     ("records", "message"),
     [
         ((_record(1, "A", "B"),), "incompleto"),
-        ((_record(1, "A", "B"), _record(2, "C", "D", count=3)), "incompleto"),
+        ((_record(1, "A", "B"), _record(2, "C", "D", count=3)), "incoherentes"),
         ((_record(1, "A", "B"), _record(2, "C", "D", terminal=False)), "incoherentes"),
     ],
 )
