@@ -222,3 +222,8 @@ La rama `feat/novel-writing-studio-memory-panel` ya contiene un primer MVP de c�
 Incluye creación de proyectos de ficción, fichas de memoria con estado propuesto/aprobado/rechazado/conflicto, prompts por rol con solo fichas aprobadas, intercambio manual con el proveedor ya elegido y borradores de capítulo con versiones. La memoria se guarda en la SQLite local de NovelTrad. No ejecuta ningún modelo por sí solo ni aplica texto como canon automáticamente.
 
 **Estado de verificación:** pendiente de CI y revisión manual del panel. La rama no debe considerarse terminada ni fusionarse por la mera existencia de los endpoints. `main` permanece sin modificar.
+
+
+### Bot profiles propios — 2026-10-26
+
+La capa de escritura también tiene perfiles de bot persistentes por proyecto: nombre, especialidad, proveedor preferido e instrucciones personalizadas. El usuario puede crear, seleccionar, editar y eliminar perfiles desde el panel. No son modelos entrenados ni agentes autónomos; son presets que se incorporan al prompt manual que el autor revisa y envía. Los hechos del lore siguen viniendo de fichas aprobadas, y una edición no cambia el canon.
