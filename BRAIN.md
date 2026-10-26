@@ -213,3 +213,12 @@ El usuario quiere un panel para crear una novela original con un bot de IA y mem
 - Las propuestas del modelo deben quedar como borradores. Solo el autor aprueba hechos de canon. Para consultar lore, el bot debe distinguir `ESTABLECIDO`, `NO ESTABLECIDO`, `NO ENCONTRADO` y `CONFLICTO` y exponer la evidencia interna utilizada.
 - Mantener la política vigente: preferir el intercambio visible/manual con ChatGPT o Gemini ya integrado; no enviar texto silenciosamente; no guardar credenciales; no instalar ni mantener un modelo local pesado como requisito en el PC de 16 GB.
 - Estado honesto: estas páginas son investigación/especificación; no significa que el panel esté implementado ni que un modelo haya ganado el benchmark.
+
+
+## Actualización de implementación — Taller de novela (2026-10-26)
+
+La rama `feat/novel-writing-studio-memory-panel` ya contiene un primer MVP de código, no solo la especificación: `src/noveltrad/writing_studio.py`, rutas registradas desde `main.py`, el panel HTML/JS, y `tests/test_writing_studio.py`. La propuesta de diseño y el benchmark están en los dos documentos enlazados en la sección anterior.
+
+Incluye creación de proyectos de ficción, fichas de memoria con estado propuesto/aprobado/rechazado/conflicto, prompts por rol con solo fichas aprobadas, intercambio manual con el proveedor ya elegido y borradores de capítulo con versiones. La memoria se guarda en la SQLite local de NovelTrad. No ejecuta ningún modelo por sí solo ni aplica texto como canon automáticamente.
+
+**Estado de verificación:** pendiente de CI y revisión manual del panel. La rama no debe considerarse terminada ni fusionarse por la mera existencia de los endpoints. `main` permanece sin modificar.
