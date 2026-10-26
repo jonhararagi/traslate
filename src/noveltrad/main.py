@@ -24,6 +24,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 from noveltrad.narrative_rules import TermRule, apply_offline_rules, get_profile
 from noveltrad.translation_memory_api import install_translation_memory_routes
+from noveltrad.writing_studio import install_writing_studio_routes
 
 APP_NAME = "NovelTrad"
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
@@ -788,6 +789,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title=APP_NAME, version="0.1.0", docs_url="/api/docs", lifespan=lifespan)
 install_translation_memory_routes(app, data_dir)
+install_writing_studio_routes(app, connection)
 
 
 @app.post("/api/chapters/{chapter_id}/offline-rules")
@@ -2816,8 +2818,8 @@ def home() -> str:
 @media(prefers-color-scheme:dark){:root{--bg:#191a20;--panel:#23252d;--ink:#ece9e2;--muted:#aaa6b0;--accent:#c0b2ff;--line:#393b46;--soft:#34303f}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:3px}main{max-width:1120px;margin:auto;padding:24px 20px 60px}.top{display:flex;align-items:center;gap:12px;margin-bottom:28px}.mark{background:var(--accent);color:white;border-radius:14px;padding:9px 12px;font-weight:800}.sub{color:var(--muted)}h1{font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.15;margin:.2rem 0}h2{margin-top:0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;margin:18px 0;box-shadow:0 6px 24px #00000008}.primary,.secondary,.quiet{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:12px;padding:10px 15px;font-weight:650}.primary{background:var(--accent);color:white}.secondary{background:var(--soft);color:var(--ink)}.quiet{background:transparent;color:var(--ink);border:1px solid var(--line)}input[type=file]{max-width:100%;margin:12px 0}.book{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}.book:last-child{border:0}.bookinfo{flex:1;min-width:0}.empty{padding:24px;text-align:center;color:var(--muted)}#status{margin-top:12px;min-height:1.5em}.pill{font-size:.8rem;border:1px solid var(--line);border-radius:99px;padding:3px 9px;color:var(--muted)}#reader{display:none}.reader-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.reader-head h2{margin:0;flex:1}.reader-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.reader-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.reading-pane{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}.reading-pane h3{margin-top:0}.original-text{white-space:pre-wrap;overflow-wrap:anywhere;max-height:65vh;overflow:auto;font-family:Georgia,'Times New Roman',serif;line-height:1.85;font-size:19px}.translation-text{width:100%;min-height:48vh;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);line-height:1.85;font-family:Georgia,'Times New Roman',serif;font-size:19px}.chapter-nav{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:14px 0}.chapter-nav select{max-width:65%;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)}.reader-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.small{font-size:.9rem}.hidden{display:none!important}@media(max-width:760px){main{padding:18px 12px 40px}.reader-grid{grid-template-columns:1fr}.original-text{max-height:45vh}.translation-text{min-height:35vh}.panel{padding:16px}.book{align-items:flex-start;flex-wrap:wrap}.bookinfo{flex-basis:60%}}
 #queue-original,#queue-translation{width:100%;min-height:34vh;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);line-height:1.7;font-family:Georgia,'Times New Roman',serif;font-size:16px}#queue-progress-bar{width:100%;height:14px;margin:8px 0;accent-color:var(--accent)}.queue-meta{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.queue-meta>*{min-width:0}.queue-select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
-</style></head><body><main>
-<header class="top"><div class="mark">NT</div><div><strong>NovelTrad</strong><div class="sub">Tu biblioteca, tus reglas, tu espacio</div></div><span style="margin-left:auto" class="pill">Local-first</span></header>
+.top-nav{display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap}.writing-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.writing-field{display:block;margin:10px 0}.writing-field input,.writing-field select,.writing-field textarea,.writing-select{display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}.writing-field textarea{min-height:100px;resize:vertical}.writing-memory-item,.writing-chapter-item{padding:12px 0;border-bottom:1px solid var(--line)}.writing-memory-item:last-child,.writing-chapter-item:last-child{border-bottom:0}.writing-item-title{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.writing-item-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.writing-textarea{display:block;width:100%;min-height:22vh;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);line-height:1.65}.writing-memory-preview{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}.writing-muted{font-size:.87rem;color:var(--muted)}@media(max-width:760px){.writing-form-grid{grid-template-columns:1fr}.top-nav{margin-left:0}.top{flex-wrap:wrap}}\n</style></head><body><main>
+<header class="top"><div class="mark">NT</div><div><strong>NovelTrad</strong><div class="sub">Tu biblioteca, tus reglas, tu espacio</div></div><div id="top-nav" class="top-nav"><button id="nav-library" class="secondary" type="button">Biblioteca</button><button id="nav-writing" class="primary" type="button">Taller de novela</button></div><span class="pill">Local-first</span></header>
 <section id="library"><h1>Volvé a tu historia.</h1><p class="sub">Un espacio tranquilo para leer y preparar tus traducciones. Tus libros se guardan en este equipo.</p>
 <section class="panel"><h2>Importar una novela</h2><p class="sub">Solo EPUB y PDF · Máximo 100 MB. Los PDF escaneados todavía necesitan OCR.</p><form id="upload"><input id="file" name="file" type="file" accept=".epub,.pdf,application/pdf,application/epub+zip" required><br><button class="primary" type="submit">Añadir a mi biblioteca</button></form><div id="status" role="status" aria-live="polite"></div></section>
 <section class="panel"><h2>Mi biblioteca</h2><div id="books" class="empty">Cargando biblioteca…</div></section>
@@ -2843,6 +2845,70 @@ def home() -> str:
 </section>
 <section class="panel"><h2>Copias de seguridad</h2><p class="sub">Guarda el estado de tu biblioteca y permite recuperarlo. Antes de restaurar se crea otra copia de seguridad automática.</p><div class="reader-actions"><button id="create-backup" class="secondary" type="button">Crear copia ahora</button><button id="refresh-backups" class="quiet" type="button">Actualizar lista</button></div><label class="small" for="backup-select">Copia disponible</label><select id="backup-select" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"><option value="">Todavía no hay copias</option></select><button id="restore-backup" class="secondary" type="button" disabled>Restaurar copia seleccionada</button><div id="backup-status" role="status" aria-live="polite"></div></section>
 <section class="panel"><h2>Copias automáticas</h2><p class="sub">La aplicación crea copias en segundo plano mientras está abierta. La programación y la retención se guardan en este equipo.</p><label><input id="backup-enabled" type="checkbox" checked> Activar copias automáticas</label><div class="reader-actions"><label for="backup-interval">Frecuencia (horas)<input id="backup-interval" type="number" min="1" max="720" value="24" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></label><label for="backup-retention">Copias a conservar<input id="backup-retention" type="number" min="1" max="100" value="14" style="display:block;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></label></div><button id="save-backup-settings" class="secondary" type="button">Guardar programación</button><button id="prune-backups" class="quiet" type="button">Aplicar retención ahora</button><div id="backup-settings-status" role="status" aria-live="polite"></div></section></section>
+
+<section id="writing-studio" class="hidden">
+<h1>Taller de novela</h1>
+<p class="sub">Creá una obra original con una memoria interna local. Las fichas nuevas son propuestas; solo vos podés aprobar el canon. El asistente prepara prompts, pero nunca envía texto automáticamente.</p>
+<div class="reader-grid">
+<section class="panel">
+<h2>1. Proyecto y voz</h2>
+<form id="writing-project-form">
+<label class="writing-field">Título del proyecto<input id="writing-project-title" maxlength="200" required placeholder="Nombre de la novela"></label>
+<div class="writing-form-grid">
+<label class="writing-field">Género<input id="writing-project-genre" maxlength="120" placeholder="Fantasía, misterio, romance…"></label>
+<label class="writing-field">Idioma de salida<select id="writing-project-language"><option value="es">Español</option><option value="en">Inglés</option><option value="ja">Japonés</option><option value="ko">Coreano</option><option value="other">Otro</option></select></label>
+</div>
+<label class="writing-field">Guía de estilo del autor<textarea id="writing-project-style" maxlength="12000" placeholder="Tono, punto de vista, voz narrativa, tiempos verbales, reglas de diálogo, cosas que evitar…"></textarea></label>
+<button class="primary" type="submit">Crear proyecto</button>
+</form>
+<label class="writing-field" for="writing-project-select">Proyecto activo<select id="writing-project-select" class="writing-select"><option value="">Todavía no hay proyectos</option></select></label>
+<div id="writing-project-status" class="sub small" role="status" aria-live="polite">Los proyectos se guardan en la base local de NovelTrad.</div>
+</section>
+<section class="panel">
+<h2>2. Memoria narrativa y lore</h2>
+<p class="sub small">Añadí personajes, lugares, reglas, hechos, relaciones, pistas o decisiones. Cada ficha comienza como propuesta y solo el contenido aprobado se incluye como canon en los prompts.</p>
+<form id="writing-memory-form">
+<label class="writing-field">Tipo<select id="writing-memory-kind" class="writing-select"><option value="character">Personaje</option><option value="lore">Lore / mundo</option><option value="location">Lugar</option><option value="rule">Regla del mundo</option><option value="timeline">Cronología / acontecimiento</option><option value="plot">Trama / pista</option><option value="language">Idioma y estilo</option><option value="object">Objeto / habilidad</option><option value="relationship">Relación</option><option value="other">Otro</option></select></label>
+<label class="writing-field">Título de la ficha<input id="writing-memory-title" maxlength="300" required placeholder="Nombre del personaje o hecho"></label>
+<label class="writing-field">Contenido<textarea id="writing-memory-content" maxlength="12000" required placeholder="Describe el dato con precisión. Separá hechos confirmados de hipótesis."></textarea></label>
+<div class="writing-form-grid">
+<label class="writing-field">Palabras clave / alias<input id="writing-memory-keywords" maxlength="1000" placeholder="Alias, términos, variaciones"></label>
+<label class="writing-field">Procedencia / evidencia<input id="writing-memory-source" maxlength="1000" placeholder="Capítulo, escena o decisión del autor"></label>
+</div>
+<button class="primary" type="submit">Guardar como propuesta</button>
+</form>
+<div id="writing-memory-status" class="sub small" role="status" aria-live="polite"></div>
+<div id="writing-memory-list" aria-live="polite" class="empty">Creá o seleccioná un proyecto para ver su memoria.</div>
+</section>
+</div>
+<section class="panel">
+<h2>3. Asistente de escritura</h2>
+<p class="sub">Elegí un rol y un proveedor. El programa reúne la guía de estilo y hasta 30 fichas aprobadas relevantes; muestra el prompt para que lo envíes manualmente desde tu cuenta.</p>
+<div class="writing-form-grid">
+<label class="writing-field">Rol del bot<select id="writing-role" class="writing-select"><option value="coauthor">Coautor de escenas</option><option value="lore_guardian">Guardián del lore</option><option value="continuity_editor">Editor de continuidad</option><option value="language_editor">Editor de idioma</option><option value="planner">Planificador de tramas</option></select></label>
+<label class="writing-field">Proveedor<select id="writing-provider" class="writing-select"><option value="chatgpt">ChatGPT (cuenta en Chromium)</option><option value="gemini">Gemini (cuenta en Chromium)</option></select></label>
+</div>
+<label class="writing-field">Instrucción del autor<textarea id="writing-task" maxlength="8000" required placeholder="Qué quieres escribir o comprobar en esta sesión"></textarea></label>
+<div class="reader-actions"><button id="writing-build-prompt" class="primary" type="button">Preparar prompt con memoria</button><button id="writing-open-provider" class="secondary" type="button">Abrir proveedor</button><button id="writing-copy-prompt" class="secondary" type="button">Copiar prompt</button></div>
+<div id="writing-prompt-status" class="sub small" role="status" aria-live="polite"></div>
+<label class="writing-field">Prompt preparado (no se envía automáticamente)<textarea id="writing-prompt" class="writing-textarea" readonly aria-label="Prompt preparado para el proveedor"></textarea></label>
+<div id="writing-memory-used" class="sub small" role="status" aria-live="polite">Todavía no se ha preparado un prompt.</div>
+<div class="reader-grid">
+<section class="reading-pane">
+<h3>Respuesta / borrador</h3>
+<label class="writing-field">Título del capítulo o escena<input id="writing-chapter-title" maxlength="300" placeholder="Capítulo 1 — La primera señal"></label>
+<label class="writing-field">Texto generado o editado<textarea id="writing-response" class="writing-textarea" maxlength="100000" placeholder="Pegá aquí la respuesta de la IA. No se guarda hasta pulsar el botón."></textarea></label>
+<div class="reader-actions"><button id="writing-save-chapter" class="primary" type="button">Guardar como borrador versionado</button><button id="writing-new-chapter" class="secondary" type="button">Nuevo borrador</button></div>
+<div id="writing-chapter-status" class="sub small" role="status" aria-live="polite"></div>
+</section>
+<section class="reading-pane">
+<h3>Borradores guardados</h3>
+<p class="sub small">Los cambios guardan una nueva versión. Los borradores nunca se convierten automáticamente en canon.</p>
+<div id="writing-chapter-list" class="empty">No hay borradores guardados.</div>
+</section>
+</div>
+</section>
+</section>
 <section id="reader"><div class="reader-head"><button id="back" class="quiet" type="button">← Biblioteca</button><h2 id="book-title">Leyendo</h2><button id="toggle-glossary" class="secondary" type="button">Glosario</button><label class="small">Texto <select id="font-size" aria-label="Tamaño del texto"><option value="17">Pequeño</option><option value="19" selected>Mediano</option><option value="22">Grande</option><option value="26">Muy grande</option></select></label></div>
 <div class="chapter-nav"><button id="previous" class="secondary" type="button">← Anterior</button><select id="chapter-select" aria-label="Elegir capítulo"></select><button id="next" class="secondary" type="button">Siguiente →</button></div>
 <div class="reader-grid"><section class="reading-pane"><h3>Original</h3><div id="original" class="original-text" tabindex="0"></div></section><section class="reading-pane"><h3>Traducción</h3><p class="sub small">El original permanece intacto. Tus cambios se guardan aparte.</p><textarea id="translation" class="translation-text" aria-label="Texto de traducción" placeholder="Escribí o pegá aquí tu traducción…"></textarea><div class="reader-actions"><button id="save-translation" class="primary" type="button">Guardar traducción</button><button id="offline-rules-open" class="secondary" type="button">Reglas offline</button><button id="export-epub" class="secondary" type="button">Exportar EPUB</button><button id="show-history" class="secondary" type="button">Historial</button><button id="translation-memory-open" class="secondary" type="button">Memoria de traducción</button><span id="save-status" class="sub small" role="status" aria-live="polite"></span></div><p class="sub small">Cada guardado conserva una versión anterior.</p>
@@ -3048,7 +3114,7 @@ $('#refresh-backups').addEventListener('click',loadBackups);
 $('#restore-backup').addEventListener('click',async()=>{const name=$('#backup-select').value;if(!name)return;if(!confirm('La restauración reemplazará la biblioteca actual con el estado de esta copia. Antes se guardará una copia de seguridad del estado actual. ¿Continuar?'))return;const button=$('#restore-backup');button.disabled=true;$('#backup-status').textContent='Validando y restaurando…';try{const result=await api('/api/backups/'+encodeURIComponent(name)+'/restore',{method:'POST'});$('#backup-status').textContent='Biblioteca restaurada. Copia de seguridad del estado anterior: '+result.safety_backup+'.';await refresh();await loadBackups()}catch(e){$('#backup-status').textContent='No se pudo restaurar: '+e.message}finally{button.disabled=false}});
 
 $('#upload').addEventListener('submit',async e=>{e.preventDefault();const file=$('#file').files[0];if(!file)return;$('#status').textContent='Importando y preparando el libro…';const data=new FormData();data.append('file',file);try{const result=await api('/api/books/import',{method:'POST',body:data});$('#status').textContent='“'+result.title+'” se importó correctamente ('+result.chapter_count+' secciones).';e.target.reset();await refresh()}catch(err){$('#status').textContent=err.message}});
-async function openBook(id,preferred=0){try{const books=await api('/api/books');currentBook=books.find(b=>b.id===id);if(!currentBook)throw new Error('No se encontró la novela');chapters=await api('/api/books/'+id+'/chapters');if(!chapters.length)throw new Error('La novela no contiene secciones legibles');chapterPos=Math.max(0,Math.min(preferred,chapters.length-1));$('#book-title').textContent=currentBook.title;$('#chapter-select').innerHTML=chapters.map((c,i)=>'<option value="'+i+'">'+(i+1)+'. '+esc(c.title)+'</option>').join('');$('#library').classList.add('hidden');$('#reader').style.display='block';renderChapter(true)}catch(e){$('#status').textContent=e.message}}
+async function openBook(id,preferred=0){try{const books=await api('/api/books');currentBook=books.find(b=>b.id===id);if(!currentBook)throw new Error('No se encontró la novela');chapters=await api('/api/books/'+id+'/chapters');if(!chapters.length)throw new Error('La novela no contiene secciones legibles');chapterPos=Math.max(0,Math.min(preferred,chapters.length-1));$('#book-title').textContent=currentBook.title;$('#chapter-select').innerHTML=chapters.map((c,i)=>'<option value="'+i+'">'+(i+1)+'. '+esc(c.title)+'</option>').join('');$('#library').classList.add('hidden');$('#writing-studio').classList.add('hidden');$('#top-nav').classList.add('hidden');$('#reader').style.display='block';renderChapter(true)}catch(e){$('#status').textContent=e.message}}
 function renderChapter(restore){const c=chapters[chapterPos];if(!c)return;translationDirty=false;$('#chapter-select').value=String(chapterPos);$('#original').textContent=c.original_text;$('#translation').value=c.translated_text||'';$('#previous').disabled=chapterPos===0;$('#next').disabled=chapterPos===chapters.length-1;$('#save-status').textContent='';$('#original').scrollTop=0;if(restore){let p={};try{p=JSON.parse(currentBook.current_location||'{}')}catch{}if(p.chapter_index===chapterPos&&Number.isFinite(p.scroll_top))$('#original').scrollTop=p.scroll_top}saveProgress()}
 function goToChapter(i){if(i<0||i>=chapters.length)return;if(translationDirty&&!confirm('Hay cambios de traducción sin guardar. ¿Descartarlos y cambiar de capítulo?'))return;translationDirty=false;chapterPos=i;renderChapter(false)}
 $('#chapter-select').addEventListener('change',e=>goToChapter(Number(e.target.value)));$('#previous').addEventListener('click',()=>goToChapter(chapterPos-1));$('#next').addEventListener('click',()=>goToChapter(chapterPos+1));
@@ -3137,7 +3203,7 @@ $('#glossary-candidates-list').addEventListener('click',async e=>{
   }catch(err){$('#glossary-candidate-status').textContent='No se pudo guardar: '+err.message}
 });
 $('#font-size').addEventListener('change',e=>{const size=Number(e.target.value);$('#original').style.fontSize=size+'px';$('#translation').style.fontSize=size+'px'});
-$('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay cambios de traducción sin guardar. ¿Salir sin guardarlos?'))return;try{await persistProgressNow()}catch(e){$('#save-status').textContent='No se pudo guardar el progreso: '+e.message;return}translationDirty=false;$('#reader').style.display='none';$('#library').classList.remove('hidden');await refresh()});
+$('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay cambios de traducción sin guardar. ¿Salir sin guardarlos?'))return;try{await persistProgressNow()}catch(e){$('#save-status').textContent='No se pudo guardar el progreso: '+e.message;return}translationDirty=false;$('#reader').style.display='none';$('#top-nav').classList.remove('hidden');$('#writing-studio').classList.add('hidden');$('#library').classList.remove('hidden');await refresh()});
 
 /* Manual narrative-assistance micro-window: no network calls or provider-session automation. */
 (function installNarrativeAssistant() {
@@ -3330,6 +3396,123 @@ $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay
     $('#save-status').textContent = 'Propuesta de memoria transferida al editor; todavía no se guardó.';
     $('#translation-memory-status').textContent = 'Propuesta transferida al editor. Revisala y guardala explícitamente cuando estés conforme.';
   });
+
+
+/* Taller de novela: memoria estructurada local, prompts manuales y borradores versionados. */
+let currentWritingProjectId=null,currentWritingChapterId=null,currentWritingPrompt=null;
+function writingStatus(id,message){const el=$('#'+id);if(el)el.textContent=message||''}
+function resetWritingEditor(){currentWritingChapterId=null;$('#writing-chapter-title').value='';$('#writing-response').value='';writingStatus('writing-chapter-status','Nuevo borrador. No hay cambios guardados.')}
+async function loadWritingProjects(preferredId=null){
+  try{
+    const projects=await api('/api/writing/projects');
+    const select=$('#writing-project-select');const previous=preferredId||currentWritingProjectId||select.value;
+    select.innerHTML=projects.length?projects.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.title)+'</option>').join(''):'<option value="">Todavía no hay proyectos</option>';
+    if(!projects.length){currentWritingProjectId=null;$('#writing-memory-list').textContent='Creá un proyecto para registrar lore, personajes y decisiones.';$('#writing-chapter-list').textContent='Todavía no hay borradores.';writingStatus('writing-project-status','Creá tu primer proyecto. Se guardará localmente.');return}
+    currentWritingProjectId=projects.some(p=>p.id===previous)?previous:projects[0].id;select.value=currentWritingProjectId;
+    await loadWritingProjectData();
+  }catch(e){writingStatus('writing-project-status','No se pudieron cargar los proyectos: '+e.message)}
+}
+async function loadWritingProjectData(){
+  if(!currentWritingProjectId)return;
+  try{
+    const [project,memory,chapters]=await Promise.all([
+      api('/api/writing/projects/'+currentWritingProjectId),
+      api('/api/writing/projects/'+currentWritingProjectId+'/memory'),
+      api('/api/writing/projects/'+currentWritingProjectId+'/chapters')
+    ]);
+    writingStatus('writing-project-status',project.genre+' · '+project.language+' · '+memory.filter(m=>m.status==='approved').length+' fichas aprobadas · '+chapters.length+' borradores/versiones actuales.');
+    $('#writing-memory-list').className=memory.length?'':'empty';
+    $('#writing-memory-list').innerHTML=memory.length?memory.map(m=>{
+      const actions=[];
+      if(m.status!=='approved')actions.push('<button class="secondary" type="button" data-memory-id="'+esc(m.id)+'" data-memory-status="approved">Aprobar canon</button>');
+      if(m.status!=='rejected')actions.push('<button class="quiet" type="button" data-memory-id="'+esc(m.id)+'" data-memory-status="rejected">Rechazar</button>');
+      if(m.status!=='conflict')actions.push('<button class="quiet" type="button" data-memory-id="'+esc(m.id)+'" data-memory-status="conflict">Marcar conflicto</button>');
+      return '<article class="writing-memory-item"><div class="writing-item-title"><strong>'+esc(m.title)+'</strong><span class="pill">'+esc(m.kind)+'</span><span class="pill">'+esc(m.status)+'</span></div><div class="writing-memory-preview">'+esc(m.content)+'</div><div class="writing-muted">Palabras clave: '+esc(m.keywords||'—')+' · Procedencia: '+esc(m.source_ref||'No registrada')+'</div><div class="writing-item-actions">'+actions.join('')+'</div></article>';
+    }).join(''):'<div class="empty">Este proyecto todavía no tiene fichas de memoria.</div>';
+    $('#writing-chapter-list').className=chapters.length?'':'empty';
+    $('#writing-chapter-list').innerHTML=chapters.length?chapters.map(c=>'<article class="writing-chapter-item"><strong>Cap. '+c.chapter_number+' — '+esc(c.title)+'</strong><div class="writing-muted">Versión '+c.current_version+' · '+esc(c.status)+' · '+esc(c.updated_at)+'</div><div class="writing-item-actions"><button class="secondary" type="button" data-load-writing-chapter="'+esc(c.id)+'">Abrir borrador</button></div></article>').join(''):'No hay borradores guardados.';
+    writingStatus('writing-memory-status','Memoria cargada. Solo las fichas aprobadas se incluyen en el prompt.');
+  }catch(e){writingStatus('writing-project-status','No se pudo cargar este proyecto: '+e.message)}
+}
+$('#nav-library').addEventListener('click',()=>{
+  $('#writing-studio').classList.add('hidden');$('#library').classList.remove('hidden');$('#reader').style.display='none';
+});
+$('#nav-writing').addEventListener('click',async()=>{
+  $('#reader').style.display='none';$('#library').classList.add('hidden');$('#writing-studio').classList.remove('hidden');await loadWritingProjects();
+});
+$('#writing-project-select').addEventListener('change',async e=>{
+  currentWritingProjectId=e.target.value;currentWritingChapterId=null;currentWritingPrompt=null;$('#writing-prompt').value='';$('#writing-response').value='';$('#writing-chapter-title').value='';await loadWritingProjectData();
+});
+$('#writing-project-form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  try{
+    const project=await api('/api/writing/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      title:$('#writing-project-title').value,genre:$('#writing-project-genre').value,language:$('#writing-project-language').value,style_guide:$('#writing-project-style').value
+    })});
+    e.target.reset();writingStatus('writing-project-status','Proyecto creado y guardado localmente.');await loadWritingProjects(project.id);
+  }catch(err){writingStatus('writing-project-status','No se pudo crear el proyecto: '+err.message)}
+});
+$('#writing-memory-form').addEventListener('submit',async e=>{
+  e.preventDefault();if(!currentWritingProjectId){writingStatus('writing-memory-status','Primero creá o seleccioná un proyecto.');return}
+  try{
+    await api('/api/writing/projects/'+currentWritingProjectId+'/memory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      kind:$('#writing-memory-kind').value,title:$('#writing-memory-title').value,content:$('#writing-memory-content').value,keywords:$('#writing-memory-keywords').value,source_ref:$('#writing-memory-source').value
+    })});
+    $('#writing-memory-title').value='';$('#writing-memory-content').value='';$('#writing-memory-keywords').value='';$('#writing-memory-source').value='';
+    writingStatus('writing-memory-status','Ficha guardada como PROPUESTA. Revisala y aprobala para incluirla como canon.');
+    await loadWritingProjectData();
+  }catch(err){writingStatus('writing-memory-status','No se pudo guardar la ficha: '+err.message)}
+});
+$('#writing-memory-list').addEventListener('click',async e=>{
+  const button=e.target.closest('[data-memory-id][data-memory-status]');if(!button)return;
+  try{
+    await api('/api/writing/memory/'+button.dataset.memoryId+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:button.dataset.memoryStatus})});
+    writingStatus('writing-memory-status','Estado actualizado a '+button.dataset.memoryStatus+'.');
+    await loadWritingProjectData();
+  }catch(err){writingStatus('writing-memory-status','No se pudo actualizar el estado: '+err.message)}
+});
+$('#writing-build-prompt').addEventListener('click',async()=>{
+  if(!currentWritingProjectId){writingStatus('writing-prompt-status','Primero creá o seleccioná un proyecto.');return}
+  const instruction=$('#writing-task').value.trim();if(!instruction){writingStatus('writing-prompt-status','Escribí la tarea que debe realizar el bot.');return}
+  try{
+    const result=await api('/api/writing/projects/'+currentWritingProjectId+'/prompt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:$('#writing-role').value,user_instruction:instruction})});
+    currentWritingPrompt=result.prompt;$('#writing-prompt').value=result.prompt;
+    $('#writing-memory-used').textContent='Memoria incluida: '+result.memory_count+' fichas aprobadas'+(result.memory_used.length?' — '+result.memory_used.map(m=>m.title+' ['+m.id.slice(0,8)+']').join('; '):' — no se encontraron fichas aprobadas pertinentes')+'. El prompt todavía no se ha enviado.';
+    writingStatus('writing-prompt-status','Prompt preparado. Revisalo, copialo y enviá el texto manualmente. No hubo una llamada automática al proveedor.');
+  }catch(err){writingStatus('writing-prompt-status','No se pudo preparar el prompt: '+err.message)}
+});
+$('#writing-open-provider').addEventListener('click',async()=>{
+  try{const result=await api('/api/premium-browser/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:$('#writing-provider').value})});writingStatus('writing-prompt-status',result.message+' Pegá manualmente el prompt y la respuesta.');}
+  catch(err){writingStatus('writing-prompt-status',err.message)}
+});
+$('#writing-copy-prompt').addEventListener('click',async()=>{
+  if(!currentWritingPrompt){writingStatus('writing-prompt-status','Primero prepará un prompt.');return}
+  try{await navigator.clipboard.writeText(currentWritingPrompt);writingStatus('writing-prompt-status','Prompt copiado. Enviá el texto manualmente en la sesión abierta.');}
+  catch(err){$('#writing-prompt').focus();$('#writing-prompt').select();writingStatus('writing-prompt-status','No se pudo copiar automáticamente; el prompt quedó seleccionado para copiarlo manualmente.')}
+});
+$('#writing-save-chapter').addEventListener('click',async()=>{
+  if(!currentWritingProjectId){writingStatus('writing-chapter-status','Primero creá o seleccioná un proyecto.');return}
+  const title=$('#writing-chapter-title').value.trim(),content=$('#writing-response').value;
+  if(!title||!content.trim()){writingStatus('writing-chapter-status','Escribí un título y contenido antes de guardar.');return}
+  try{
+    let saved;
+    if(currentWritingChapterId)saved=await api('/api/writing/chapters/'+currentWritingChapterId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content})});
+    else saved=await api('/api/writing/projects/'+currentWritingProjectId+'/chapters',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content})});
+    currentWritingChapterId=saved.id;
+    writingStatus('writing-chapter-status','Borrador guardado en local. Capítulo '+saved.chapter_number+' · versión '+saved.current_version+' · estado BORRADOR. El canon no cambió.');
+    await loadWritingProjectData();
+  }catch(err){writingStatus('writing-chapter-status','No se pudo guardar el borrador: '+err.message)}
+});
+$('#writing-new-chapter').addEventListener('click',resetWritingEditor);
+$('#writing-chapter-list').addEventListener('click',async e=>{
+  const button=e.target.closest('[data-load-writing-chapter]');if(!button)return;
+  try{
+    const chapter=await api('/api/writing/chapters/'+button.dataset.loadWritingChapter);
+    currentWritingChapterId=chapter.id;$('#writing-chapter-title').value=chapter.title;$('#writing-response').value=chapter.content;
+    writingStatus('writing-chapter-status','Borrador cargado: capítulo '+chapter.chapter_number+' · versión '+chapter.current_version+'. Guardar creará una nueva versión.');
+  }catch(err){writingStatus('writing-chapter-status','No se pudo abrir el borrador: '+err.message)}
+});
+loadWritingProjects();
 
 </script></body></html>'''
 
