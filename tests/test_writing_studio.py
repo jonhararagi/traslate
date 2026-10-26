@@ -150,3 +150,48 @@ def test_writing_api_rejects_unknown_projects_and_blank_memory(tmp_path):
         json={"status": "approved"},
     )
     assert invalid_status.status_code == 404
+
+
+
+def test_editing_approved_memory_reverts_it_to_proposal(tmp_path):
+    client = _client(tmp_path)
+    project = _project(client)
+    created = client.post(
+        f"/api/writing/projects/{project['id']}/memory",
+        json={
+            "kind": "rule",
+            "title": "Magic rule",
+            "content": "The bell can reveal hidden paths.",
+            "keywords": "bell magic",
+            "source_ref": "Author note 1",
+        },
+    )
+    assert created.status_code == 200
+    item = created.json()
+    approved = client.post(f"/api/writing/memory/{item['id']}/status", json={"status": "approved"})
+    assert approved.status_code == 200
+
+    edited = client.put(
+        f"/api/writing/memory/{item['id']}",
+        json={
+            "kind": "rule",
+            "title": "Magic rule revised",
+            "content": "The bell reveals hidden paths only during winter.",
+            "keywords": "bell magic winter",
+            "source_ref": "Author note 2",
+        },
+    )
+    assert edited.status_code == 200
+    value = edited.json()
+    assert value["title"] == "Magic rule revised"
+    assert value["content"] == "The bell reveals hidden paths only during winter."
+    assert value["source_ref"] == "Author note 2"
+    assert value["status"] == "proposed"
+
+    prompt = client.post(
+        f"/api/writing/projects/{project['id']}/prompt",
+        json={"role": "lore_guardian", "user_instruction": "Explain the bell rule in winter."},
+    )
+    assert prompt.status_code == 200
+    assert prompt.json()["memory_count"] == 0
+    assert "only during winter" not in prompt.json()["prompt"]
