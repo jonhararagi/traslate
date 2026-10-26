@@ -63,6 +63,8 @@ No hace falta ejecutar cinco modelos distintos. Para la primera versión convien
 
 Los roles son plantillas de instrucciones y herramientas de memoria, no cinco personalidades que deban ejecutarse simultáneamente. Solo se necesitaría una segunda pasada del modelo cuando el usuario la solicite o cuando una revisión concreta aporte valor.
 
+**La primera implementación permite además crear perfiles de bot propios por proyecto.** Cada perfil guarda nombre, especialidad, proveedor preferido e instrucciones personalizadas. El autor puede seleccionarlo, editarlo o eliminarlo. Esto crea un bot especializado a nivel de instrucciones y memoria de la aplicación; no entrena un modelo nuevo ni convierte esas instrucciones en un mensaje de sistema privado del proveedor. Se le entrega el prompt compuesto cuando el usuario lo copia manualmente.
+
 ## Cómo seleccionar un buen modelo en lugar de aceptar cualquiera
 
 La selección no se debe basar únicamente en popularidad, nombre, contexto máximo o una demostración llamativa. Se debe medir el modelo con tareas idénticas y memoria idéntica.
