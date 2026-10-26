@@ -2875,7 +2875,7 @@ def home() -> str:
 <label class="writing-field">Palabras clave / alias<input id="writing-memory-keywords" maxlength="1000" placeholder="Alias, términos, variaciones"></label>
 <label class="writing-field">Procedencia / evidencia<input id="writing-memory-source" maxlength="1000" placeholder="Capítulo, escena o decisión del autor"></label>
 </div>
-<button class="primary" type="submit">Guardar como propuesta</button>
+<button id="writing-memory-submit" class="primary" type="submit">Guardar como propuesta</button><button id="writing-memory-cancel-edit" class="quiet hidden" type="button">Cancelar edición</button>
 </form>
 <div id="writing-memory-status" class="sub small" role="status" aria-live="polite"></div>
 <div id="writing-memory-list" aria-live="polite" class="empty">Creá o seleccioná un proyecto para ver su memoria.</div>
@@ -3399,7 +3399,7 @@ $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay
 
 
 /* Taller de novela: memoria estructurada local, prompts manuales y borradores versionados. */
-let currentWritingProjectId=null,currentWritingChapterId=null,currentWritingPrompt=null;
+let currentWritingProjectId=null,currentWritingChapterId=null,currentWritingPrompt=null,currentWritingMemoryEditId=null,currentWritingMemoryItems=[];
 function writingStatus(id,message){const el=$('#'+id);if(el)el.textContent=message||''}
 function resetWritingEditor(){currentWritingChapterId=null;$('#writing-chapter-title').value='';$('#writing-response').value='';writingStatus('writing-chapter-status','Nuevo borrador. No hay cambios guardados.')}
 async function loadWritingProjects(preferredId=null){
@@ -3420,10 +3420,11 @@ async function loadWritingProjectData(){
       api('/api/writing/projects/'+currentWritingProjectId+'/memory'),
       api('/api/writing/projects/'+currentWritingProjectId+'/chapters')
     ]);
+    currentWritingMemoryItems=memory;
     writingStatus('writing-project-status',project.genre+' · '+project.language+' · '+memory.filter(m=>m.status==='approved').length+' fichas aprobadas · '+chapters.length+' borradores/versiones actuales.');
     $('#writing-memory-list').className=memory.length?'':'empty';
     $('#writing-memory-list').innerHTML=memory.length?memory.map(m=>{
-      const actions=[];
+      const actions=['<button class="quiet" type="button" data-edit-memory="'+esc(m.id)+'">Editar ficha</button>'];
       if(m.status!=='approved')actions.push('<button class="secondary" type="button" data-memory-id="'+esc(m.id)+'" data-memory-status="approved">Aprobar canon</button>');
       if(m.status!=='rejected')actions.push('<button class="quiet" type="button" data-memory-id="'+esc(m.id)+'" data-memory-status="rejected">Rechazar</button>');
       if(m.status!=='conflict')actions.push('<button class="quiet" type="button" data-memory-id="'+esc(m.id)+'" data-memory-status="conflict">Marcar conflicto</button>');
@@ -3452,18 +3453,33 @@ $('#writing-project-form').addEventListener('submit',async e=>{
     e.target.reset();writingStatus('writing-project-status','Proyecto creado y guardado localmente.');await loadWritingProjects(project.id);
   }catch(err){writingStatus('writing-project-status','No se pudo crear el proyecto: '+err.message)}
 });
+function resetWritingMemoryForm(){
+  currentWritingMemoryEditId=null;$('#writing-memory-form').reset();$('#writing-memory-submit').textContent='Guardar como propuesta';$('#writing-memory-cancel-edit').classList.add('hidden');
+}
 $('#writing-memory-form').addEventListener('submit',async e=>{
   e.preventDefault();if(!currentWritingProjectId){writingStatus('writing-memory-status','Primero creá o seleccioná un proyecto.');return}
+  const payload={kind:$('#writing-memory-kind').value,title:$('#writing-memory-title').value,content:$('#writing-memory-content').value,keywords:$('#writing-memory-keywords').value,source_ref:$('#writing-memory-source').value};
   try{
-    await api('/api/writing/projects/'+currentWritingProjectId+'/memory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      kind:$('#writing-memory-kind').value,title:$('#writing-memory-title').value,content:$('#writing-memory-content').value,keywords:$('#writing-memory-keywords').value,source_ref:$('#writing-memory-source').value
-    })});
-    $('#writing-memory-title').value='';$('#writing-memory-content').value='';$('#writing-memory-keywords').value='';$('#writing-memory-source').value='';
-    writingStatus('writing-memory-status','Ficha guardada como PROPUESTA. Revisala y aprobala para incluirla como canon.');
-    await loadWritingProjectData();
+    if(currentWritingMemoryEditId){
+      await api('/api/writing/memory/'+currentWritingMemoryEditId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      writingStatus('writing-memory-status','Ficha editada y devuelta a PROPUESTA. Debe aprobarse otra vez para volver al canon.');
+    }else{
+      await api('/api/writing/projects/'+currentWritingProjectId+'/memory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      writingStatus('writing-memory-status','Ficha guardada como PROPUESTA. Revisala y aprobala para incluirla como canon.');
+    }
+    resetWritingMemoryForm();await loadWritingProjectData();
   }catch(err){writingStatus('writing-memory-status','No se pudo guardar la ficha: '+err.message)}
 });
+$('#writing-memory-cancel-edit').addEventListener('click',resetWritingMemoryForm);
 $('#writing-memory-list').addEventListener('click',async e=>{
+  const edit=e.target.closest('[data-edit-memory]');
+  if(edit){
+    const item=currentWritingMemoryItems.find(m=>m.id===edit.dataset.editMemory);if(!item)return;
+    currentWritingMemoryEditId=item.id;$('#writing-memory-kind').value=item.kind;$('#writing-memory-title').value=item.title;$('#writing-memory-content').value=item.content;$('#writing-memory-keywords').value=item.keywords||'';$('#writing-memory-source').value=item.source_ref||'';
+    $('#writing-memory-submit').textContent='Guardar cambios como propuesta';$('#writing-memory-cancel-edit').classList.remove('hidden');
+    writingStatus('writing-memory-status','Editando una ficha. Al guardar, volverá a PROPUESTA para evitar cambios silenciosos del canon.');
+    $('#writing-memory-title').focus();return;
+  }
   const button=e.target.closest('[data-memory-id][data-memory-status]');if(!button)return;
   try{
     await api('/api/writing/memory/'+button.dataset.memoryId+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:button.dataset.memoryStatus})});
