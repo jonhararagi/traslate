@@ -142,3 +142,17 @@ Imported records are always downgraded to `draft`, regardless of the status clai
 The API endpoints are `POST /api/books/{book_id}/translation-memory/import`, `GET /api/books/{book_id}/translation-memory`, `POST /api/books/{book_id}/translation-memory/preview`, and per-segment `approve`/`reject` actions under `/api/books/{book_id}/translation-memory/{entry_id}/`. Listing returns metadata only, not source/target prose; the preview endpoint returns text only for the user's local review.
 
 The first-novel page-aligned pack belongs in the private `jonhararagi/noveltrad-novel-lab` repository and is intentionally **not** copied into this public code repository. Tests use synthetic text, not novel excerpts. A passing automated test suite verifies import, validation and preview mechanics; it does not establish translation quality or replace Windows/manual chapter review.
+
+
+## Taller de novela con memoria interna (en revisión en PR #18)
+
+La rama de desarrollo añade un panel separado del lector/traductor para escribir una obra original:
+
+1. Pulsa **Taller de novela** en la cabecera y crea un proyecto con género, idioma y guía de estilo.
+2. Añade fichas de personajes, lugares, reglas del mundo, cronología, objetos, relaciones y pistas. Las fichas nuevas empiezan como **propuestas**; solo las aprobadas entran en el contexto de escritura.
+3. Elige uno de los perfiles de tarea (coautor, guardián del lore, editor de continuidad, editor de idioma o planificador), redacta la instrucción y selecciona ChatGPT o Gemini.
+4. Pulsa **Preparar prompt con memoria**, revisa las fichas listadas, abre el proveedor y copia/envía manualmente el prompt. NovelTrad no envía texto automáticamente.
+5. Pega la respuesta y guárdala como borrador de capítulo. Las ediciones crean versiones; el canon no se altera cuando se guarda un capítulo.
+6. En el panel de memoria, editar una ficha aprobada la devuelve a propuesta para que deba aprobarse otra vez.
+
+La memoria y los borradores se guardan en la SQLite local del programa. El prompt incluye solo un conjunto acotado de fichas aprobadas seleccionadas por coincidencia de términos; todavía no utiliza búsqueda semántica/embeddings. La función es un primer MVP en la rama del [PR #18](https://github.com/jonhararagi/traslate/pull/18), no una función incluida en `main` hasta que se revise y se integre.
