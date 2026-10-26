@@ -150,7 +150,7 @@ La rama de desarrollo añade un panel separado del lector/traductor para escribi
 
 1. Pulsa **Taller de novela** en la cabecera y crea un proyecto con género, idioma y guía de estilo.
 2. Añade fichas de personajes, lugares, reglas del mundo, cronología, objetos, relaciones y pistas. Las fichas nuevas empiezan como **propuestas**; solo las aprobadas entran en el contexto de escritura.
-3. Elige uno de los perfiles de tarea (coautor, guardián del lore, editor de continuidad, editor de idioma o planificador), redacta la instrucción y selecciona ChatGPT o Gemini.
+3. Usa un rol incorporado o crea un bot propio guardando nombre, especialidad, proveedor e instrucciones de personalidad. Los perfiles propios se guardan por proyecto y se pueden reutilizar, editar o eliminar.
 4. Pulsa **Preparar prompt con memoria**, revisa las fichas listadas, abre el proveedor y copia/envía manualmente el prompt. NovelTrad no envía texto automáticamente.
 5. Pega la respuesta y guárdala como borrador de capítulo. Las ediciones crean versiones; el canon no se altera cuando se guarda un capítulo.
 6. En el panel de memoria, editar una ficha aprobada la devuelve a propuesta para que deba aprobarse otra vez.
