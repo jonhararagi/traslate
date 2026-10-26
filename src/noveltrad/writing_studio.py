@@ -6,6 +6,7 @@ translation records. It never calls an AI provider or submits text automatically
 from __future__ import annotations
 
 import re
+import sqlite3
 from contextlib import AbstractContextManager
 from datetime import datetime, timezone
 from typing import Callable
@@ -34,6 +35,18 @@ def _init_tables(connection_factory: ConnectionFactory) -> None:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS writing_bots (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL REFERENCES writing_projects(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                role TEXT NOT NULL CHECK(role IN ('coauthor','lore_guardian','continuity_editor','language_editor','planner')),
+                provider TEXT NOT NULL DEFAULT 'chatgpt' CHECK(provider IN ('chatgpt','gemini')),
+                instructions TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE(project_id, name)
+            );
+            CREATE INDEX IF NOT EXISTS idx_writing_bots_project ON writing_bots(project_id, updated_at DESC);
             CREATE TABLE IF NOT EXISTS writing_memory_items (
                 id TEXT PRIMARY KEY,
                 project_id TEXT NOT NULL REFERENCES writing_projects(id) ON DELETE CASCADE,
@@ -146,8 +159,21 @@ class WritingChapterEditInput(BaseModel):
         return value
 
 
+class WritingBotInput(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    role: str = Field(default='coauthor', pattern='^(coauthor|lore_guardian|continuity_editor|language_editor|planner)$')
+    provider: str = Field(default='chatgpt', pattern='^(chatgpt|gemini)$')
+    instructions: str = Field(default='', max_length=6000)
+
+    @field_validator('name', 'instructions', mode='before')
+    @classmethod
+    def normalize_bot_fields(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
+
 class WritingPromptInput(BaseModel):
     role: str = Field(default='coauthor', pattern='^(coauthor|lore_guardian|continuity_editor|language_editor|planner)$')
+    bot_id: str | None = Field(default=None, max_length=80)
     user_instruction: str = Field(min_length=1, max_length=8000)
 
     @field_validator('user_instruction')
@@ -263,6 +289,60 @@ def install_writing_studio_routes(app: FastAPI, connection_factory: ConnectionFa
         ensure_tables()
         with connection_factory() as conn:
             return dict(require_project(conn, project_id))
+
+    @app.get('/api/writing/projects/{project_id}/bots')
+    def list_writing_bots(project_id: str) -> list[dict[str, object]]:
+        ensure_tables()
+        with connection_factory() as conn:
+            require_project(conn, project_id)
+            rows = conn.execute(
+                'SELECT * FROM writing_bots WHERE project_id=? ORDER BY updated_at DESC, name COLLATE NOCASE',
+                (project_id,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    @app.post('/api/writing/projects/{project_id}/bots')
+    def create_writing_bot(project_id: str, payload: WritingBotInput) -> dict[str, object]:
+        ensure_tables()
+        now = _now()
+        bot_id = str(uuid4())
+        with connection_factory() as conn:
+            require_project(conn, project_id)
+            try:
+                conn.execute(
+                    'INSERT INTO writing_bots(id,project_id,name,role,provider,instructions,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)',
+                    (bot_id, project_id, payload.name, payload.role, payload.provider, payload.instructions, now, now),
+                )
+            except sqlite3.IntegrityError as exc:
+                raise HTTPException(status_code=409, detail='Ya existe un bot con ese nombre en este proyecto.') from exc
+            row = conn.execute('SELECT * FROM writing_bots WHERE id=?', (bot_id,)).fetchone()
+            return dict(row)
+
+    @app.put('/api/writing/bots/{bot_id}')
+    def update_writing_bot(bot_id: str, payload: WritingBotInput) -> dict[str, object]:
+        ensure_tables()
+        with connection_factory() as conn:
+            row = conn.execute('SELECT * FROM writing_bots WHERE id=?', (bot_id,)).fetchone()
+            if row is None:
+                raise HTTPException(status_code=404, detail='No se encontró el perfil de bot.')
+            try:
+                conn.execute(
+                    'UPDATE writing_bots SET name=?,role=?,provider=?,instructions=?,updated_at=? WHERE id=?',
+                    (payload.name, payload.role, payload.provider, payload.instructions, _now(), bot_id),
+                )
+            except sqlite3.IntegrityError as exc:
+                raise HTTPException(status_code=409, detail='Ya existe otro bot con ese nombre en este proyecto.') from exc
+            updated = conn.execute('SELECT * FROM writing_bots WHERE id=?', (bot_id,)).fetchone()
+            return dict(updated)
+
+    @app.delete('/api/writing/bots/{bot_id}')
+    def delete_writing_bot(bot_id: str) -> dict[str, object]:
+        ensure_tables()
+        with connection_factory() as conn:
+            deleted = conn.execute('DELETE FROM writing_bots WHERE id=?', (bot_id,)).rowcount
+            if not deleted:
+                raise HTTPException(status_code=404, detail='No se encontró el perfil de bot.')
+        return {'id': bot_id, 'deleted': True}
 
     @app.get('/api/writing/projects/{project_id}/memory')
     def list_writing_memory(project_id: str) -> list[dict[str, object]]:
@@ -410,14 +490,24 @@ def install_writing_studio_routes(app: FastAPI, connection_factory: ConnectionFa
     @app.post('/api/writing/projects/{project_id}/prompt')
     def build_writing_prompt(project_id: str, payload: WritingPromptInput) -> dict[str, object]:
         ensure_tables()
+        bot = None
         with connection_factory() as conn:
             project = dict(require_project(conn, project_id))
+            if payload.bot_id:
+                bot_row = conn.execute(
+                    'SELECT * FROM writing_bots WHERE id=? AND project_id=?',
+                    (payload.bot_id, project_id),
+                ).fetchone()
+                if bot_row is None:
+                    raise HTTPException(status_code=404, detail='El bot seleccionado no pertenece a este proyecto o ya no existe.')
+                bot = dict(bot_row)
             memory_rows = conn.execute(
                 'SELECT id,kind,title,content,keywords,source_ref,status,created_at,updated_at '
                 'FROM writing_memory_items WHERE project_id=? AND status=\'approved\'',
                 (project_id,),
             ).fetchall()
             approved = [dict(row) for row in memory_rows]
+        role = bot['role'] if bot else payload.role
         selected = _select_memories(approved, payload.user_instruction)
         language_label = {'es': 'español', 'en': 'inglés', 'ja': 'japonés', 'ko': 'coreano', 'other': 'el idioma configurado por el autor'}.get(project['language'], 'español')
         parts = [
@@ -426,7 +516,8 @@ def install_writing_studio_routes(app: FastAPI, connection_factory: ConnectionFa
             f"Género: {project.get('genre') or 'no especificado'}",
             f"Idioma de salida: {language_label}",
             'Guía de estilo aprobada por el autor:\n' + (project.get('style_guide') or 'No hay guía específica guardada; pide aclaración si la voz o el estilo resulta esencial.'),
-            'Rol solicitado:\n' + ROLE_INSTRUCTIONS[payload.role],
+            'Rol solicitado:\n' + ROLE_INSTRUCTIONS[role],
+            ('Perfil de bot elegido:\\nNombre: ' + bot['name'] + '\\nProveedor previsto: ' + bot['provider'] + '\\nInstrucciones adicionales del autor (subordinadas al canon aprobado):\\n' + (bot['instructions'] or 'Sin instrucciones adicionales.')) if bot else 'Perfil de bot: preset incorporado, sin personalidad adicional guardada.',
             'Memoria interna aprobada (solo estos hechos están confirmados como canon para esta tarea):',
         ]
         if selected:
@@ -443,7 +534,8 @@ def install_writing_studio_routes(app: FastAPI, connection_factory: ConnectionFa
         prompt = '\n\n'.join(parts)
         return {
             'project_id': project_id,
-            'role': payload.role,
+            'role': role,
+            'bot': ({'id': bot['id'], 'name': bot['name'], 'provider': bot['provider']} if bot else None),
             'prompt': prompt,
             'memory_used': [
                 {'id': item['id'], 'kind': item['kind'], 'title': item['title'], 'source_ref': item['source_ref']}
