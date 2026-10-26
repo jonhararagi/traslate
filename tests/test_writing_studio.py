@@ -195,3 +195,72 @@ def test_editing_approved_memory_reverts_it_to_proposal(tmp_path):
     assert prompt.status_code == 200
     assert prompt.json()["memory_count"] == 0
     assert "only during winter" not in prompt.json()["prompt"]
+
+
+
+def test_custom_bot_profile_is_persistent_and_controls_prompt_role(tmp_path):
+    client = _client(tmp_path)
+    project = _project(client)
+    created = client.post(
+        f"/api/writing/projects/{project['id']}/bots",
+        json={
+            "name": "Cronista sobrio",
+            "role": "continuity_editor",
+            "provider": "gemini",
+            "instructions": "Usa frases cortas. Nunca completes un vacío de canon con una suposición.",
+        },
+    )
+    assert created.status_code == 200
+    bot = created.json()
+    assert bot["name"] == "Cronista sobrio"
+    assert bot["provider"] == "gemini"
+
+    listed = client.get(f"/api/writing/projects/{project['id']}/bots")
+    assert listed.status_code == 200
+    assert any(entry["id"] == bot["id"] for entry in listed.json())
+
+    prompt = client.post(
+        f"/api/writing/projects/{project['id']}/prompt",
+        json={
+            "role": "coauthor",
+            "bot_id": bot["id"],
+            "user_instruction": "Revisa si el alcalde causó el silencio de la campana.",
+        },
+    )
+    assert prompt.status_code == 200
+    result = prompt.json()
+    assert result["role"] == "continuity_editor"
+    assert result["bot"]["name"] == "Cronista sobrio"
+    assert "No completes un vacío de canon con una suposición." in result["prompt"]
+    assert "Actúa como editor de continuidad." in result["prompt"]
+    assert result["provider_submission"] == "manual_only"
+
+    edited = client.put(
+        f"/api/writing/bots/{bot['id']}",
+        json={
+            "name": "Cronista preciso",
+            "role": "lore_guardian",
+            "provider": "chatgpt",
+            "instructions": "Contesta solo con evidencia confirmada.",
+        },
+    )
+    assert edited.status_code == 200
+    assert edited.json()["name"] == "Cronista preciso"
+    assert edited.json()["role"] == "lore_guardian"
+
+    updated_prompt = client.post(
+        f"/api/writing/projects/{project['id']}/prompt",
+        json={"role": "coauthor", "bot_id": bot["id"], "user_instruction": "Consulta el canon."},
+    )
+    assert updated_prompt.status_code == 200
+    assert updated_prompt.json()["role"] == "lore_guardian"
+    assert "Contesta solo con evidencia confirmada." in updated_prompt.json()["prompt"]
+
+    deleted = client.delete(f"/api/writing/bots/{bot['id']}")
+    assert deleted.status_code == 200
+    assert deleted.json()["deleted"] is True
+    missing = client.post(
+        f"/api/writing/projects/{project['id']}/prompt",
+        json={"bot_id": bot["id"], "user_instruction": "Consulta el canon."},
+    )
+    assert missing.status_code == 404
