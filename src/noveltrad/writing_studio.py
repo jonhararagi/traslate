@@ -200,12 +200,13 @@ def _tokens(text: str) -> set[str]:
 def _select_memories(rows: list[dict[str, object]], instruction: str, max_items: int = 30, max_chars: int = 16000) -> list[dict[str, object]]:
     query_tokens = _tokens(instruction)
 
-    def rank(row: dict[str, object]) -> tuple[int, str, str]:
+    def score_row(row: dict[str, object]) -> int:
         searchable = ' '.join(str(row.get(key, '')) for key in ('title', 'content', 'keywords', 'kind'))
-        score = len(query_tokens & _tokens(searchable))
-        return (-score, str(row.get('updated_at', '')), str(row.get('id', '')))
+        return len(query_tokens & _tokens(searchable))
 
-    ordered = sorted(rows, key=rank)
+    # Sort ties by recency, but prioritize lexical relevance above recency.
+    ordered = sorted(rows, key=lambda row: str(row.get('updated_at', '')), reverse=True)
+    ordered.sort(key=score_row, reverse=True)
     selected: list[dict[str, object]] = []
     used_chars = 0
     for row in ordered:
@@ -289,6 +290,21 @@ def install_writing_studio_routes(app: FastAPI, connection_factory: ConnectionFa
             )
             row = conn.execute('SELECT * FROM writing_memory_items WHERE id=?', (item_id,)).fetchone()
             return dict(row)
+
+    @app.put('/api/writing/memory/{item_id}')
+    def edit_writing_memory(item_id: str, payload: WritingMemoryInput) -> dict[str, object]:
+        """Editing an approved fact reverts it to proposal so it must be approved again."""
+        ensure_tables()
+        with connection_factory() as conn:
+            row = conn.execute('SELECT id FROM writing_memory_items WHERE id=?', (item_id,)).fetchone()
+            if row is None:
+                raise HTTPException(status_code=404, detail='No se encontró la ficha de memoria.')
+            conn.execute(
+                'UPDATE writing_memory_items SET kind=?,title=?,content=?,keywords=?,source_ref=?,status=\'proposed\',updated_at=? WHERE id=?',
+                (payload.kind, payload.title, payload.content, payload.keywords, payload.source_ref, _now(), item_id),
+            )
+            updated = conn.execute('SELECT * FROM writing_memory_items WHERE id=?', (item_id,)).fetchone()
+            return dict(updated)
 
     @app.post('/api/writing/memory/{item_id}/status')
     def update_writing_memory_status(item_id: str, payload: WritingMemoryStatusInput) -> dict[str, object]:
