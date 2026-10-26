@@ -2883,9 +2883,24 @@ def home() -> str:
 </div>
 <section class="panel">
 <h2>3. Asistente de escritura</h2>
-<p class="sub">Elegí un rol y un proveedor. El programa reúne la guía de estilo y hasta 30 fichas aprobadas relevantes; muestra el prompt para que lo envíes manualmente desde tu cuenta.</p>
+<p class="sub">Podés usar un rol incorporado o crear tus propios bots con instrucciones de personalidad. Cada bot usa la memoria aprobada del proyecto; cambiar de bot no borra el lore.</p>
+<section class="reading-pane" style="margin-bottom:16px">
+<h3>Crear o editar un bot propio</h3>
+<form id="writing-bot-form">
+<label class="writing-field">Nombre del bot<input id="writing-bot-name" maxlength="120" required placeholder="Ej.: Cronista de fantasía oscura"></label>
 <div class="writing-form-grid">
-<label class="writing-field">Rol del bot<select id="writing-role" class="writing-select"><option value="coauthor">Coautor de escenas</option><option value="lore_guardian">Guardián del lore</option><option value="continuity_editor">Editor de continuidad</option><option value="language_editor">Editor de idioma</option><option value="planner">Planificador de tramas</option></select></label>
+<label class="writing-field">Especialidad<select id="writing-bot-role" class="writing-select"><option value="coauthor">Coautor de escenas</option><option value="lore_guardian">Guardián del lore</option><option value="continuity_editor">Editor de continuidad</option><option value="language_editor">Editor de idioma</option><option value="planner">Planificador de tramas</option></select></label>
+<label class="writing-field">Proveedor<select id="writing-bot-provider" class="writing-select"><option value="chatgpt">ChatGPT (cuenta en Chromium)</option><option value="gemini">Gemini (cuenta en Chromium)</option></select></label>
+</div>
+<label class="writing-field">Personalidad e instrucciones propias<textarea id="writing-bot-instructions" maxlength="6000" placeholder="Ej.: analítico, directo, mantiene diálogos distintos; no inventa canon; entrega propuestas con evidencia."></textarea></label>
+<div class="reader-actions"><button id="writing-bot-save" class="primary" type="submit">Guardar bot</button><button id="writing-bot-cancel" class="quiet hidden" type="button">Cancelar edición</button></div>
+</form>
+<div id="writing-bot-status" class="sub small" role="status" aria-live="polite"></div>
+<div id="writing-bot-list" class="empty">Todavía no hay bots propios en este proyecto.</div>
+</section>
+<div class="writing-form-grid">
+<label class="writing-field">Bot a utilizar<select id="writing-bot-select" class="writing-select"><option value="">Usar un rol incorporado</option></select></label>
+<label class="writing-field">Rol incorporado<select id="writing-role" class="writing-select"><option value="coauthor">Coautor de escenas</option><option value="lore_guardian">Guardián del lore</option><option value="continuity_editor">Editor de continuidad</option><option value="language_editor">Editor de idioma</option><option value="planner">Planificador de tramas</option></select></label>
 <label class="writing-field">Proveedor<select id="writing-provider" class="writing-select"><option value="chatgpt">ChatGPT (cuenta en Chromium)</option><option value="gemini">Gemini (cuenta en Chromium)</option></select></label>
 </div>
 <label class="writing-field">Instrucción del autor<textarea id="writing-task" maxlength="8000" required placeholder="Qué quieres escribir o comprobar en esta sesión"></textarea></label>
@@ -3399,7 +3414,7 @@ $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay
 
 
 /* Taller de novela: memoria estructurada local, prompts manuales y borradores versionados. */
-let currentWritingProjectId=null,currentWritingChapterId=null,currentWritingPrompt=null,currentWritingMemoryEditId=null,currentWritingMemoryItems=[];
+let currentWritingProjectId=null,currentWritingChapterId=null,currentWritingPrompt=null,currentWritingMemoryEditId=null,currentWritingMemoryItems=[],currentWritingBots=[],currentWritingBotEditId=null;
 function writingStatus(id,message){const el=$('#'+id);if(el)el.textContent=message||''}
 function resetWritingEditor(){currentWritingChapterId=null;$('#writing-chapter-title').value='';$('#writing-response').value='';writingStatus('writing-chapter-status','Nuevo borrador. No hay cambios guardados.')}
 async function loadWritingProjects(preferredId=null){
@@ -3415,13 +3430,18 @@ async function loadWritingProjects(preferredId=null){
 async function loadWritingProjectData(){
   if(!currentWritingProjectId)return;
   try{
-    const [project,memory,chapters]=await Promise.all([
+    const [project,memory,chapters,bots]=await Promise.all([
       api('/api/writing/projects/'+currentWritingProjectId),
       api('/api/writing/projects/'+currentWritingProjectId+'/memory'),
-      api('/api/writing/projects/'+currentWritingProjectId+'/chapters')
+      api('/api/writing/projects/'+currentWritingProjectId+'/chapters'),
+      api('/api/writing/projects/'+currentWritingProjectId+'/bots')
     ]);
-    currentWritingMemoryItems=memory;
-    writingStatus('writing-project-status',project.genre+' · '+project.language+' · '+memory.filter(m=>m.status==='approved').length+' fichas aprobadas · '+chapters.length+' borradores/versiones actuales.');
+    currentWritingMemoryItems=memory;currentWritingBots=bots;
+    const botSelect=$('#writing-bot-select');const previousBot=botSelect.value;
+    botSelect.innerHTML='<option value="">Usar un rol incorporado</option>'+bots.map(bot=>'<option value="'+esc(bot.id)+'">'+esc(bot.name)+' · '+esc(bot.role)+'</option>').join('');
+    botSelect.value=bots.some(bot=>bot.id===previousBot)?previousBot:'';
+    renderWritingBotList();syncWritingBotSelection();
+    writingStatus('writing-project-status',project.genre+' · '+project.language+' · '+memory.filter(m=>m.status==='approved').length+' fichas aprobadas · '+chapters.length+' borradores · '+bots.length+' bots propios.');
     $('#writing-memory-list').className=memory.length?'':'empty';
     $('#writing-memory-list').innerHTML=memory.length?memory.map(m=>{
       const actions=['<button class="quiet" type="button" data-edit-memory="'+esc(m.id)+'">Editar ficha</button>'];
@@ -3487,11 +3507,56 @@ $('#writing-memory-list').addEventListener('click',async e=>{
     await loadWritingProjectData();
   }catch(err){writingStatus('writing-memory-status','No se pudo actualizar el estado: '+err.message)}
 });
+function resetWritingBotForm(){
+  currentWritingBotEditId=null;$('#writing-bot-form').reset();$('#writing-bot-save').textContent='Guardar bot';$('#writing-bot-cancel').classList.add('hidden');
+}
+function syncWritingBotSelection(){
+  const id=$('#writing-bot-select').value;const bot=currentWritingBots.find(item=>item.id===id);
+  $('#writing-role').disabled=Boolean(bot);$('#writing-provider').disabled=Boolean(bot);
+  if(bot){$('#writing-role').value=bot.role;$('#writing-provider').value=bot.provider;}
+}
+function renderWritingBotList(){
+  const list=$('#writing-bot-list');
+  list.className=currentWritingBots.length?'':'empty';
+  list.innerHTML=currentWritingBots.length?currentWritingBots.map(bot=>'<article class="writing-memory-item"><div class="writing-item-title"><strong>'+esc(bot.name)+'</strong><span class="pill">'+esc(bot.role)+'</span><span class="pill">'+esc(bot.provider)+'</span></div><div class="writing-memory-preview">'+esc(bot.instructions||'Sin instrucciones adicionales.')+'</div><div class="writing-item-actions"><button class="secondary" type="button" data-use-writing-bot="'+esc(bot.id)+'">Usar bot</button><button class="quiet" type="button" data-edit-writing-bot="'+esc(bot.id)+'">Editar</button><button class="quiet" type="button" data-delete-writing-bot="'+esc(bot.id)+'">Eliminar</button></div></article>').join(''):'Todavía no hay bots propios en este proyecto.';
+}
+$('#writing-bot-form').addEventListener('submit',async e=>{
+  e.preventDefault();if(!currentWritingProjectId){writingStatus('writing-bot-status','Primero creá o seleccioná un proyecto.');return}
+  const payload={name:$('#writing-bot-name').value,role:$('#writing-bot-role').value,provider:$('#writing-bot-provider').value,instructions:$('#writing-bot-instructions').value};
+  try{
+    let bot;
+    if(currentWritingBotEditId)bot=await api('/api/writing/bots/'+currentWritingBotEditId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else bot=await api('/api/writing/projects/'+currentWritingProjectId+'/bots',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    writingStatus('writing-bot-status',(currentWritingBotEditId?'Bot actualizado: ':'Bot creado: ')+bot.name+'. Perfil guardado localmente.');
+    currentWritingBotEditId=null;$('#writing-bot-form').reset();$('#writing-bot-save').textContent='Guardar bot';$('#writing-bot-cancel').classList.add('hidden');
+    await loadWritingProjectData();$('#writing-bot-select').value=bot.id;syncWritingBotSelection();
+  }catch(err){writingStatus('writing-bot-status','No se pudo guardar el bot: '+err.message)}
+});
+$('#writing-bot-cancel').addEventListener('click',resetWritingBotForm);
+$('#writing-bot-select').addEventListener('change',syncWritingBotSelection);
+$('#writing-bot-list').addEventListener('click',async e=>{
+  const use=e.target.closest('[data-use-writing-bot]');
+  if(use){$('#writing-bot-select').value=use.dataset.useWritingBot;syncWritingBotSelection();writingStatus('writing-bot-status','Bot seleccionado. El prompt reutilizará su perfil y la memoria aprobada.');return}
+  const edit=e.target.closest('[data-edit-writing-bot]');
+  if(edit){
+    const bot=currentWritingBots.find(item=>item.id===edit.dataset.editWritingBot);if(!bot)return;
+    currentWritingBotEditId=bot.id;$('#writing-bot-name').value=bot.name;$('#writing-bot-role').value=bot.role;$('#writing-bot-provider').value=bot.provider;$('#writing-bot-instructions').value=bot.instructions||'';
+    $('#writing-bot-save').textContent='Guardar cambios';$('#writing-bot-cancel').classList.remove('hidden');
+    writingStatus('writing-bot-status','Editando el perfil '+bot.name+'.');$('#writing-bot-name').focus();return;
+  }
+  const remove=e.target.closest('[data-delete-writing-bot]');
+  if(remove){
+    const bot=currentWritingBots.find(item=>item.id===remove.dataset.deleteWritingBot);if(!bot)return;
+    if(!confirm('¿Eliminar el perfil de bot '+bot.name+'? No se borrarán los proyectos ni el lore.'))return;
+    try{await api('/api/writing/bots/'+bot.id,{method:'DELETE'});if($('#writing-bot-select').value===bot.id)$('#writing-bot-select').value='';await loadWritingProjectData();syncWritingBotSelection();writingStatus('writing-bot-status','Perfil eliminado; la memoria de la novela se conserva.');}
+    catch(err){writingStatus('writing-bot-status','No se pudo eliminar el bot: '+err.message)}
+  }
+});
 $('#writing-build-prompt').addEventListener('click',async()=>{
   if(!currentWritingProjectId){writingStatus('writing-prompt-status','Primero creá o seleccioná un proyecto.');return}
   const instruction=$('#writing-task').value.trim();if(!instruction){writingStatus('writing-prompt-status','Escribí la tarea que debe realizar el bot.');return}
   try{
-    const result=await api('/api/writing/projects/'+currentWritingProjectId+'/prompt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:$('#writing-role').value,user_instruction:instruction})});
+    const result=await api('/api/writing/projects/'+currentWritingProjectId+'/prompt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:$('#writing-role').value,bot_id:$('#writing-bot-select').value||null,user_instruction:instruction})});
     currentWritingPrompt=result.prompt;$('#writing-prompt').value=result.prompt;
     $('#writing-memory-used').textContent='Memoria incluida: '+result.memory_count+' fichas aprobadas'+(result.memory_used.length?' — '+result.memory_used.map(m=>m.title+' ['+m.id.slice(0,8)+']').join('; '):' — no se encontraron fichas aprobadas pertinentes')+'. El prompt todavía no se ha enviado.';
     writingStatus('writing-prompt-status','Prompt preparado. Revisalo, copialo y enviá el texto manualmente. No hubo una llamada automática al proveedor.');
