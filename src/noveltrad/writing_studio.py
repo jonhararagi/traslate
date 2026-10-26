@@ -239,6 +239,8 @@ def _select_memories(rows: list[dict[str, object]], instruction: str, max_items:
         item_cost = len(str(row.get('title', ''))) + len(str(row.get('content', ''))) + len(str(row.get('source_ref', ''))) + 80
         if len(selected) >= max_items:
             break
+        if query_tokens and score_row(row) == 0:
+            continue
         if used_chars + item_cost > max_chars:
             continue
         selected.append(row)
@@ -517,7 +519,7 @@ def install_writing_studio_routes(app: FastAPI, connection_factory: ConnectionFa
             f"Idioma de salida: {language_label}",
             'Guía de estilo aprobada por el autor:\n' + (project.get('style_guide') or 'No hay guía específica guardada; pide aclaración si la voz o el estilo resulta esencial.'),
             'Rol solicitado:\n' + ROLE_INSTRUCTIONS[role],
-            ('Perfil de bot elegido:\\nNombre: ' + bot['name'] + '\\nProveedor previsto: ' + bot['provider'] + '\\nInstrucciones adicionales del autor (subordinadas al canon aprobado):\\n' + (bot['instructions'] or 'Sin instrucciones adicionales.')) if bot else 'Perfil de bot: preset incorporado, sin personalidad adicional guardada.',
+            ('Perfil de bot elegido:\nNombre: ' + bot['name'] + '\nProveedor previsto: ' + bot['provider'] + '\nInstrucciones adicionales del autor (subordinadas al canon aprobado):\n' + (bot['instructions'] or 'Sin instrucciones adicionales.')) if bot else 'Perfil de bot: preset incorporado, sin personalidad adicional guardada.',
             'Memoria interna aprobada (solo estos hechos están confirmados como canon para esta tarea):',
         ]
         if selected:
