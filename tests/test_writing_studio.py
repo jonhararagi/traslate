@@ -231,7 +231,7 @@ def test_custom_bot_profile_is_persistent_and_controls_prompt_role(tmp_path):
     result = prompt.json()
     assert result["role"] == "continuity_editor"
     assert result["bot"]["name"] == "Cronista sobrio"
-    assert "No completes un vacío de canon con una suposición." in result["prompt"]
+    assert "Nunca completes un vacío de canon con una suposición." in result["prompt"]
     assert "Actúa como editor de continuidad." in result["prompt"]
     assert result["provider_submission"] == "manual_only"
 
