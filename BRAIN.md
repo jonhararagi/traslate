@@ -200,3 +200,16 @@ This section supersedes earlier statements above that PR #6 is open or that its 
 - Decision and acceptance criteria: [docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md](docs/PREMIUM_CHROMIUM_CHATGPT_GEMINI.md).
 - Current main still implements an Ollama endpoint under the Premium label. This is an explicit migration gap, not a completed feature. Do not claim the Chromium integration exists until implementation and end-to-end tests land.
 - First implementation should favor visible, user-mediated prompt/result handoff over brittle silent DOM automation. Never store account credentials/cookies or bypass provider controls. Ollama can only remain as a separately named optional mode.
+
+
+## Propuesta en evaluación — Taller de novela con memoria interna (2026-10-26)
+
+El usuario quiere un panel para crear una novela original con un bot de IA y memoria persistente: idioma/estilo, personajes, lore, cronología, tramas, capítulos, historial y control de canon. Esto amplía el foco del lector/traductor actual; debe diseñarse como módulo separado, sin romper lectura ni traducción.
+
+- Investigación y especificación (todavía no implementación): [Estudio de bots, lore y memoria narrativa](docs/ESTUDIO_BOTS_MEMORIA_NOVELA.md).
+- Evaluación repetible, sin declarar ganador antes de medir: [Benchmark de bots para novela](docs/BENCHMARK_BOT_NOVELA.md).
+- Rama de trabajo: `feat/novel-writing-studio-memory-panel`. `main` no se modifica por esta propuesta.
+- Decisión de arquitectura propuesta: un proveedor/modelo elegido por el usuario más perfiles de tarea (coautor, guardián del lore, editor de continuidad, editor de idioma, planificador); memoria SQLite local con estados de canon, procedencia, búsqueda y control de versiones.
+- Las propuestas del modelo deben quedar como borradores. Solo el autor aprueba hechos de canon. Para consultar lore, el bot debe distinguir `ESTABLECIDO`, `NO ESTABLECIDO`, `NO ENCONTRADO` y `CONFLICTO` y exponer la evidencia interna utilizada.
+- Mantener la política vigente: preferir el intercambio visible/manual con ChatGPT o Gemini ya integrado; no enviar texto silenciosamente; no guardar credenciales; no instalar ni mantener un modelo local pesado como requisito en el PC de 16 GB.
+- Estado honesto: estas páginas son investigación/especificación; no significa que el panel esté implementado ni que un modelo haya ganado el benchmark.
