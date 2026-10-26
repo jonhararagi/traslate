@@ -368,12 +368,12 @@ def install_writing_studio_routes(app: FastAPI, connection_factory: ConnectionFa
             current_version = int(row['current_version'])
             next_version = current_version + 1
             conn.execute(
-                'INSERT INTO writing_chapter_versions(id,chapter_id,version_number,title,content,created_at) VALUES (?,?,?,?,?,?)',
-                (str(uuid4()), chapter_id, next_version, row['title'], row['content'], now),
-            )
-            conn.execute(
                 'UPDATE writing_chapters SET title=?,content=?,current_version=?,updated_at=? WHERE id=?',
                 (payload.title, payload.content, next_version, now, chapter_id),
+            )
+            conn.execute(
+                'INSERT INTO writing_chapter_versions(id,chapter_id,version_number,title,content,created_at) VALUES (?,?,?,?,?,?)',
+                (str(uuid4()), chapter_id, next_version, payload.title, payload.content, now),
             )
             updated = conn.execute('SELECT * FROM writing_chapters WHERE id=?', (chapter_id,)).fetchone()
             return dict(updated)
