@@ -137,8 +137,8 @@ def test_retrieval_respects_example_and_total_context_budgets():
         {
             "chapter_ref": f"V02-C{i:03d}",
             "page_index": 1,
-            "source_text": ("Oknodie magic training cursed artifact " * 10).strip(),
-            "target_text": ("Oknodie mantiene el término maldición y entrenamiento " * 10).strip(),
+            "source_text": "Oknodie magic training cursed artifact.",
+            "target_text": "Oknodie: artefacto maldito durante el entrenamiento mágico.",
             "status": "confirmed",
         }
         for i in range(3)
@@ -147,12 +147,12 @@ def test_retrieval_respects_example_and_total_context_budgets():
         "Oknodie magic training cursed artifact",
         entries,
         max_examples=3,
-        max_context_chars=500,
-        max_example_chars=180,
+        max_context_chars=340,
+        max_example_chars=100,
     )
-    assert len(selected) <= 2
+    assert len(selected) == 2
     assert all(item["pair_chars"] <= 180 for item in selected)
-    assert sum(item["pair_chars"] + 120 for item in selected) <= 500
+    assert sum(item["pair_chars"] + 120 for item in selected) <= 340
 
 
 def test_prompt_retrieval_reads_only_confirmed_local_memory(tmp_path):
