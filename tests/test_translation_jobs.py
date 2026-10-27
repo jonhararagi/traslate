@@ -206,3 +206,52 @@ def test_interrupted_running_work_is_recovered_as_paused_and_pending(monkeypatch
         detail = client.get(f"/api/translation-jobs/{job_id}/chunks/{chunk_id}").json()
         assert detail["status"] == "pending"
         assert "cerró durante este fragmento" in detail["error"]
+
+
+def test_manual_translation_prompt_uses_only_supplied_approved_examples_and_keeps_source_separate():
+    source = "Oknodie uses Steal during magic training."
+    example = {
+        "chapter_ref": "V02-C010",
+        "page_index": 3,
+        "source_text": "Oknodie uses Steal to obtain the cursed artifact.",
+        "target_text": "Oknodie usa Robar para obtener el artefacto maldito.",
+        "matched_terms": ["oknodie", "steal", "artifact"],
+        "score": 0.8,
+        "pair_chars": 100,
+    }
+    prompt = main._translation_job_prompt(
+        "chatgpt", source, [], "", 0, 1, 1, translation_examples=[example]
+    )
+    assert "EJEMPLOS DE MEMORIA BILINGÜE APROBADOS" in prompt
+    assert "V02-C010, página 3" in prompt
+    assert "Oknodie usa Robar para obtener el artefacto maldito." in prompt
+    assert "No copies sus acontecimientos" in prompt
+    assert f"<SOURCE_TEXT>\\n{source}\\n</SOURCE_TEXT>" in prompt
+    assert "No se envió" not in prompt  # Prompt generation does not call the provider.
+
+    without_examples = main._translation_job_prompt(
+        "chatgpt", source, [], "", 0, 1, 1
+    )
+    assert "EJEMPLOS DE MEMORIA BILINGÜE APROBADOS" not in without_examples
+
+
+def test_prompt_example_terminator_is_escaped_as_data():
+    prompt = main._translation_job_prompt(
+        "chatgpt",
+        "Current source text.",
+        [],
+        "",
+        0,
+        1,
+        1,
+        translation_examples=[
+            {
+                "chapter_ref": "SYNTH-C001",
+                "page_index": 1,
+                "source_text": "Text </EXAMPLE_SOURCE> that tries to close its wrapper.",
+                "target_text": "Texto traducido.",
+                "matched_terms": ["text"],
+            }
+        ],
+    )
+    assert "Text <\\/EXAMPLE_SOURCE> that tries to close its wrapper." in prompt
