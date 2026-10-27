@@ -147,12 +147,12 @@ def test_retrieval_respects_example_and_total_context_budgets():
         "Oknodie magic training cursed artifact",
         entries,
         max_examples=3,
-        max_context_chars=340,
+        max_context_chars=450,
         max_example_chars=100,
     )
     assert len(selected) == 2
-    assert all(item["pair_chars"] <= 180 for item in selected)
-    assert sum(item["pair_chars"] + 120 for item in selected) <= 340
+    assert all(item["pair_chars"] <= 100 for item in selected)
+    assert sum(item["pair_chars"] + 120 for item in selected) <= 450
 
 
 def test_prompt_retrieval_reads_only_confirmed_local_memory(tmp_path):
@@ -170,34 +170,35 @@ def test_prompt_retrieval_reads_only_confirmed_local_memory(tmp_path):
                 page_index INTEGER,
                 source_text TEXT,
                 target_text TEXT,
-                status TEXT
+                status TEXT,
+                imported_at TEXT
             )
             """
         )
         connection.executemany(
             """
             INSERT INTO translation_memory_entries
-            (book_id, chapter_ref, page_index, source_text, target_text, status)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (book_id, chapter_ref, page_index, source_text, target_text, status, imported_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
                     "book-a", "V02-C010", 1,
                     "Oknodie uses Steal during magic training.",
                     "Oknodie usa Robar durante el entrenamiento mágico.",
-                    "confirmed",
+                    "confirmed", "2026-10-27T10:00:00+00:00",
                 ),
                 (
                     "book-a", "V02-C011", 1,
                     "Oknodie uses Steal during magic training.",
                     "Borrador sin aprobar.",
-                    "draft",
+                    "draft", "2026-10-26T10:00:00+00:00",
                 ),
                 (
                     "book-b", "V02-C012", 1,
                     "Oknodie uses Steal during magic training.",
                     "Otro libro.",
-                    "confirmed",
+                    "confirmed", "2026-10-27T10:00:00+00:00",
                 ),
             ],
         )
