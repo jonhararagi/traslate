@@ -59,7 +59,7 @@ def get_translation_memory_examples_for_prompt(
             SELECT chapter_ref, page_index, source_text, target_text, status
             FROM translation_memory_entries
             WHERE book_id = ? AND status = 'confirmed'
-            ORDER BY chapter_ref, page_index
+            ORDER BY imported_at DESC, chapter_ref, page_index
             LIMIT 5000
             """,
             (book_id,),
