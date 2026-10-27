@@ -21,6 +21,7 @@ from noveltrad.translation_memory import (
     TranslationMemoryPackError,
     choose_complete_memory_match,
     parse_translation_memory_pack,
+    retrieve_confirmed_translation_examples,
 )
 
 
@@ -28,6 +29,54 @@ class TranslationMemoryPreviewInput(BaseModel):
     source_text: str
     chapter_ref: str | None = None
     include_draft: bool = False
+
+
+def get_translation_memory_examples_for_prompt(
+    data_dir: Callable[[], Path | str],
+    book_id: str,
+    source_text: str,
+    *,
+    max_examples: int = 2,
+    max_context_chars: int = 4200,
+) -> list[dict[str, object]]:
+    """Return bounded, approved-only page examples for a translation prompt.
+
+    The database is local to the user's NovelTrad data directory. Missing or
+    not-yet-initialized memory is a normal empty result and does not block
+    translation. Imported drafts are never retrieved as examples.
+    """
+    if not book_id or not source_text.strip():
+        return []
+    database = Path(data_dir()) / "translation_memory.sqlite3"
+    if not database.is_file():
+        return []
+    connection = None
+    try:
+        connection = sqlite3.connect(str(database))
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            """
+            SELECT chapter_ref, page_index, source_text, target_text, status
+            FROM translation_memory_entries
+            WHERE book_id = ? AND status = 'confirmed'
+            ORDER BY chapter_ref, page_index
+            LIMIT 5000
+            """,
+            (book_id,),
+        ).fetchall()
+        entries = [dict(row) for row in rows]
+    except sqlite3.OperationalError:
+        # An uninitialized/older memory store must not break ordinary prompts.
+        return []
+    finally:
+        if connection is not None:
+            connection.close()
+    return retrieve_confirmed_translation_examples(
+        source_text,
+        entries,
+        max_examples=max_examples,
+        max_context_chars=max_context_chars,
+    )
 
 
 def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -> None:
