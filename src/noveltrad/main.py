@@ -3356,7 +3356,105 @@ $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay
       button.disabled = false;
     }
   });
+  async function openTranslationMemoryPageReview(entryId) {
+    if (!currentBook || !entryId) return;
+    const status = $('#translation-memory-page-review-status');
+    status.textContent = 'Cargando la página para cotejo…';
+    try {
+      const result = await api(
+        '/api/books/' + encodeURIComponent(currentBook.id) +
+        '/translation-memory/' + encodeURIComponent(entryId)
+      );
+      const entry = result.entry;
+      selectedTranslationMemoryEntryId = entry.id;
+      selectedTranslationMemoryEntry = entry;
+      const stateLabel = entry.status === 'confirmed' ? 'APROBADA' :
+        entry.status === 'rejected' ? 'RECHAZADA' : 'BORRADOR';
+      $('#translation-memory-page-metadata').textContent =
+        entry.chapter_ref + ' · página ' + entry.page_index + ' de ' + entry.chapter_page_count +
+        ' · Estado: ' + stateLabel +
+        ' · SHA fuente: ' + (entry.source_blob_sha || 'sin SHA') +
+        ' · SHA español: ' + (entry.translation_blob_sha || 'sin SHA');
+      $('#translation-memory-page-source').textContent = entry.source_text || '';
+      $('#translation-memory-page-target').textContent = entry.target_text || '';
+      $('#translation-memory-page-detail').classList.remove('hidden');
+      $('#translation-memory-page-approve').disabled = entry.status !== 'draft';
+      $('#translation-memory-page-reject').disabled = entry.status === 'rejected';
+      status.textContent = entry.status === 'draft'
+        ? 'Cotejá nombres, negaciones, cifras, formato y omisiones contra la fuente antes de aprobar.'
+        : entry.status === 'confirmed'
+          ? 'Esta página está aprobada y puede aportar ejemplos a futuros prompts; no se ha aplicado a un capítulo.'
+          : 'Esta página está rechazada y queda excluida de la recuperación.';
+    } catch (error) {
+      status.textContent = 'No se pudo cargar la página: ' + error.message;
+    }
+  }
+
+  $('#translation-memory-pages-close').addEventListener('click', () => {
+    $('#translation-memory-pages-panel').classList.add('hidden');
+    selectedTranslationMemoryEntryId = '';
+    selectedTranslationMemoryEntry = null;
+  });
+
+  $('#translation-memory-page-list').addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-tm-page-entry]');
+    if (!button || !currentBook) return;
+    await openTranslationMemoryPageReview(button.getAttribute('data-tm-page-entry'));
+  });
+
+  async function submitTranslationMemoryPageDecision(action) {
+    if (!currentBook || !selectedTranslationMemoryEntryId || !selectedTranslationMemoryEntry) return;
+    const entryId = selectedTranslationMemoryEntryId;
+    if (action === 'approve' && selectedTranslationMemoryEntry.status !== 'draft') return;
+    if (action === 'reject' && selectedTranslationMemoryEntry.status === 'rejected') return;
+    const prompt = action === 'approve'
+      ? '¿Confirmás que cotejaste esta página contra la fuente y que la traducción no tiene omisiones ni datos inventados? Solo entonces se usará como ejemplo aprobado.'
+      : '¿Querés rechazar esta página y excluirla de la memoria recuperable?';
+    if (!confirm(prompt)) return;
+    $('#translation-memory-page-approve').disabled = true;
+    $('#translation-memory-page-reject').disabled = true;
+    try {
+      await api(
+        '/api/books/' + encodeURIComponent(currentBook.id) +
+        '/translation-memory/' + encodeURIComponent(entryId) + '/' + action,
+        { method: 'POST' }
+      );
+      await refreshTranslationMemory();
+      await openTranslationMemoryPageReview(entryId);
+      $('#translation-memory-page-review-status').textContent = action === 'approve'
+        ? 'Página confirmada. Queda disponible como ejemplo bilingüe para futuros prompts; no modifica ningún capítulo.'
+        : 'Página rechazada. Ya no se recuperará como ejemplo para futuros prompts.';
+    } catch (error) {
+      $('#translation-memory-page-review-status').textContent = 'No se pudo guardar la decisión: ' + error.message;
+      $('#translation-memory-page-approve').disabled = selectedTranslationMemoryEntry?.status !== 'draft';
+      $('#translation-memory-page-reject').disabled = selectedTranslationMemoryEntry?.status === 'rejected';
+    }
+  }
+
+  $('#translation-memory-page-approve').addEventListener('click', () => submitTranslationMemoryPageDecision('approve'));
+  $('#translation-memory-page-reject').addEventListener('click', () => submitTranslationMemoryPageDecision('reject'));
+
   $('#translation-memory-list').addEventListener('click', async (event) => {
+    const reviewButton = event.target.closest('[data-tm-review-chapter]');
+    if (reviewButton && currentBook) {
+      const chapterRef = reviewButton.getAttribute('data-tm-review-chapter');
+      const entries = translationMemoryEntries
+        .filter(entry => entry.chapter_ref === chapterRef)
+        .sort((a, b) => Number(a.page_index) - Number(b.page_index));
+      const stateLabels = { draft: 'BORRADOR', confirmed: 'APROBADA', rejected: 'RECHAZADA' };
+      $('#translation-memory-pages-panel').classList.remove('hidden');
+      $('#translation-memory-pages-heading').textContent = 'Revisión por página: ' + chapterRef;
+      $('#translation-memory-page-list').innerHTML = entries.map(entry =>
+        '<button class="secondary" type="button" data-tm-page-entry="' + esc(entry.id) + '">' +
+        'Página ' + Number(entry.page_index) + ' · ' + (stateLabels[entry.status] || 'SIN ESTADO') + '</button>'
+      ).join('');
+      $('#translation-memory-page-detail').classList.add('hidden');
+      $('#translation-memory-page-review-status').textContent =
+        'Seleccioná una página. Solo aprobá el par que hayas cotejado con el texto fuente.';
+      selectedTranslationMemoryEntryId = '';
+      selectedTranslationMemoryEntry = null;
+      return;
+    }
     const button = event.target.closest('[data-tm-preview]');
     if (!button || !currentBook) return;
     const chapterRef = button.getAttribute('data-tm-preview');
