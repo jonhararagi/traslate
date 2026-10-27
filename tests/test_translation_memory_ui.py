@@ -17,3 +17,11 @@ def test_reader_exposes_local_translation_memory_import_and_review(tmp_path, mon
     assert 'id="translation-memory-apply"' in html
     assert "Pasar propuesta al editor sin guardar" in html
     assert "no sobrescriben ni guardan la traducción actual" in html
+
+    assert 'id="translation-memory-pages-panel"' in html
+    assert 'id="translation-memory-page-source"' in html
+    assert 'id="translation-memory-page-target"' in html
+    assert 'id="translation-memory-page-approve"' in html
+    assert 'id="translation-memory-page-reject"' in html
+    assert "Aprobar página revisada" in html
+    assert "Solo una página que hayas revisado puede aprobarse" in html

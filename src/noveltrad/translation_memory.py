@@ -193,3 +193,110 @@ def choose_complete_memory_match(
     if len(matches) != 1:
         return None
     return matches[0]
+
+
+_RETRIEVAL_STOPWORDS = {
+    "a", "about", "after", "again", "all", "also", "am", "an", "and", "any",
+    "are", "as", "at", "be", "because", "been", "before", "being", "between",
+    "both", "but", "by", "can", "could", "did", "do", "does", "doing", "down",
+    "during", "each", "few", "for", "from", "further", "had", "has", "have",
+    "having", "he", "her", "here", "hers", "herself", "him", "himself", "his",
+    "how", "i", "if", "in", "into", "is", "it", "its", "itself", "just",
+    "me", "more", "most", "my", "myself", "no", "nor", "not", "now", "of",
+    "off", "on", "once", "only", "or", "other", "our", "ours", "ourselves",
+    "out", "over", "own", "same", "she", "should", "so", "some", "such",
+    "than", "that", "the", "their", "theirs", "them", "themselves", "then",
+    "there", "these", "they", "this", "those", "through", "to", "too", "under",
+    "until", "up", "very", "was", "we", "were", "what", "when", "where",
+    "which", "while", "who", "whom", "why", "will", "with", "would", "you",
+    "your", "yours", "yourself", "yourselves",
+}
+
+
+def _translation_memory_terms(value: str) -> set[str]:
+    """Extract lexical hints for low-cost retrieval; this is not semantic search."""
+    return {
+        token
+        for token in re.findall(r"[a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ'-]{1,}", value.casefold())
+        if len(token) >= 3 and token not in _RETRIEVAL_STOPWORDS
+    }
+
+
+def retrieve_confirmed_translation_examples(
+    source_text: str,
+    entries: list[dict[str, Any]],
+    *,
+    max_examples: int = 2,
+    max_context_chars: int = 4200,
+    max_example_chars: int = 3600,
+    min_shared_terms: int = 2,
+) -> list[dict[str, Any]]:
+    """Select a few approved page pairs with lexical overlap for a translation prompt.
+
+    Retrieval is intentionally conservative and local: it considers confirmed
+    entries only, scores shared non-stopword tokens, excludes an exact source
+    page (which is a memory-match concern rather than an example), and bounds
+    the total context. It does not claim semantic similarity or approve drafts.
+    """
+    if not isinstance(source_text, str) or not source_text.strip():
+        return []
+    if max_examples < 1 or max_context_chars < 1 or max_example_chars < 1:
+        return []
+
+    query_terms = _translation_memory_terms(source_text)
+    if not query_terms:
+        return []
+    normalized_source = normalize_memory_text(source_text)
+    ranked: list[dict[str, Any]] = []
+    for item in entries:
+        if not isinstance(item, dict) or item.get("status") != "confirmed":
+            continue
+        example_source = item.get("source_text")
+        example_target = item.get("target_text")
+        if (
+            not isinstance(example_source, str)
+            or not example_source.strip()
+            or not isinstance(example_target, str)
+            or not example_target.strip()
+        ):
+            continue
+        if normalize_memory_text(example_source) == normalized_source:
+            continue
+        pair_chars = len(example_source) + len(example_target)
+        if pair_chars > max_example_chars:
+            continue
+        terms = _translation_memory_terms(example_source)
+        shared = sorted(query_terms & terms)
+        if len(shared) < min_shared_terms:
+            continue
+        # Normalize overlap by example size so long pages do not win solely
+        # because they contain more words; ties remain deterministic.
+        score = len(shared) / (len(terms) ** 0.5 if terms else 1.0)
+        ranked.append({
+            "chapter_ref": str(item.get("chapter_ref") or item.get("chapter_id") or ""),
+            "page_index": int(item.get("page_index") or 0),
+            "source_text": example_source,
+            "target_text": example_target,
+            "matched_terms": shared,
+            "score": round(score, 6),
+            "pair_chars": pair_chars,
+        })
+
+    ranked.sort(key=lambda item: (
+        -float(item["score"]),
+        -len(item["matched_terms"]),
+        str(item["chapter_ref"]),
+        int(item["page_index"]),
+    ))
+    selected: list[dict[str, Any]] = []
+    total_chars = 0
+    for item in ranked:
+        # Fixed framing overhead keeps the context limit meaningful.
+        framed_chars = int(item["pair_chars"]) + 120
+        if total_chars + framed_chars > max_context_chars:
+            continue
+        selected.append(item)
+        total_chars += framed_chars
+        if len(selected) >= max_examples:
+            break
+    return selected

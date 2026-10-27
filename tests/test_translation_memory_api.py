@@ -203,3 +203,34 @@ def test_import_rejects_incomplete_chapter_page_set(tmp_path):
     assert response.status_code == 422
     assert "incompleto" in response.json()["detail"]
     assert client.get("/api/books/book-synthetic/translation-memory").json()["count"] == 0
+
+
+def test_single_entry_review_endpoint_returns_only_the_requested_page_and_is_book_scoped(tmp_path):
+    client = _client(tmp_path)
+    imported = client.post(
+        "/api/books/book-synthetic/translation-memory/import",
+        files={"file": ("sample.jsonl", _page_pack(), "application/x-ndjson")},
+    )
+    assert imported.status_code == 200
+
+    detail = client.get(
+        "/api/books/book-synthetic/translation-memory/SYNTH-C001-P01"
+    )
+    assert detail.status_code == 200
+    body = detail.json()
+    assert body["entry"]["source_text"] == "Synthetic opening page."
+    assert body["entry"]["target_text"] == "Página sintética inicial."
+    assert body["entry"]["status"] == "draft"
+    assert body["review_only"] is True
+    assert body["applied_to_chapters"] is False
+    assert body["explicit_decision_required"] is True
+
+    wrong_book = client.get(
+        "/api/books/another-book/translation-memory/SYNTH-C001-P01"
+    )
+    assert wrong_book.status_code == 404
+
+    # The bulk listing stays metadata-only; the prose is returned only on review.
+    listing = client.get("/api/books/book-synthetic/translation-memory").json()
+    assert "source_text" not in listing["entries"][0]
+    assert "target_text" not in listing["entries"][0]

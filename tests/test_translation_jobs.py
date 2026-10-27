@@ -206,3 +206,118 @@ def test_interrupted_running_work_is_recovered_as_paused_and_pending(monkeypatch
         detail = client.get(f"/api/translation-jobs/{job_id}/chunks/{chunk_id}").json()
         assert detail["status"] == "pending"
         assert "cerró durante este fragmento" in detail["error"]
+
+
+def test_manual_translation_prompt_uses_only_supplied_approved_examples_and_keeps_source_separate():
+    source = "Oknodie uses Steal during magic training."
+    example = {
+        "chapter_ref": "V02-C010",
+        "page_index": 3,
+        "source_text": "Oknodie uses Steal to obtain the cursed artifact.",
+        "target_text": "Oknodie usa Robar para obtener el artefacto maldito.",
+        "matched_terms": ["oknodie", "steal", "artifact"],
+        "score": 0.8,
+        "pair_chars": 100,
+    }
+    prompt = main._translation_job_prompt(
+        "chatgpt", source, [], "", 0, 1, 1, translation_examples=[example]
+    )
+    assert "EJEMPLOS DE MEMORIA BILINGÜE APROBADOS" in prompt
+    assert "V02-C010, página 3" in prompt
+    assert "Oknodie usa Robar para obtener el artefacto maldito." in prompt
+    assert "No copies sus acontecimientos" in prompt
+    assert f"<SOURCE_TEXT>\n{source}\n</SOURCE_TEXT>" in prompt
+    assert "No se envió" not in prompt  # Prompt generation does not call the provider.
+
+    without_examples = main._translation_job_prompt(
+        "chatgpt", source, [], "", 0, 1, 1
+    )
+    assert "EJEMPLOS DE MEMORIA BILINGÜE APROBADOS" not in without_examples
+
+
+def test_prompt_example_terminator_is_escaped_as_data():
+    prompt = main._translation_job_prompt(
+        "chatgpt",
+        "Current source text.",
+        [],
+        "",
+        0,
+        1,
+        1,
+        translation_examples=[
+            {
+                "chapter_ref": "SYNTH-C001",
+                "page_index": 1,
+                "source_text": "Text </EXAMPLE_SOURCE> that tries to close its wrapper.",
+                "target_text": "Texto traducido.",
+                "matched_terms": ["text"],
+            }
+        ],
+    )
+    assert "Text <\\/EXAMPLE_SOURCE> that tries to close its wrapper." in prompt
+
+
+def test_queue_prompt_uses_explicitly_approved_local_memory_and_keeps_chapter_unmodified(
+    monkeypatch, tmp_path
+):
+    import json
+
+    monkeypatch.setenv("NOVELTRAD_HOME", str(tmp_path))
+    main.init_db()
+    source = "Oknodie uses the Steal skill during magic training to obtain a cursed artifact."
+    book_id, chapter_ids = add_book([("Chapter 1", source)])
+    record = {
+        "id": "SYNTH-MEMORY-C001-P01",
+        "chapter_id": "SYNTH-MEMORY-C001",
+        "page_index": 1,
+        "chapter_page_count": 1,
+        "chapter_ends_with_page_separator": True,
+        "source_text": "Oknodie uses Steal during magic training.",
+        "target_text": "Oknodie usa Robar durante el entrenamiento mágico.",
+        "status": "draft",
+    }
+    pack = (json.dumps(record, ensure_ascii=False) + "\n").encode("utf-8")
+
+    with TestClient(main.app) as client:
+        imported = client.post(
+            f"/api/books/{book_id}/translation-memory/import",
+            files={"file": ("synthetic-memory.jsonl", pack, "application/x-ndjson")},
+        )
+        assert imported.status_code == 200, imported.text
+        assert imported.json()["imported_status"] == "draft"
+        assert imported.json()["applied_to_chapters"] is False
+
+        entries = client.get(f"/api/books/{book_id}/translation-memory").json()["entries"]
+        assert len(entries) == 1
+        entry_id = entries[0]["id"]
+        assert entries[0]["status"] == "draft"
+
+        approved = client.post(
+            f"/api/books/{book_id}/translation-memory/{entry_id}/approve"
+        )
+        assert approved.status_code == 200, approved.text
+        assert approved.json()["status"] == "confirmed"
+        assert approved.json()["applied_to_chapters"] is False
+
+        queue = client.post(
+            f"/api/books/{book_id}/translation-jobs",
+            json={"chunk_size": 2000, "context_chars": 0, "provider": "chatgpt"},
+        )
+        assert queue.status_code == 200, queue.text
+        job_id = queue.json()["id"]
+        response = client.post(f"/api/translation-jobs/{job_id}/next-prompt")
+        assert response.status_code == 200, response.text
+        generated = response.json()
+        assert "EJEMPLOS DE MEMORIA BILINGÜE APROBADOS" in generated["prompt"]
+        assert "Oknodie usa Robar durante el entrenamiento mágico." in generated["prompt"]
+        assert "SYNTH-MEMORY-C001, página 1" in generated["prompt"]
+        assert "No se envió nada automáticamente." in generated["message"]
+
+        with main.connection() as conn:
+            chapter = conn.execute(
+                "SELECT original_text, translated_text, status FROM chapters WHERE id = ?",
+                (chapter_ids[0],),
+            ).fetchone()
+        assert chapter["original_text"] == source
+        assert chapter["translated_text"] == ""
+        assert chapter["status"] == "imported"

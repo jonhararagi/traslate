@@ -142,3 +142,19 @@ Imported records are always downgraded to `draft`, regardless of the status clai
 The API endpoints are `POST /api/books/{book_id}/translation-memory/import`, `GET /api/books/{book_id}/translation-memory`, `POST /api/books/{book_id}/translation-memory/preview`, and per-segment `approve`/`reject` actions under `/api/books/{book_id}/translation-memory/{entry_id}/`. Listing returns metadata only, not source/target prose; the preview endpoint returns text only for the user's local review.
 
 The first-novel page-aligned pack belongs in the private `jonhararagi/noveltrad-novel-lab` repository and is intentionally **not** copied into this public code repository. Tests use synthetic text, not novel excerpts. A passing automated test suite verifies import, validation and preview mechanics; it does not establish translation quality or replace Windows/manual chapter review.
+
+
+## Approved page examples in translation prompts (PR #19 draft)
+
+The page-aligned memory importer remains local-first and imports every entry as a draft. This proposed follow-up adds a review workflow for each page: read the source and Spanish draft together, then explicitly approve or reject the pair. Approved pairs can be retrieved by low-cost lexical overlap and added to a new manual translation prompt as bounded references for names, terminology, formatting, and style. Rejected and draft pages are excluded. A page approval does not write to the book.
+
+Retrieval is a pragmatic lexical baseline, not semantic RAG, automatic canon inference, or fine-tuning. It uses at most two examples within a small character budget. If memory is absent, normal translation prompts continue without examples. The text is not sent automatically to ChatGPT/Gemini, and new translations still require manual review and save. The implementation is under [draft PR #19](https://github.com/jonhararagi/traslate/pull/19); do not treat it as released until the PR is reviewed and merged.
+
+The private novel lab and its bilingual page packs are intentionally excluded from this public source repository. The novel's translation drafts stay unapproved until a human has reviewed the source/target pair. Structural page alignment and passing code tests do not certify literary fidelity.
+
+
+## Current private novel-lab handoff (2026-10-27)
+
+The private lab's latest status records 197/500 main chapters with Spanish drafts and 198 draft units counting the prologue. Its accumulated index covers C174–C181 and C184–C199: 24 chapters, 282 page-aligned bilingual page pairs. The C190–C199 block has a consolidated structural audit. C182–C183 remain gaps and must not be counted as translated; C200 is the next forward chapter after the current saved frontier. These numbers are metadata only: all new memory entries remain drafts until a human performs bilingual review.
+
+Do not copy original or translated novel prose into this repository. Import the private JSONL packs into the user's local NovelTrad data directory as draft entries; each pair must be reviewed individually and approved explicitly before it can be used as a prompt example. Structural page alignment does not imply literary fidelity, and test results do not imply content approval.
