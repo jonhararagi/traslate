@@ -2896,6 +2896,20 @@ def home() -> str:
 <div class="reader-actions"><input id="translation-memory-file" type="file" accept=".jsonl,.ndjson,application/json" aria-label="Archivo de memoria de traducción"><button id="translation-memory-import" class="primary" type="button">Importar memoria</button><button id="translation-memory-refresh" class="secondary" type="button">Actualizar lista</button></div>
 <p id="translation-memory-status" class="sub small" role="status" aria-live="polite"></p>
 <div id="translation-memory-list"></div>
+<div id="translation-memory-pages-panel" class="panel hidden">
+<div class="reader-head"><h3 id="translation-memory-pages-heading">Revisión individual de páginas</h3><button id="translation-memory-pages-close" class="quiet" type="button">Cerrar revisión</button></div>
+<p class="sub small">Abrí una página y cotejá el original con el borrador español. Solo una página que hayas revisado puede aprobarse y usarse como ejemplo de memoria; aprobarla no guarda ni modifica capítulos.</p>
+<div id="translation-memory-page-list" class="reader-actions"></div>
+<div id="translation-memory-page-detail" class="hidden">
+<p id="translation-memory-page-metadata" class="sub small"></p>
+<div class="reader-grid">
+<section class="reading-pane"><h4>Fuente original</h4><pre id="translation-memory-page-source" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:24rem;overflow:auto"></pre></section>
+<section class="reading-pane"><h4>Borrador español</h4><pre id="translation-memory-page-target" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:24rem;overflow:auto"></pre></section>
+</div>
+<div class="reader-actions"><button id="translation-memory-page-approve" class="primary" type="button" disabled>Aprobar página revisada</button><button id="translation-memory-page-reject" class="secondary" type="button" disabled>Rechazar página</button></div>
+<p id="translation-memory-page-review-status" class="sub small" role="status" aria-live="polite"></p>
+</div>
+</div>
 <div class="panel"><h3>Vista previa del capítulo actual</h3><p class="sub small">Elegí un capítulo de memoria de la lista para comparar su fuente completa con el original que tenés abierto.</p>
 <pre id="translation-memory-preview" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:32rem;overflow:auto"></pre>
 <div class="reader-actions"><button id="translation-memory-apply" class="primary" type="button" disabled>Pasar propuesta al editor sin guardar</button></div>
