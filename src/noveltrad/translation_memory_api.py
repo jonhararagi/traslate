@@ -215,6 +215,33 @@ def install_translation_memory_routes(app, data_dir: Callable[[], Path | str]) -
             ).fetchall()
         return {"book_id": book_id, "count": len(rows), "entries": [dict(row) for row in rows]}
 
+    @app.get("/api/books/{book_id}/translation-memory/{entry_id}")
+    def get_translation_memory_entry_for_review(book_id: str, entry_id: str):
+        """Return one local source/target pair for deliberate review, not a bulk export."""
+        if not book_id.strip() or len(book_id) > 200 or not entry_id.strip() or len(entry_id) > 200:
+            raise HTTPException(status_code=422, detail="Identificador de memoria inválido.")
+        with memory_connection() as connection:
+            row = connection.execute(
+                """
+                SELECT id, chapter_ref, page_index, chapter_page_count,
+                       chapter_ends_with_page_separator, source_text, target_text,
+                       status, review_status, source_blob_sha, translation_blob_sha,
+                       imported_at
+                FROM translation_memory_entries
+                WHERE book_id = ? AND id = ?
+                """,
+                (book_id, entry_id),
+            ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Entrada de memoria no encontrada.")
+        return {
+            "book_id": book_id,
+            "entry": dict(row),
+            "review_only": True,
+            "applied_to_chapters": False,
+            "explicit_decision_required": row["status"] == "draft",
+        }
+
     @app.post("/api/books/{book_id}/translation-memory/{entry_id}/approve")
     def approve_translation_memory_entry(book_id: str, entry_id: str):
         """Explicitly approve one memory page; approval still does not write a chapter."""
