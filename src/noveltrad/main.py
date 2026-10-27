@@ -3290,6 +3290,9 @@ $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay
 })();
 
   let translationMemoryProposal = '';
+  let translationMemoryEntries = [];
+  let selectedTranslationMemoryEntryId = '';
+  let selectedTranslationMemoryEntry = null;
   $('#translation-memory-open').addEventListener('click', async () => {
     $('#translation-memory-panel').classList.remove('hidden');
     await refreshTranslationMemory();
@@ -3305,19 +3308,25 @@ $('#back').addEventListener('click',async()=>{if(translationDirty&&!confirm('Hay
     status.textContent = 'Leyendo la memoria local…';
     try {
       const payload = await api('/api/books/' + encodeURIComponent(currentBook.id) + '/translation-memory?limit=5000');
+      translationMemoryEntries = Array.isArray(payload.entries) ? payload.entries : [];
       const grouped = new Map();
-      for (const entry of payload.entries) {
-        if (!grouped.has(entry.chapter_ref)) grouped.set(entry.chapter_ref, { pages: 0, draft: 0, confirmed: 0, rejected: 0 });
+      for (const entry of translationMemoryEntries) {
+        if (!grouped.has(entry.chapter_ref)) {
+          grouped.set(entry.chapter_ref, { pages: [], draft: 0, confirmed: 0, rejected: 0 });
+        }
         const item = grouped.get(entry.chapter_ref);
-        item.pages += 1;
+        item.pages.push(entry);
         if (Object.prototype.hasOwnProperty.call(item, entry.status)) item[entry.status] += 1;
       }
       list.innerHTML = grouped.size ? Array.from(grouped.entries()).map(([chapter, info]) =>
         '<article class="book"><div class="bookinfo"><strong>' + esc(chapter) + '</strong><div class="sub small">' +
-        info.pages + ' páginas · ' + info.confirmed + ' confirmadas · ' + info.draft + ' borradores · ' + info.rejected + ' rechazadas</div></div>' +
-        '<button class="secondary" type="button" data-tm-preview="' + esc(chapter) + '">Previsualizar coincidencia</button></article>'
+        info.pages.length + ' páginas · ' + info.confirmed + ' confirmadas · ' + info.draft + ' borradores · ' + info.rejected + ' rechazadas</div></div>' +
+        '<div class="reader-actions">' +
+        '<button class="secondary" type="button" data-tm-review-chapter="' + esc(chapter) + '">Revisar páginas</button>' +
+        '<button class="secondary" type="button" data-tm-preview="' + esc(chapter) + '">Previsualizar coincidencia</button>' +
+        '</div></article>'
       ).join('') : '<div class="empty">No hay memoria importada en esta novela.</div>';
-      status.textContent = 'Memoria local: ' + payload.count + ' segmentos. Los borradores requieren revisión explícita.';
+      status.textContent = 'Memoria local: ' + payload.count + ' segmentos. Abrí cada página, compará fuente y español y aprobá solo las revisadas.';
     } catch (error) {
       status.textContent = 'No se pudo leer la memoria: ' + error.message;
     }
