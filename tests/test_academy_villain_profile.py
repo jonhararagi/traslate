@@ -74,3 +74,30 @@ def test_profile_terms_have_evidence_class_suggestions_and_human_review_requirem
         assert candidate["chapter_evidence_required"] is True
         assert candidate["evidence_status"] == "profile-only-not-verified-in-imported-chapter"
         assert candidate["review_requirements"]
+
+def test_chapter_181_201_terminology_candidates_keep_source_provenance_and_stay_unapproved():
+    profile = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
+    evidence_candidates = [
+        item for item in profile["terminology_candidates"]
+        if item.get("chapter_evidence")
+    ]
+
+    # Candidates from the lab may aid review, but must not become auto-translation rules.
+    assert len(evidence_candidates) >= 40
+    assert all(item.get("approved") is False for item in evidence_candidates)
+    assert all(
+        item.get("chapter_evidence_required") is True
+        and item.get("evidence_status") == "chapter-evidence-present-pending-bilingual-review"
+        or item.get("evidence_status") == "source-excerpt-present-pending-bilingual-review"
+        for item in evidence_candidates
+    )
+    evidence = [
+        excerpt
+        for item in evidence_candidates
+        for excerpt in item.get("chapter_evidence", [])
+    ]
+    assert any(item.get("chapter_id") == "V02-C182" for item in evidence)
+    assert any(item.get("chapter_id") == "V02-C183" for item in evidence)
+    assert any(item.get("chapter_id") == "V03-C201" for item in evidence)
+    feed_raider = next(item for item in evidence_candidates if item["source"].casefold() == "feed raider")
+    assert any(item["chapter_id"] == "V02-C186" and item["source_excerpt"] == "Feed Raider" for item in feed_raider["chapter_evidence"])
