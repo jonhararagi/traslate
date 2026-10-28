@@ -85,11 +85,21 @@ def test_chapter_181_201_terminology_candidates_keep_source_provenance_and_stay_
     # Candidates from the lab may aid review, but must not become auto-translation rules.
     assert len(evidence_candidates) >= 40
     assert all(item.get("approved") is False for item in evidence_candidates)
+    allowed_evidence_states = {
+        "chapter-evidence-present-pending-bilingual-review",
+        "source-excerpt-present-pending-bilingual-review",
+    }
     assert all(
         item.get("chapter_evidence_required") is True
-        and item.get("evidence_status") == "chapter-evidence-present-pending-bilingual-review"
-        or item.get("evidence_status") == "source-excerpt-present-pending-bilingual-review"
+        and item.get("evidence_status") in allowed_evidence_states
         for item in evidence_candidates
+    )
+    assert all(
+        evidence_item.get("chapter_id")
+        and evidence_item.get("source_file")
+        and evidence_item.get("source_excerpt")
+        for item in evidence_candidates
+        for evidence_item in item.get("chapter_evidence", [])
     )
     evidence = [
         excerpt
