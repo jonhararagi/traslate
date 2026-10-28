@@ -443,3 +443,27 @@ Este registro resuelve los pendientes de CI anotados arriba para el SHA final de
 - El PR #16 continúa abierto, en estado Draft y sin fusionar. La rama base sigue siendo `main`. SHA de `main` verificado sin cambios: `6ebca3e06565456d473a44b1d62e14012531cde8`.
 - La implementación queda **verificada por CI** para tests de Ubuntu/Windows y empaquetado Windows. Esto no equivale a una prueba visual/end-to-end manual en el PC del usuario ni a una validación de calidad lingüística de una traducción real; esos puntos siguen pendientes.
 - Este registro es un commit documental adicional. Por disciplina de evidencia, volver a comprobar tests y paquete en el SHA que resulte de este commit antes de tratar dicho SHA documental como final. No modificar `main`, no quitar el estado Draft y no fusionar.
+
+## Auditoría de borradores previos y transferencia terminológica — 2026-10-28
+
+Rama de trabajo: `feat/offline-linguistic-narrative-core`. PR #16 permanece abierto en borrador; no modificar `main` ni fusionar sin autorización.
+
+### Laboratorio de novela
+- Rama inspeccionada: `work/source-inventory-2026-10-20`.
+- Auditoría C181–C200: 20 fuentes reales; 18 borradores españoles (C181 y C184–C200); C182 y C183 no tienen borrador. Los 18 pares conservan número de separadores y segmentos de página, pero esto NO prueba fidelidad frase por frase. Ninguno se considera validado por esta auditoría.
+- C200 tiene un borrador guardado; se corrigió su informe, que antes afirmaba que no existía.
+- Se revisaron 38 candidatos de glosario de C181–C199 y se corrigieron 11 registros con extractos no literales, no demostrativos o etiquetas de origen no presentes. Todos siguen como candidatos.
+- Registros: [auditoría C181–C200](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/05_informes_capitulos/AUDITORIA_TRADUCCION_C181-C200_2026-10-28.md), [manifiesto con revisión bloqueada](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/07_conocimiento_noveltrad/translation_memory_manifest_C181-C200_2026-10-28.jsonl), [glosario corregido](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/03_glosario/glossary.jsonl).
+
+### Datos añadidos al perfil de NovelTrad
+- El perfil de `I Became the Academy Villain's Daughter` ahora contiene 65 candidatos en total; 46 entradas nuevas y una entrada existente enriquecida con referencias literales a capítulos V02-C181–C200 y V03-C201.
+- Los candidatos importados tienen `approved: false`, evidencias por capítulo y requisitos de revisión humana. Los borradores españoles son pruebas de trabajo, no ejemplos bilingües aprobados.
+- La extracción de candidatos del traductor usa el perfil para mostrar posibles términos y evidencia literal, pero las sugerencias no son reglas de traducción. Solo las entradas aprobadas en el glosario se incorporan como reglas activas. No se cambió este límite.
+- Prueba añadida en `tests/test_academy_villain_profile.py` para exigir procedencia por capítulo y mantener el estado no aprobado.
+- Commits de perfil y pruebas: `24dcd0b35504b3c2a3aefb6b4991df7959f6a689`, `3c4ca8bb38efb6422f7da6449cc4731b8b4c230b`.
+
+### Pendientes sin ocultar
+- C182 y C183 continúan sin traducción española.
+- C181 y C184–C200 continúan en borrador; la alineación estructural no autoriza una etiqueta `VALIDADO`.
+- No hay revisión bilingüe frase por frase verificada en el bloque auditado.
+- La CI del nuevo SHA de esta rama debe comprobarse antes de atribuirle aprobación técnica.
