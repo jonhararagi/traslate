@@ -59,7 +59,8 @@
     "All starter terms remain unapproved until verified in the imported edition. Context-sensitive words must not be translated globally.",
     "El título de la obra es metadato, no un término del glosario. Los candidatos iniciales son solo sugerencias; cada regla exige muestra literal en el capítulo importado y confirmación humana.",
     "La ficha oficial inglesa de Novelpia Global (https://global.novelpia.com/novel/41?sid=main1) fue comprobada el 2026-10-20: figura como completa y muestra 1.567 capítulos. La ficha coreana muestra 1.566 entregas y Novel Updates 1.563 capítulos; la causa de la diferencia no está confirmada. El conteo del corpus a traducir debe hacerse al importar la edición de trabajo.",
-    "C181–C201: se incorporaron candidatos terminológicos con citas literales y rutas de fuente desde noveltrad-novel-lab. Todos siguen sin aprobar; los capítulos 182, 183 y 201 no tienen borrador español y los demás de esta tanda siguen pendientes de revisión bilingüe. La alineación estructural no equivale a validación literaria."
+    "C181–C201: se incorporaron candidatos terminológicos con citas literales y rutas de fuente desde noveltrad-novel-lab. Todos siguen sin aprobar; los capítulos 182, 183 y 201 no tienen borrador español y los demás de esta tanda siguen pendientes de revisión bilingüe. La alineación estructural no equivale a validación literaria.",
+    "C161–C180: se auditaron los 20 pares fuente/borrador y se incorporaron al perfil los candidatos con evidencia literal. Los 42 términos válidos siguen sin aprobar; el rótulo «Infinite Respect» de C176 fue rechazado por falta de evidencia. La estructura alineada no demuestra calidad literaria."
   ],
   "terminology_candidates": [
     {
@@ -1710,6 +1711,1330 @@
         "No aprobar una sustitución global si el término depende del contexto."
       ],
       "notes": "Candidato extraído del glosario del laboratorio; estado original: candidate. No aprobado. Contexto: Recintos donde se guardaban las monturas antes de que fueran dispersadas por el bosque. Observaciones: «Recintos» evita fijar que se trate de establos cerrados hasta cotejar la descripción visual."
+    },
+    {
+      "source": "Precursor to Xing's Murderous Impulse",
+      "target": "Precursor del impulso asesino de Xing",
+      "type": "recompensa de comprensión",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C161: [You receive the 1st special reward <Precursor to Xing's\nMurderous Impulse>.]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C161",
+          "source_file": "01_original/volume-02/chapters/C161.txt",
+          "source_blob_sha": "52e6ac4de8207ad138452c06db3fd4a800dd5a37",
+          "source_excerpt": "[You receive the 1st special reward <Precursor to Xing's\nMurderous Impulse>.]",
+          "translation_file": "02_traduccion_es/volume-02/C161.es.txt",
+          "translation_blob_sha": "e3f8339e4d3347131399e9656f007dcd76f21ac0",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Recompensa desbloqueada al superar el primer umbral de comprensión del personaje Xing. Observaciones: Candidato provisional; la evidencia se guarda con el salto de línea original de la recompensa."
+    },
+    {
+      "source": "Companion in Vengeance",
+      "target": "Compañero de venganza",
+      "type": "recompensa/evento",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C161: [You receive the 4th special reward <Companion in\nVengeance>.]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C161",
+          "source_file": "01_original/volume-02/chapters/C161.txt",
+          "source_blob_sha": "52e6ac4de8207ad138452c06db3fd4a800dd5a37",
+          "source_excerpt": "[You receive the 4th special reward <Companion in\nVengeance>.]",
+          "translation_file": "02_traduccion_es/volume-02/C161.es.txt",
+          "translation_blob_sha": "e3f8339e4d3347131399e9656f007dcd76f21ac0",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Recompensa ligada a la posibilidad de que Xing invite a Oknodie a participar en su venganza. Observaciones: Candidato provisional; etiqueta de la cuarta recompensa especial de comprensión de Xing, con salto de línea original preservado."
+    },
+    {
+      "source": "Affection Brake",
+      "target": "Freno de afecto",
+      "type": "recompensa/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C161: [3rd special reward <Affection Brake> detected.]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C161",
+          "source_file": "01_original/volume-02/chapters/C161.txt",
+          "source_blob_sha": "52e6ac4de8207ad138452c06db3fd4a800dd5a37",
+          "source_excerpt": "[3rd special reward <Affection Brake> detected.]",
+          "translation_file": "02_traduccion_es/volume-02/C161.es.txt",
+          "translation_blob_sha": "e3f8339e4d3347131399e9656f007dcd76f21ac0",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Recompensa detectada cuando Xing alcanza un umbral de comprensión sin sentir afecto por nadie. Observaciones: Procedencia corregida: la etiqueta aparece en C161, no en C162. Mantener candidato hasta cotejar el sentido y el contexto de la recompensa."
+    },
+    {
+      "source": "guimul",
+      "target": "guimul (objeto espiritual)",
+      "type": "folclore/objeto",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C162: known as guimul",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C162",
+          "source_file": "01_original/volume-02/chapters/C162.txt",
+          "source_blob_sha": "ebbcdf4c08df41ecaba71a795e64f24f0ae137ea",
+          "source_excerpt": "known as guimul",
+          "translation_file": "02_traduccion_es/volume-02/C162.es.txt",
+          "translation_blob_sha": "4e24f79629a3fe684e64926d8bb94088d156d221",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Nombre oriental para objetos o entidades relacionados con espíritus que pueden contener fantasmas. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Dorothy's Hunting Time",
+      "target": "Hora de caza de Dorothy",
+      "type": "beneficio de afinidad",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C163: <Dorothy's Hunting Time>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C163",
+          "source_file": "01_original/volume-02/chapters/C163.txt",
+          "source_blob_sha": "35ecc936135b012feda44f3e9e97242c6c9f95f5",
+          "source_excerpt": "<Dorothy's Hunting Time>",
+          "translation_file": "02_traduccion_es/volume-02/C163.es.txt",
+          "translation_blob_sha": "6fc57eec6082b6e3fdd96418ed41c71a2b617681",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Beneficio que aumenta la probabilidad de saqueo al visitar el bosque con Dorothy. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Baby Grass Picker",
+      "target": "Pequeña recolectora de hierbas",
+      "type": "título/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C163: <Baby Grass Picker>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C163",
+          "source_file": "01_original/volume-02/chapters/C163.txt",
+          "source_blob_sha": "35ecc936135b012feda44f3e9e97242c6c9f95f5",
+          "source_excerpt": "<Baby Grass Picker>",
+          "translation_file": "02_traduccion_es/volume-02/C163.es.txt",
+          "translation_blob_sha": "6fc57eec6082b6e3fdd96418ed41c71a2b617681",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Título ganado al alcanzar el nivel introductorio 1 de recolección de hierbas. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Forest of Silence",
+      "target": "Bosque del Silencio",
+      "type": "jefe de capítulo/zona",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C164: <Chapter 4: Silent Death, Forest of Silence>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C164",
+          "source_file": "01_original/volume-02/chapters/C164.txt",
+          "source_blob_sha": "a0b4f3c46bc8b7545b0bf38649c1ef3445af1780",
+          "source_excerpt": "<Chapter 4: Silent Death, Forest of Silence>",
+          "translation_file": "02_traduccion_es/volume-02/C164.es.txt",
+          "translation_blob_sha": "ed4c6a52bad5dc2e38d5a380421cb79adff6ca42",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Bosque maldito que devora a seres vivos que producen sonido; Oknodie anticipa su futura amenaza. Observaciones: Candidato provisional. El nombre aparece como amenaza futura en el meta-conocimiento de Oknodie; no afirmar que la zona ya esté activa."
+    },
+    {
+      "source": "curse waste",
+      "target": "residuos malditos",
+      "type": "material peligroso",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C164: These are what people call \"curse waste.\"",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C164",
+          "source_file": "01_original/volume-02/chapters/C164.txt",
+          "source_blob_sha": "a0b4f3c46bc8b7545b0bf38649c1ef3445af1780",
+          "source_excerpt": "These are what people call \"curse waste.\"",
+          "translation_file": "02_traduccion_es/volume-02/C164.es.txt",
+          "translation_blob_sha": "ed4c6a52bad5dc2e38d5a380421cb79adff6ca42",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Objetos y restos impregnados de maldición que Sadako deposita para que el árbol los consuma. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Poppy",
+      "target": "Poppy (nombre del árbol maldito)",
+      "type": "nombre propio/criatura",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C165: Our Poppy doesn't bite people.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C165",
+          "source_file": "01_original/volume-02/chapters/C165.txt",
+          "source_blob_sha": "ace32a6f78a87c6c044dda4bb8cbe09492aff620",
+          "source_excerpt": "Our Poppy doesn't bite people.",
+          "translation_file": "02_traduccion_es/volume-02/C165.es.txt",
+          "translation_blob_sha": "2ef2b9a06f4bea45d0954f13db2bf05ca3bd26da",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Nombre afectivo que Sadako da al árbol maldito que consume residuos de maldición. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Curse Magic Circle",
+      "target": "círculo mágico de maldición",
+      "type": "técnica ritual",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C166: <Curse Magic Circle>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C166",
+          "source_file": "01_original/volume-02/chapters/C166.txt",
+          "source_blob_sha": "c2a236a5ac1d6af3082098f6124a72574c0f499f",
+          "source_excerpt": "<Curse Magic Circle>",
+          "translation_file": "02_traduccion_es/volume-02/C166.es.txt",
+          "translation_blob_sha": "3bc911e2af7d5454f19857025ca1a959b0837869",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Círculo ritual utilizado por Oknodie para sujetar y limitar a la entidad fantasmal. Observaciones: Procedencia corregida: el rótulo literal aparece en C166, no C165. Mantener candidato hasta revisar la terminología ritual."
+    },
+    {
+      "source": "Ghost Ring Binding",
+      "target": "atadura de fantasma al anillo",
+      "type": "maldición/técnica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C166: <Curse of Binding - Ghost Ring Binding>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C166",
+          "source_file": "01_original/volume-02/chapters/C166.txt",
+          "source_blob_sha": "c2a236a5ac1d6af3082098f6124a72574c0f499f",
+          "source_excerpt": "<Curse of Binding - Ghost Ring Binding>",
+          "translation_file": "02_traduccion_es/volume-02/C166.es.txt",
+          "translation_blob_sha": "3bc911e2af7d5454f19857025ca1a959b0837869",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Encantamiento que mantiene a la entidad fantasmal vinculada al anillo. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Ghost Movement Range Limitation",
+      "target": "limitación del radio de movimiento del fantasma",
+      "type": "maldición/técnica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C166: <Curse of Restriction - Ghost Movement Range Limitation>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C166",
+          "source_file": "01_original/volume-02/chapters/C166.txt",
+          "source_blob_sha": "c2a236a5ac1d6af3082098f6124a72574c0f499f",
+          "source_excerpt": "<Curse of Restriction - Ghost Movement Range Limitation>",
+          "translation_file": "02_traduccion_es/volume-02/C166.es.txt",
+          "translation_blob_sha": "3bc911e2af7d5454f19857025ca1a959b0837869",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Efecto que impide que la entidad se aleje más de veinte metros del anillo. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "contagious curse",
+      "target": "maldición contagiosa",
+      "type": "amenaza/evento",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C167: Due to a contagious\ncurse circulating on campus, please make sure to carry the\n'Protection Charm' placed in front of your door when going\nout.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C167",
+          "source_file": "01_original/volume-02/chapters/C167.txt",
+          "source_blob_sha": "4cf8802fcd0b9b84ac0e4f9852f7e75f9b13caf8",
+          "source_excerpt": "Due to a contagious\ncurse circulating on campus, please make sure to carry the\n'Protection Charm' placed in front of your door when going\nout.",
+          "translation_file": "02_traduccion_es/volume-02/C167.es.txt",
+          "translation_blob_sha": "ad1d0eba9d2f7ac15caa11b0d224de95c97119bf",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Maldición que el aviso del dormitorio dice que circula por el campus y requiere un amuleto. Observaciones: Candidato provisional; evidencia conserva los saltos de línea de la fuente original."
+    },
+    {
+      "source": "Protection Charm",
+      "target": "amuleto de protección",
+      "type": "objeto mágico",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C167: Due to a contagious\ncurse circulating on campus, please make sure to carry the\n'Protection Charm' placed in front of your door when going\nout.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C167",
+          "source_file": "01_original/volume-02/chapters/C167.txt",
+          "source_blob_sha": "4cf8802fcd0b9b84ac0e4f9852f7e75f9b13caf8",
+          "source_excerpt": "Due to a contagious\ncurse circulating on campus, please make sure to carry the\n'Protection Charm' placed in front of your door when going\nout.",
+          "translation_file": "02_traduccion_es/volume-02/C167.es.txt",
+          "translation_blob_sha": "ad1d0eba9d2f7ac15caa11b0d224de95c97119bf",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Amuleto que se debe llevar para reducir riesgos de la maldición del campus. Observaciones: Candidato provisional; amuleto indicado en el aviso de dormitorios. La evidencia conserva los saltos de línea de la fuente original."
+    },
+    {
+      "source": "Itching Curse",
+      "target": "maldición de picor",
+      "type": "maldición/estado",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C168: It's the lowest-level Itching Curse!",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C168",
+          "source_file": "01_original/volume-02/chapters/C168.txt",
+          "source_blob_sha": "6f9bcc290f276271cc3099a7697d4caf82625a3b",
+          "source_excerpt": "It's the lowest-level Itching Curse!",
+          "translation_file": "02_traduccion_es/volume-02/C168.es.txt",
+          "translation_blob_sha": "bbe70ccad90a151b130c7bd27519c43fb17e140b",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Maldición leve que provoca picor y se elimina tras rascarse o resistirla durante un tiempo. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Curse Resistance",
+      "target": "resistencia a las maldiciones",
+      "type": "estadística/habilidad",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C168: [Curse Resistance experience +1] | V02-C172: curse\nresistance",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C168",
+          "source_file": "01_original/volume-02/chapters/C168.txt",
+          "source_blob_sha": "6f9bcc290f276271cc3099a7697d4caf82625a3b",
+          "source_excerpt": "[Curse Resistance experience +1]",
+          "translation_file": "02_traduccion_es/volume-02/C168.es.txt",
+          "translation_blob_sha": "bbe70ccad90a151b130c7bd27519c43fb17e140b",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        },
+        {
+          "chapter_id": "V02-C172",
+          "source_file": "01_original/volume-02/chapters/C172.txt",
+          "source_blob_sha": "0742cfcf5944241ad49bedded00b3e0b15f82a47",
+          "source_excerpt": "curse\nresistance",
+          "translation_file": "02_traduccion_es/volume-02/C172.es.txt",
+          "translation_blob_sha": "b9336b6ce1a54bea131a5a897865bddd681b1d50",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "chapter-evidence-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto.",
+        "Revisar el contexto completo, la voz del personaje y el equivalente español antes de aprobar."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Atributo que aumenta al soportar los efectos de determinadas maldiciones. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "How Could Such a Terrible Thing Happen",
+      "target": "Cómo pudo ocurrir algo tan terrible",
+      "type": "ventaja especial/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C169: <How Could Such a Terrible Thing Happen>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C169",
+          "source_file": "01_original/volume-02/chapters/C169.txt",
+          "source_blob_sha": "45add026c41d6b2ca74b597fbb8b3e0a94463457",
+          "source_excerpt": "<How Could Such a Terrible Thing Happen>",
+          "translation_file": "02_traduccion_es/volume-02/C169.es.txt",
+          "translation_blob_sha": "8dfbb3f2c94cf8bf3349264ac98efb47c0f2d77c",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Ventaja especial de Hestia, vinculada a su tendencia a interpretar situaciones desde experiencias extremas. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Serious Delusions",
+      "target": "Delirios graves",
+      "type": "rasgo/comprensión",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C169: Serious Delusions (Understanding 40)",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C169",
+          "source_file": "01_original/volume-02/chapters/C169.txt",
+          "source_blob_sha": "45add026c41d6b2ca74b597fbb8b3e0a94463457",
+          "source_excerpt": "Serious Delusions (Understanding 40)",
+          "translation_file": "02_traduccion_es/volume-02/C169.es.txt",
+          "translation_blob_sha": "8dfbb3f2c94cf8bf3349264ac98efb47c0f2d77c",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Rasgo de comprensión que describe la tendencia de Hestia a conectar hechos menores con la maldad del mundo. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "'thief' class",
+      "target": "clase de ladrón",
+      "type": "clase/arquetipo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C170: 'thief' class",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C170",
+          "source_file": "01_original/volume-02/chapters/C170.txt",
+          "source_blob_sha": "a878641ef17d1b7aec1b36ab3115391359f9b84c",
+          "source_excerpt": "'thief' class",
+          "translation_file": "02_traduccion_es/volume-02/C170.es.txt",
+          "translation_blob_sha": "306c0cba6a85234b6f55b43d6ccd7bcb088070a7",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Categoría que Destructor considera capaz de integrar sigilo, discernimiento, combate y manejo de trampas. Observaciones: Evidencia corregida para conservar las comillas literales de la fuente. Equivalente candidato, pendiente de revisión."
+    },
+    {
+      "source": "Black Knight",
+      "target": "Caballero Negro",
+      "type": "apodo/rumor",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C170: Black Knight Mob",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C170",
+          "source_file": "01_original/volume-02/chapters/C170.txt",
+          "source_blob_sha": "a878641ef17d1b7aec1b36ab3115391359f9b84c",
+          "source_excerpt": "Black Knight Mob",
+          "translation_file": "02_traduccion_es/volume-02/C170.es.txt",
+          "translation_blob_sha": "306c0cba6a85234b6f55b43d6ccd7bcb088070a7",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Apodo atribuido a Mob por estudiantes que lo ven entrenar constantemente con armadura y casco. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "portable curse storage device",
+      "target": "dispositivo portátil de almacenamiento de maldiciones",
+      "type": "artefacto",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C171: a portable curse storage device",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C171",
+          "source_file": "01_original/volume-02/chapters/C171.txt",
+          "source_blob_sha": "581fadb43aa65a75d979c52d74eedee9a8214bfb",
+          "source_excerpt": "a portable curse storage device",
+          "translation_file": "02_traduccion_es/volume-02/C171.es.txt",
+          "translation_blob_sha": "3030bd862ce74c14324b0121a4dbc7c9eb323c1e",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Objeto capaz de guardar y transferir maldiciones de la Academia, usado para atacar a una persona. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "rescue button",
+      "target": "botón de rescate",
+      "type": "función/seguridad",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C171: rescue button",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C171",
+          "source_file": "01_original/volume-02/chapters/C171.txt",
+          "source_blob_sha": "581fadb43aa65a75d979c52d74eedee9a8214bfb",
+          "source_excerpt": "rescue button",
+          "translation_file": "02_traduccion_es/volume-02/C171.es.txt",
+          "translation_blob_sha": "3030bd862ce74c14324b0121a4dbc7c9eb323c1e",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Función del reloj mágico que permite solicitar extracción de una zona prohibida a cambio de una multa. Observaciones: Evidencia corregida con la ocurrencia literal del término en la fuente. Equivalente candidato."
+    },
+    {
+      "source": "Random Nightmare Curse",
+      "target": "maldición de pesadilla aleatoria",
+      "type": "maldición/objeto",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C172: Random Nightmare Curse",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C172",
+          "source_file": "01_original/volume-02/chapters/C172.txt",
+          "source_blob_sha": "0742cfcf5944241ad49bedded00b3e0b15f82a47",
+          "source_excerpt": "Random Nightmare Curse",
+          "translation_file": "02_traduccion_es/volume-02/C172.es.txt",
+          "translation_blob_sha": "b9336b6ce1a54bea131a5a897865bddd681b1d50",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Maldición con resultado variable, que puede otorgar resistencia útil o activar una pesadilla letal de gran dificultad. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Death Experience Curse",
+      "target": "Maldición de Experiencia de Muerte",
+      "type": "maldición de alto nivel",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C172: Death Experience Curse",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C172",
+          "source_file": "01_original/volume-02/chapters/C172.txt",
+          "source_blob_sha": "0742cfcf5944241ad49bedded00b3e0b15f82a47",
+          "source_excerpt": "Death Experience Curse",
+          "translation_file": "02_traduccion_es/volume-02/C172.es.txt",
+          "translation_blob_sha": "b9336b6ce1a54bea131a5a897865bddd681b1d50",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Maldición que obliga al afectado a experimentar muertes oníricas y cumplir la condición de resolución para escapar. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Into Oknodie's nightmare",
+      "target": "a la pesadilla de Oknodie",
+      "type": "frase narrativa/entrada a un sueño",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C173: Into Oknodie's nightmare",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C173",
+          "source_file": "01_original/volume-02/chapters/C173.txt",
+          "source_blob_sha": "403d542c0b90805b9cf1fe6353523d64fd684774",
+          "source_excerpt": "Into Oknodie's nightmare",
+          "translation_file": "02_traduccion_es/volume-02/C173.es.txt",
+          "translation_blob_sha": "50d0237c1d45e19913a36f896fdc4230060431f1",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Respuesta a la pregunta «¿Adónde?». Describe entrar directamente en la pesadilla de Oknodie; no se confirma una técnica formal llamada «Mind Dive». Observaciones: Se retiró la etiqueta inglesa inferida «Mind Dive», que no aparece en la fuente. La frase literal se conserva como candidato contextual, no como nombre de habilidad."
+    },
+    {
+      "source": "curse related to nightmares",
+      "target": "maldición relacionada con las pesadillas",
+      "type": "maldición",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C173: curse related to nightmares",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C173",
+          "source_file": "01_original/volume-02/chapters/C173.txt",
+          "source_blob_sha": "403d542c0b90805b9cf1fe6353523d64fd684774",
+          "source_excerpt": "curse related to nightmares",
+          "translation_file": "02_traduccion_es/volume-02/C173.es.txt",
+          "translation_blob_sha": "50d0237c1d45e19913a36f896fdc4230060431f1",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Categoría de maldición que infiltra la mente y puede ser peligrosa de retirar sin conocer el estado previo del sujeto. Observaciones: Se sustituyó el rótulo conceptual no literal por la frase que sí aparece en la fuente. La propuesta española sigue siendo candidata."
+    },
+    {
+      "source": "Philosopher's Stone",
+      "target": "piedra filosofal",
+      "type": "artefacto mágico",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C174: Philosopher's Stone",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C174",
+          "source_file": "01_original/volume-02/chapters/C174.txt",
+          "source_blob_sha": "038745c57d27badc4f42bafe0661bdfa5f771839",
+          "source_excerpt": "Philosopher's Stone",
+          "translation_file": "02_traduccion_es/volume-02/C174.es.txt",
+          "translation_blob_sha": "cf959db0089243afd4b044cb234512979491660e",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Piedra incompleta creada originalmente para resolver la escasez de alimentos, luego usada en el sueño como objeto clave para contener a una estudiante. Observaciones: Evidencia corregida a una subcadena literal exacta; traducción candidata."
+    },
+    {
+      "source": "Amplification Stone",
+      "target": "piedra de amplificación",
+      "type": "artefacto mágico",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C174: Amplification Stone",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C174",
+          "source_file": "01_original/volume-02/chapters/C174.txt",
+          "source_blob_sha": "038745c57d27badc4f42bafe0661bdfa5f771839",
+          "source_excerpt": "Amplification Stone",
+          "translation_file": "02_traduccion_es/volume-02/C174.es.txt",
+          "translation_blob_sha": "cf959db0089243afd4b044cb234512979491660e",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Versión corrompida que potencia la capacidad de destruir y romper objetos. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Ice Demon Prison",
+      "target": "Prisión del Demonio de Hielo",
+      "type": "objeto/medio mágico",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C175: The Ice Demon Prison",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C175",
+          "source_file": "01_original/volume-02/chapters/C175.txt",
+          "source_blob_sha": "8f08bbeae1e9273abc83f2252b2c45e40ec2b50b",
+          "source_excerpt": "The Ice Demon Prison",
+          "translation_file": "02_traduccion_es/volume-02/C175.es.txt",
+          "translation_blob_sha": "0281899ccbfc652a2ac5c8b886fc91f6813b176c",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Masa de frío extremo que Oknodie usa para neutralizar las llamas de Rogini en la pesadilla. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "world erosion",
+      "target": "erosión del mundo",
+      "type": "fenómeno mágico",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C175: World erosion of such high intensity",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C175",
+          "source_file": "01_original/volume-02/chapters/C175.txt",
+          "source_blob_sha": "8f08bbeae1e9273abc83f2252b2c45e40ec2b50b",
+          "source_excerpt": "World erosion of such high intensity",
+          "translation_file": "02_traduccion_es/volume-02/C175.es.txt",
+          "translation_blob_sha": "0281899ccbfc652a2ac5c8b886fc91f6813b176c",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Campo de erosión de intensidad extrema que Sadako interpreta como una manifestación de nivel mundial. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Sentinel Core",
+      "target": "núcleo centinela",
+      "type": "artefacto mágico",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C176: The Sentinel Core of the Flame Magic Tower",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C176",
+          "source_file": "01_original/volume-02/chapters/C176.txt",
+          "source_blob_sha": "eab9364a3ca027c76835c5893e7827d56528a5f9",
+          "source_excerpt": "The Sentinel Core of the Flame Magic Tower",
+          "translation_file": "02_traduccion_es/volume-02/C176.es.txt",
+          "translation_blob_sha": "57df466834cfeb8f8eda09ff94a84f56e6a60a63",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Núcleo vital de una torre mágica que Oknodie usa como fuente de energía alternativa para el gigante primordial. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Total Annihilation Ending",
+      "target": "final de aniquilación total",
+      "type": "final/ruta de juego",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C177: <Total Annihilation Ending>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C177",
+          "source_file": "01_original/volume-02/chapters/C177.txt",
+          "source_blob_sha": "423fb750ac6629d3ad0eb8d0a71985f4d146f66a",
+          "source_excerpt": "<Total Annihilation Ending>",
+          "translation_file": "02_traduccion_es/volume-02/C177.es.txt",
+          "translation_blob_sha": "c6bd234a97a96c3680b0b02dc20b878bdf1c1eee",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Ruta final en la que una versión de Oknodie, graduada tras veinte años, intenta destruir a todos los seres vivos. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Experiencer of the Apocalypse",
+      "target": "Experimentadora del apocalipsis",
+      "type": "título/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C177: <Experiencer of the Apocalypse>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C177",
+          "source_file": "01_original/volume-02/chapters/C177.txt",
+          "source_blob_sha": "423fb750ac6629d3ad0eb8d0a71985f4d146f66a",
+          "source_excerpt": "<Experiencer of the Apocalypse>",
+          "translation_file": "02_traduccion_es/volume-02/C177.es.txt",
+          "translation_blob_sha": "c6bd234a97a96c3680b0b02dc20b878bdf1c1eee",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Título ganado al sobrevivir repetidamente a finales de mundos destinados a la destrucción. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "this object's previous owner",
+      "target": "propietario anterior de este objeto",
+      "type": "frase/identificación de artefacto",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C178: this object's previous\nowner",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C178",
+          "source_file": "01_original/volume-02/chapters/C178.txt",
+          "source_blob_sha": "5f6173ed3782f3e0d4361b83ffc7ee36201ff2fa",
+          "source_excerpt": "this object's previous\nowner",
+          "translation_file": "02_traduccion_es/volume-02/C178.es.txt",
+          "translation_blob_sha": "f62de93f253ccd4587ed5df372b9e2464d1ae1a2",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Parte de la petición dirigida al espejo para mostrar el rostro de quien poseyó el objeto antes. El original no le da al espejo el nombre técnico «owner-revealing mirror». Observaciones: Se eliminó el nombre de artefacto inferido y se registró la frase literal realmente presente. Equivalente contextual candidato."
+    },
+    {
+      "source": "Thieves' Guild",
+      "target": "Gremio de Ladrones",
+      "type": "organización",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C178: branch manager of the Thieves' Guild",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C178",
+          "source_file": "01_original/volume-02/chapters/C178.txt",
+          "source_blob_sha": "5f6173ed3782f3e0d4361b83ffc7ee36201ff2fa",
+          "source_excerpt": "branch manager of the Thieves' Guild",
+          "translation_file": "02_traduccion_es/volume-02/C178.es.txt",
+          "translation_blob_sha": "f62de93f253ccd4587ed5df372b9e2464d1ae1a2",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Red de informantes y especialistas que reúne inteligencia y materiales para la misión de un héroe. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "affection-boosting items",
+      "target": "objetos para aumentar la afinidad",
+      "type": "objeto/consumible",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C179: affection-boosting items",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C179",
+          "source_file": "01_original/volume-02/chapters/C179.txt",
+          "source_blob_sha": "f747d380a1f07065df0fc399dee1beec1f9abe4d",
+          "source_excerpt": "affection-boosting items",
+          "translation_file": "02_traduccion_es/volume-02/C179.es.txt",
+          "translation_blob_sha": "108c90ebaf3d4bd9cbe14a4cfd31341e36162283",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Objetos entregados para incrementar afinidad sin depender solo de conversaciones o actividades naturales. Observaciones: Se corrigió el término inglés: la fuente dice «affection-boosting items», no «likability-boosting items». Equivalente candidato pendiente de cotejo con capítulos anteriores."
+    },
+    {
+      "source": "Concentration-Boosting Doping Potions",
+      "target": "pociones dopantes potenciadoras de concentración",
+      "type": "consumible",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C179: Concentration-Boosting Doping Potions",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C179",
+          "source_file": "01_original/volume-02/chapters/C179.txt",
+          "source_blob_sha": "f747d380a1f07065df0fc399dee1beec1f9abe4d",
+          "source_excerpt": "Concentration-Boosting Doping Potions",
+          "translation_file": "02_traduccion_es/volume-02/C179.es.txt",
+          "translation_blob_sha": "108c90ebaf3d4bd9cbe14a4cfd31341e36162283",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Pociones que reducen la somnolencia y ayudan a concentrarse, aunque los estudiantes advierten de efectos secundarios. Observaciones: Evidencia corregida a la ocurrencia literal exacta del término dentro del título largo. Equivalente español candidato; revisar el registro coloquial de «doping» en esta novela."
+    },
+    {
+      "source": "Frontier faction",
+      "target": "facción fronteriza",
+      "type": "facciones/academia",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C180: Frontier faction",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C180",
+          "source_file": "01_original/volume-02/chapters/C180.txt",
+          "source_blob_sha": "c0e6cccd36d8039eb7c975ca59459dbc15d2a12b",
+          "source_excerpt": "Frontier faction",
+          "translation_file": "02_traduccion_es/volume-02/C180.es.txt",
+          "translation_blob_sha": "d4a41ddd3c735baff76791130209066e2e00d0cd",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Grupos de estudiantes alineados con profesores de la frontera o del Imperio, que reflejan una desigualdad de recursos y entrenamiento. Observaciones: Registro separado para la facción fronteriza. La evidencia es literal; equivalente candidato."
+    },
+    {
+      "source": "Dojo Martial Artist",
+      "target": "artista marcial de dojo",
+      "type": "clase",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C180: Dojo Martial\nArtist",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C180",
+          "source_file": "01_original/volume-02/chapters/C180.txt",
+          "source_blob_sha": "c0e6cccd36d8039eb7c975ca59459dbc15d2a12b",
+          "source_excerpt": "Dojo Martial\nArtist",
+          "translation_file": "02_traduccion_es/volume-02/C180.es.txt",
+          "translation_blob_sha": "d4a41ddd3c735baff76791130209066e2e00d0cd",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Clase institucional atribuida a estudiantes que entrenan en dojos licenciados, en contraste con la clase callejera. Observaciones: Evidencia corregida para preservar el salto de línea entre las palabras del rótulo en el original. Equivalente candidato para una clase institucional, pendiente de revisión."
+    },
+    {
+      "source": "petrification curse",
+      "target": "maldición de petrificación",
+      "type": "maldición/estado",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C171: petrification\ncurse",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C171",
+          "source_file": "01_original/volume-02/chapters/C171.txt",
+          "source_blob_sha": "581fadb43aa65a75d979c52d74eedee9a8214bfb",
+          "source_excerpt": "petrification\ncurse",
+          "translation_file": "02_traduccion_es/volume-02/C171.es.txt",
+          "translation_blob_sha": "3030bd862ce74c14324b0121a4dbc7c9eb323c1e",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Maldición del aula de arte que convierte temporalmente en estatua a quien expone el espacio a la luz o sale de él. Observaciones: Evidencia corregida para preservar el salto de línea entre las palabras en la fuente. Equivalente candidato."
+    },
+    {
+      "source": "Imperial faction",
+      "target": "facción imperial",
+      "type": "facción/academia",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C180: Imperial faction",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C180",
+          "source_file": "01_original/volume-02/chapters/C180.txt",
+          "source_blob_sha": "c0e6cccd36d8039eb7c975ca59459dbc15d2a12b",
+          "source_excerpt": "Imperial faction",
+          "translation_file": "02_traduccion_es/volume-02/C180.es.txt",
+          "translation_blob_sha": "d4a41ddd3c735baff76791130209066e2e00d0cd",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del capítulo original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo está en borrador, no aprobado.",
+        "No aplicar una sustitución global cuando la expresión dependa del contexto."
+      ],
+      "notes": "Candidato procedente del glosario del laboratorio. Contexto: Grupo de estudiantes alineados con profesores del Imperio, contrapuesto a la Frontier faction. Observaciones: Registro independiente de Frontier faction; su equivalente español permanece candidato."
     }
   ],
   "characters": [],
@@ -1732,6 +3057,6 @@
     "human_confirmation": "El usuario revisa la muestra, edita forma preferida y regla, y pulsa la acción explícita de confirmación.",
     "automatic_approval": false,
     "do_not_use_for_glossary": "El título de la novela se conserva como metadato de perfil y no como entrada del glosario.",
-    "chapter_draft_evidence": "Los extractos de fuentes pueden alimentar candidatos, pero los borradores españoles y sus términos siguen sin aprobar hasta completar revisión bilingüe humana. La integridad estructural no demuestra fidelidad."
+    "chapter_draft_evidence": "Los extractos literales de fuentes y las traducciones en borrador pueden alimentar candidatos y apoyar revisión; ninguno se convierte en regla o ejemplo bilingüe confirmado hasta completar una revisión bilingüe humana."
   }
 }
