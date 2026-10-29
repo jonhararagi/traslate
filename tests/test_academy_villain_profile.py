@@ -72,7 +72,10 @@ def test_profile_terms_have_evidence_class_suggestions_and_human_review_requirem
             "publisher_metadata_only", "user_requested_term", "genre_convention_only"
         }
         assert candidate["chapter_evidence_required"] is True
-        assert candidate["evidence_status"] == "profile-only-not-verified-in-imported-chapter"
+        if candidate.get("chapter_evidence"):
+            assert candidate["evidence_status"] == "chapter-evidence-present-pending-bilingual-review"
+        else:
+            assert candidate["evidence_status"] == "profile-only-not-verified-in-imported-chapter"
         assert candidate["review_requirements"]
 
 def test_chapter_181_201_terminology_candidates_keep_source_provenance_and_stay_unapproved():
