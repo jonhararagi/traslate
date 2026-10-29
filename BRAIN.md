@@ -467,3 +467,23 @@ Rama de trabajo: `feat/offline-linguistic-narrative-core`. PR #16 permanece abie
 - C181 y C184–C200 continúan en borrador; la alineación estructural no autoriza una etiqueta `VALIDADO`.
 - No hay revisión bilingüe frase por frase verificada en el bloque auditado.
 - La CI del nuevo SHA de esta rama debe comprobarse antes de atribuirle aprobación técnica.
+
+## Auditoría retrospectiva C161–C200 y candidatos del perfil — actualización 2026-10-28
+
+### C161–C180
+- Auditoría estructural: 20 fuentes y 20 borradores; 20/20 pares alineados por número de separadores y segmentos no vacíos. Esto no prueba calidad literaria.
+- Se añadieron 12 registros de página para C161, con hashes del original y el borrador; todos `draft` / `pending_bilingual_review`.
+- Se comprobaron 43 registros terminológicos del bloque: 42 con fuente literal y uno rechazado (`Infinite Respect`, ausente de C176). Se corrigieron entradas inferidas y discrepancias de evidencia; todos los candidatos válidos permanecen no aprobados.
+- Recursos: [auditoría C161–C180](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/05_informes_capitulos/AUDITORIA_TRADUCCION_C161-C180_2026-10-28.md), [manifiesto](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/07_conocimiento_noveltrad/translation_memory_manifest_C161-C180_2026-10-28.jsonl), [paquete C161](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/07_conocimiento_noveltrad/translation_memory_pages_C161.jsonl).
+
+### C181–C200
+- Auditoría estructural: 20 fuentes, 18 borradores españoles y 2 ausencias confirmadas (C182–C183); 18/18 pares existentes están alineados estructuralmente.
+- El informe obsoleto de C200 se corrigió para reconocer que el borrador sí existe.
+- Se repararon evidencias terminológicas que no eran literales o no justificaban el término propuesto.
+- Recursos: [auditoría C181–C200](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/05_informes_capitulos/AUDITORIA_TRADUCCION_C181-C200_2026-10-28.md), [manifiesto](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/07_conocimiento_noveltrad/translation_memory_manifest_C181-C200_2026-10-28.jsonl).
+
+### Transferencia al modelo de traducción
+- El perfil de la novela contiene ahora **106 candidatos** después de incorporar citas literales de C161–C201. Estos términos solo aparecen como candidatos para la revisión del glosario y no se aplican automáticamente.
+- Todos los candidatos derivados de capítulos siguen `approved: false`; la prueba de regresión exige procedencia por capítulo y excluye la entrada rechazada `Infinite Respect` de C176.
+- Commits recientes del perfil/prueba: `7598c7c7a8cf2422fb5464d1c7176eb8ef4cc81d`, `f4ff34aa45ef0ee4e2cf78efac25136ff12cd5b9`.
+- No se ha validado literariamente ningún capítulo por esta auditoría. Los datos de página están en estado `draft`; las páginas no deben tratarse como ejemplos confirmados de traducción hasta revisión bilingüe humana.
