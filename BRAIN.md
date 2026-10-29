@@ -487,3 +487,23 @@ Rama de trabajo: `feat/offline-linguistic-narrative-core`. PR #16 permanece abie
 - Todos los candidatos derivados de capítulos siguen `approved: false`; la prueba de regresión exige procedencia por capítulo y excluye la entrada rechazada `Infinite Respect` de C176.
 - Commits recientes del perfil/prueba: `7598c7c7a8cf2422fb5464d1c7176eb8ef4cc81d`, `f4ff34aa45ef0ee4e2cf78efac25136ff12cd5b9`.
 - No se ha validado literariamente ningún capítulo por esta auditoría. Los datos de página están en estado `draft`; las páginas no deben tratarse como ejemplos confirmados de traducción hasta revisión bilingüe humana.
+
+## Auditoría retrospectiva V01-C081–C120 — actualización 2026-10-29
+
+### V01-C081–C100
+- 20 fuentes y 20 borradores comprobados; 20/20 pares estructuralmente alineados. C100 no termina con `\f` en fuente ni borrador; ese comportamiento coincide.
+- Se auditaron 57 candidatos de glosario y se corrigieron ocho extractos que no eran literales o estaban mal puntuados; ahora se comprobó la procedencia literal para los 57 candidatos.
+- Memoria por página: `translation_memory_pages_C081-C090_2026-10-29.jsonl` (115 pares) y `translation_memory_pages_C091-C100_2026-10-29.jsonl` (108 pares), todos `draft` / `pending_bilingual_review`.
+- Informe: [auditoría C081–C100](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/05_informes_capitulos/AUDITORIA_TRADUCCION_C081-C100_2026-10-29.md).
+
+### V02-C101–C120
+- 20 fuentes y 20 borradores; alineación estructural 20/20. No hay revisión literaria completa verificada.
+- De 46 registros de glosario, se corrigieron las evidencias problemáticas y se rechazaron dos términos no respaldados por su capítulo: la asociación de hongos atribuida a C109 y `Dark Nutritional Tonic` atribuido a C119. La frase real `dark nourishing tonic` pertenece a C120.
+- Paquete de páginas C101–C108: 88 pares. C109–C120 reutiliza el paquete preexistente C109–C128. Todos continúan en borrador.
+- Informe: [auditoría C101–C120](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/05_informes_capitulos/AUDITORIA_TRADUCCION_C101-C120_2026-10-29.md).
+
+### Estado del perfil de la novela en NovelTrad
+- El perfil contiene **296 candidatos terminológicos** con evidencia de capítulo tras la transferencia de los bloques V01-C081–C100, V02-C101–C201 y sus conjuntos de candidatos compartidos.
+- Todos los candidatos derivados de capítulos tienen `approved: false`; las pruebas exigen procedencia literal por capítulo y estado de revisión pendiente.
+- Las citas no aprueban traducciones: los 80 capítulos auditados de C081 a C200 aún requieren revisión literaria frase por frase. La integridad estructural no es validación editorial.
+- Últimos commits de perfil/prueba: `b28911688351e3fbd2aee46869144248d124e0ac` y `2628d69fb129c2515b68b5c2ab3df078a8925d07`. El test de esta rama sigue en ejecución; no declarar éxito hasta ver la conclusión.
