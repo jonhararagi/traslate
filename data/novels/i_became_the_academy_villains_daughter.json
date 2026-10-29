@@ -60,7 +60,8 @@
     "El título de la obra es metadato, no un término del glosario. Los candidatos iniciales son solo sugerencias; cada regla exige muestra literal en el capítulo importado y confirmación humana.",
     "La ficha oficial inglesa de Novelpia Global (https://global.novelpia.com/novel/41?sid=main1) fue comprobada el 2026-10-20: figura como completa y muestra 1.567 capítulos. La ficha coreana muestra 1.566 entregas y Novel Updates 1.563 capítulos; la causa de la diferencia no está confirmada. El conteo del corpus a traducir debe hacerse al importar la edición de trabajo.",
     "C181–C201: se incorporaron candidatos terminológicos con citas literales y rutas de fuente desde noveltrad-novel-lab. Todos siguen sin aprobar; los capítulos 182, 183 y 201 no tienen borrador español y los demás de esta tanda siguen pendientes de revisión bilingüe. La alineación estructural no equivale a validación literaria.",
-    "C161–C180: se auditaron los 20 pares fuente/borrador y se incorporaron al perfil los candidatos con evidencia literal. Los 42 términos válidos siguen sin aprobar; el rótulo «Infinite Respect» de C176 fue rechazado por falta de evidencia. La estructura alineada no demuestra calidad literaria."
+    "C161–C180: se auditaron los 20 pares fuente/borrador y se incorporaron al perfil los candidatos con evidencia literal. Los 42 términos válidos siguen sin aprobar; el rótulo «Infinite Respect» de C176 fue rechazado por falta de evidencia. La estructura alineada no demuestra calidad literaria.",
+    "C141–C160: 42 candidatos del glosario transferidos al perfil con ruta, SHA de fuente/borrador y extracto literal. Se corrigió el candidato C145 a «dark mana absolute value». Todos los términos siguen sin aprobar y los borradores requieren revisión bilingüe."
   ],
   "terminology_candidates": [
     {
@@ -3035,6 +3036,1350 @@
         "No aplicar una sustitución global cuando la expresión dependa del contexto."
       ],
       "notes": "Candidato procedente del glosario del laboratorio. Contexto: Grupo de estudiantes alineados con profesores del Imperio, contrapuesto a la Frontier faction. Observaciones: Registro independiente de Frontier faction; su equivalente español permanece candidato."
+    },
+    {
+      "source": "The Power to Detect All Lies",
+      "target": "Poder para detectar todas las mentiras",
+      "type": "poder/artefacto",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C141: possessed \"The Power to Detect All Lies.\"",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C141",
+          "source_file": "01_original/volume-02/chapters/C141.txt",
+          "source_blob_sha": "738f3fe050b6ed5fe881e3c67b7f82353e511052",
+          "source_excerpt": "possessed \"The Power to Detect All Lies.\"",
+          "translation_file": "02_traduccion_es/volume-02/C141.es.txt",
+          "translation_blob_sha": "1f98062a9fa3415e64f812971776b4efcfa500be",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Propiedad de la espada sagrada de Ishtar; no se activa ante las respuestas veraces de Oknodie. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "killing intent",
+      "target": "intención asesina",
+      "type": "concepto de combate",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C141: You've been trained to resist killing intent",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C141",
+          "source_file": "01_original/volume-02/chapters/C141.txt",
+          "source_blob_sha": "738f3fe050b6ed5fe881e3c67b7f82353e511052",
+          "source_excerpt": "You've been trained to resist killing intent",
+          "translation_file": "02_traduccion_es/volume-02/C141.es.txt",
+          "translation_blob_sha": "1f98062a9fa3415e64f812971776b4efcfa500be",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Intención hostil cuya resistencia Ishtar interpreta como señal de entrenamiento especializado. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Knight Department",
+      "target": "Departamento de Caballería",
+      "type": "departamento/examen",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C142: Knight Department - Crossing the Bridge.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C142",
+          "source_file": "01_original/volume-02/chapters/C142.txt",
+          "source_blob_sha": "4a8685fac5e7b557dc90630e0fcf6a2c1c0343e1",
+          "source_excerpt": "Knight Department - Crossing the Bridge.",
+          "translation_file": "02_traduccion_es/volume-02/C142.es.txt",
+          "translation_blob_sha": "12fce445a1b9e646d56e2899b3a2a3be31a2b2a1",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Categoría de examen en la que hay que despejar el puente bloqueado por una roca gigantesca. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "weighted spear",
+      "target": "lanza lastrada",
+      "type": "arma/equipo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C142: Mob's weapon was a weighted spear.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C142",
+          "source_file": "01_original/volume-02/chapters/C142.txt",
+          "source_blob_sha": "4a8685fac5e7b557dc90630e0fcf6a2c1c0343e1",
+          "source_excerpt": "Mob's weapon was a weighted spear.",
+          "translation_file": "02_traduccion_es/volume-02/C142.es.txt",
+          "translation_blob_sha": "12fce445a1b9e646d56e2899b3a2a3be31a2b2a1",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Lanza preparada con peso que Mob usa en la prueba contra el peñasco. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "dark-attribute mana",
+      "target": "maná de atributo oscuro",
+      "type": "tipo de maná",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C143: What makes this possible is dark-attribute mana.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C143",
+          "source_file": "01_original/volume-02/chapters/C143.txt",
+          "source_blob_sha": "6df42bfa23ed6e1700b01014ae40d02ef309cbc2",
+          "source_excerpt": "What makes this possible is dark-attribute mana.",
+          "translation_file": "02_traduccion_es/volume-02/C143.es.txt",
+          "translation_blob_sha": "e194a1e0aa8f914908cdaeff417eb3f9b8bc4a9a",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Atributo extremadamente destructivo descrito como capaz de devorar al usuario si pierde el control. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "blade aura",
+      "target": "aura de espada",
+      "type": "técnica de espada",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C143: Blue blade aura indicates a water-attribute swordsman.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C143",
+          "source_file": "01_original/volume-02/chapters/C143.txt",
+          "source_blob_sha": "6df42bfa23ed6e1700b01014ae40d02ef309cbc2",
+          "source_excerpt": "Blue blade aura indicates a water-attribute swordsman.",
+          "translation_file": "02_traduccion_es/volume-02/C143.es.txt",
+          "translation_blob_sha": "e194a1e0aa8f914908cdaeff417eb3f9b8bc4a9a",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Proyección de maná a lo largo de la espada; su color se asocia a un atributo. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Bloody Maria's Mana Training Method",
+      "target": "método de entrenamiento de maná de Bloody Maria",
+      "type": "método/técnica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C144: <Bloody Maria's Mana Training Method>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C144",
+          "source_file": "01_original/volume-02/chapters/C144.txt",
+          "source_blob_sha": "6ac75bf31a7cdcde853104d32a9b8139bfa6dd9e",
+          "source_excerpt": "<Bloody Maria's Mana Training Method>",
+          "translation_file": "02_traduccion_es/volume-02/C144.es.txt",
+          "translation_blob_sha": "93879082d71fce0f2dc1cda5712abe61d3b832b4",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Método que Oknodie activa para absorber el maná oscuro de Jaku. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Absorption - Maria's Elegant Meal",
+      "target": "Absorción: el elegante banquete de Maria",
+      "type": "habilidad de absorción",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C144: <Absorption - Maria's Elegant Meal>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C144",
+          "source_file": "01_original/volume-02/chapters/C144.txt",
+          "source_blob_sha": "6ac75bf31a7cdcde853104d32a9b8139bfa6dd9e",
+          "source_excerpt": "<Absorption - Maria's Elegant Meal>",
+          "translation_file": "02_traduccion_es/volume-02/C144.es.txt",
+          "translation_blob_sha": "93879082d71fce0f2dc1cda5712abe61d3b832b4",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Habilidad subordinada que extrae el maná oscuro de Jaku hacia Oknodie. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "dark mana absolute value",
+      "target": "valor absoluto del maná oscuro",
+      "type": "mecánica mágica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C145: dark mana absolute value",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C145",
+          "source_file": "01_original/volume-02/chapters/C145.txt",
+          "source_blob_sha": "6d051820a10b7be7f261673420018301935171d0",
+          "source_excerpt": "dark mana absolute value",
+          "translation_file": "02_traduccion_es/volume-02/C145.es.txt",
+          "translation_blob_sha": "041de8c8abdec8abc912e8c5ba25b4ea79318607",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Valor combinado de pureza y cantidad del maná oscuro, que influye en seres con un valor menor. Observaciones: Se corrigió la etiqueta conceptual «absolute value (dark mana)», que no aparece literalmente, por la frase real «dark mana absolute value». El término y la equivalencia siguen como candidatos contextuales, sin aprobación."
+    },
+    {
+      "source": "imperial execution order",
+      "target": "orden de ejecución imperial",
+      "type": "orden política/legal",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C145: Ultimately, she plans to have her killed with an imperial execution order!",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C145",
+          "source_file": "01_original/volume-02/chapters/C145.txt",
+          "source_blob_sha": "6d051820a10b7be7f261673420018301935171d0",
+          "source_excerpt": "Ultimately, she plans to have her killed with an imperial execution order!",
+          "translation_file": "02_traduccion_es/volume-02/C145.es.txt",
+          "translation_blob_sha": "041de8c8abdec8abc912e8c5ba25b4ea79318607",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Orden que algunos personajes creen que podrían solicitar contra Oknodie; no se emite en este capítulo. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Baby Fabre",
+      "target": "Pequeño Fabre",
+      "type": "título/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C146: You have acquired the title <Baby Fabre>.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C146",
+          "source_file": "01_original/volume-02/chapters/C146.txt",
+          "source_blob_sha": "3c92bbe7f86fe67bd69d2607052cc9da206c118e",
+          "source_excerpt": "You have acquired the title <Baby Fabre>.",
+          "translation_file": "02_traduccion_es/volume-02/C146.es.txt",
+          "translation_blob_sha": "cee1a14a5be578540f64c7c57d140cb623946dcd",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Título que aparece al completar la colección principiante de insectos. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Beginner Insect Collection Level 2",
+      "target": "colección principiante de insectos, nivel 2",
+      "type": "logro/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C146: You have achieved the Beginner Insect Collection Level 2 achievement.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C146",
+          "source_file": "01_original/volume-02/chapters/C146.txt",
+          "source_blob_sha": "3c92bbe7f86fe67bd69d2607052cc9da206c118e",
+          "source_excerpt": "You have achieved the Beginner Insect Collection Level 2 achievement.",
+          "translation_file": "02_traduccion_es/volume-02/C146.es.txt",
+          "translation_blob_sha": "cee1a14a5be578540f64c7c57d140cb623946dcd",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Logro activado al completar una colección de 20 especies de insectos. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Imperial Royal Mana Cultivation Technique",
+      "target": "técnica imperial real de cultivo de maná",
+      "type": "técnica mágica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C147: <Imperial Royal Mana Cultivation Technique>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C147",
+          "source_file": "01_original/volume-02/chapters/C147.txt",
+          "source_blob_sha": "3f77a121f6015a3a5b8a68922af9a0484bb01441",
+          "source_excerpt": "<Imperial Royal Mana Cultivation Technique>",
+          "translation_file": "02_traduccion_es/volume-02/C147.es.txt",
+          "translation_blob_sha": "cca84c4fcbad2816a768952a3192b3b701ec973e",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Técnica que la princesa usa para activar cambio de propiedades y metalización. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Metallization",
+      "target": "metalización",
+      "type": "habilidad mágica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C147: <Metallization>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C147",
+          "source_file": "01_original/volume-02/chapters/C147.txt",
+          "source_blob_sha": "3f77a121f6015a3a5b8a68922af9a0484bb01441",
+          "source_excerpt": "<Metallization>",
+          "translation_file": "02_traduccion_es/volume-02/C147.es.txt",
+          "translation_blob_sha": "cca84c4fcbad2816a768952a3192b3b701ec973e",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Efecto que transforma árboles, suelo u otros materiales en metal mediante maná almacenado. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Guardian Visitation Event",
+      "target": "evento de visita de tutores",
+      "type": "evento/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C148: <Guardian Visitation Event>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C148",
+          "source_file": "01_original/volume-02/chapters/C148.txt",
+          "source_blob_sha": "467facb839034fdced2077f6e06291b2202abc9d",
+          "source_excerpt": "<Guardian Visitation Event>",
+          "translation_file": "02_traduccion_es/volume-02/C148.es.txt",
+          "translation_blob_sha": "292186c3b170dfe1bb9093551153823147336221",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Evento mensual en el que un tutor o representante puede visitar a estudiantes de la Academia. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "butler-calling whistle",
+      "target": "silbato para llamar al mayordomo",
+      "type": "objeto",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C148: the butler-calling whistle that was hidden deep inside it",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C148",
+          "source_file": "01_original/volume-02/chapters/C148.txt",
+          "source_blob_sha": "467facb839034fdced2077f6e06291b2202abc9d",
+          "source_excerpt": "the butler-calling whistle that was hidden deep inside it",
+          "translation_file": "02_traduccion_es/volume-02/C148.es.txt",
+          "translation_blob_sha": "292186c3b170dfe1bb9093551153823147336221",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Silbato que Oknodie lleva escondido dentro del collar y usa para llamar al mayordomo. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Boundary Deception - Complete Harmony",
+      "target": "Engaño de barrera: armonía completa",
+      "type": "técnica de sigilo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C149: <Boundary Deception - Complete Harmony>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C149",
+          "source_file": "01_original/volume-02/chapters/C149.txt",
+          "source_blob_sha": "08ae7c49ee3e20264aa69b016cbdcef96c1b6f47",
+          "source_excerpt": "<Boundary Deception - Complete Harmony>",
+          "translation_file": "02_traduccion_es/volume-02/C149.es.txt",
+          "translation_blob_sha": "f53e1b78432073398371f64cb67c80a7e24de1ee",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Técnica que Zuang usa para evitar ser reconocida por una barrera. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "assassination maid unit",
+      "target": "unidad de criadas asesinas",
+      "type": "unidad operativa",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C149: our assassination maid unit",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C149",
+          "source_file": "01_original/volume-02/chapters/C149.txt",
+          "source_blob_sha": "08ae7c49ee3e20264aa69b016cbdcef96c1b6f47",
+          "source_excerpt": "our assassination maid unit",
+          "translation_file": "02_traduccion_es/volume-02/C149.es.txt",
+          "translation_blob_sha": "f53e1b78432073398371f64cb67c80a7e24de1ee",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Grupo encubierto desplegado por Leape como distracción durante el banquete. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Boundary of Oppressive Gaze",
+      "target": "Barrera de la mirada opresiva",
+      "type": "técnica/barrera",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C150: <Type 2 - Boundary of Oppressive Gaze>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C150",
+          "source_file": "01_original/volume-02/chapters/C150.txt",
+          "source_blob_sha": "11c515ec058dd348e30457f580d9d1ec378e49c0",
+          "source_excerpt": "<Type 2 - Boundary of Oppressive Gaze>",
+          "translation_file": "02_traduccion_es/volume-02/C150.es.txt",
+          "translation_blob_sha": "e79943980f0749a856ba99801a236b950ed2b5ad",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Segunda barrera que intensifica la presión sobre quien cruza el pasillo. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Silver Mountain Iron Wall",
+      "target": "Muro de hierro de la montaña plateada",
+      "type": "técnica defensiva",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C150: <Self-Defense Technique - Silver Mountain Iron Wall>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C150",
+          "source_file": "01_original/volume-02/chapters/C150.txt",
+          "source_blob_sha": "11c515ec058dd348e30457f580d9d1ec378e49c0",
+          "source_excerpt": "<Self-Defense Technique - Silver Mountain Iron Wall>",
+          "translation_file": "02_traduccion_es/volume-02/C150.es.txt",
+          "translation_blob_sha": "e79943980f0749a856ba99801a236b950ed2b5ad",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Técnica que Jonna usa para protegerse de la presión de la mirada. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Life Magic - Clean",
+      "target": "Magia vital: limpieza",
+      "type": "hechizo doméstico",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C151: <Life Magic - Clean>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C151",
+          "source_file": "01_original/volume-02/chapters/C151.txt",
+          "source_blob_sha": "1e88bbfc6f9aac01b47ac73ded1161d2832c8723",
+          "source_excerpt": "<Life Magic - Clean>",
+          "translation_file": "02_traduccion_es/volume-02/C151.es.txt",
+          "translation_blob_sha": "901558d1fa2b7ab1d118983a631b35af6646a331",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Hechizo que elimina manchas, polvo y residuos de la ropa; también tiene riesgos si se usa mal. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "improved-flavor candies",
+      "target": "caramelos de sabor mejorado",
+      "type": "objeto/consumible",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C151: improved-flavor candies",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C151",
+          "source_file": "01_original/volume-02/chapters/C151.txt",
+          "source_blob_sha": "1e88bbfc6f9aac01b47ac73ded1161d2832c8723",
+          "source_excerpt": "improved-flavor candies",
+          "translation_file": "02_traduccion_es/volume-02/C151.es.txt",
+          "translation_blob_sha": "901558d1fa2b7ab1d118983a631b35af6646a331",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Dulces preparados por Leape y entregados a Oknodie como regalo. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Automatic Walking Assistance - Type A",
+      "target": "Asistencia automática para caminar, tipo A",
+      "type": "técnica/artefacto",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C152: <Automatic Walking Assistance - Type A>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C152",
+          "source_file": "01_original/volume-02/chapters/C152.txt",
+          "source_blob_sha": "aa6106a8dca1f03a04718874edcb5886a4fe79ce",
+          "source_excerpt": "<Automatic Walking Assistance - Type A>",
+          "translation_file": "02_traduccion_es/volume-02/C152.es.txt",
+          "translation_blob_sha": "e843241f14f13bdfd21964347b7ca26db43b3042",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Recurso técnico que Jonna activa para mantener la compostura pese al agotamiento. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Metal Worker",
+      "target": "Trabajador del metal",
+      "type": "habilidad",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C152: <Metal Worker>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C152",
+          "source_file": "01_original/volume-02/chapters/C152.txt",
+          "source_blob_sha": "aa6106a8dca1f03a04718874edcb5886a4fe79ce",
+          "source_excerpt": "<Metal Worker>",
+          "translation_file": "02_traduccion_es/volume-02/C152.es.txt",
+          "translation_blob_sha": "e843241f14f13bdfd21964347b7ca26db43b3042",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Nombre de una técnica que aparece entre las habilidades de Jonna. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "food surnames",
+      "target": "apellidos basados en alimentos",
+      "type": "costumbre nobiliaria",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C153: all nobles use food surnames",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C153",
+          "source_file": "01_original/volume-02/chapters/C153.txt",
+          "source_blob_sha": "1abf6d517686059a94d68f1b5dff720e566de2c9",
+          "source_excerpt": "all nobles use food surnames",
+          "translation_file": "02_traduccion_es/volume-02/C153.es.txt",
+          "translation_blob_sha": "10f7f4463714ad9cd115f4dba64287bb8a4feeee",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Tradición de apellidos culinarios atribuida a los logros históricos de los primeros nobles. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "childcare services",
+      "target": "servicios de cuidado infantil",
+      "type": "servicio institucional",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C153: childcare services that provide opportunities",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C153",
+          "source_file": "01_original/volume-02/chapters/C153.txt",
+          "source_blob_sha": "1abf6d517686059a94d68f1b5dff720e566de2c9",
+          "source_excerpt": "childcare services that provide opportunities",
+          "translation_file": "02_traduccion_es/volume-02/C153.es.txt",
+          "translation_blob_sha": "10f7f4463714ad9cd115f4dba64287bb8a4feeee",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Forma en que Jonna presenta públicamente el trabajo de la Fundación. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Professor Bronze's Practical Exam Quick Reference Guide",
+      "target": "Guía rápida para la evaluación práctica de la profesora Bronze",
+      "type": "documento de estudio",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C154: <Professor Bronze's Practical Exam Quick Reference Guide>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C154",
+          "source_file": "01_original/volume-02/chapters/C154.txt",
+          "source_blob_sha": "90968221ac8e7b39dcd8be20f339ad7f41e369e7",
+          "source_excerpt": "<Professor Bronze's Practical Exam Quick Reference Guide>",
+          "translation_file": "02_traduccion_es/volume-02/C154.es.txt",
+          "translation_blob_sha": "f1275450f79f4e51f63c4adefbcb7f23edb235b7",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Lista organizada por tipos de objeto y criterios de tasación. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Value Appraisal Practical Exam",
+      "target": "Examen práctico de tasación",
+      "type": "evaluación académica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C154: [You have achieved 2nd place in Professor Bronze's Value\nAppraisal Practical Exam.]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C154",
+          "source_file": "01_original/volume-02/chapters/C154.txt",
+          "source_blob_sha": "90968221ac8e7b39dcd8be20f339ad7f41e369e7",
+          "source_excerpt": "[You have achieved 2nd place in Professor Bronze's Value\nAppraisal Practical Exam.]",
+          "translation_file": "02_traduccion_es/volume-02/C154.es.txt",
+          "translation_blob_sha": "f1275450f79f4e51f63c4adefbcb7f23edb235b7",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Prueba en que el alumnado debe estimar valores y precios con precisión. Observaciones: Candidato provisional; evidencia copiada con el salto de línea original de la fuente. Revisar la terminología de tasación antes de confirmar."
+    },
+    {
+      "source": "Ghost Salvation Hidden Event",
+      "target": "Evento oculto de salvación de fantasmas",
+      "type": "evento/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C155: <Ghost Salvation Hidden Event>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C155",
+          "source_file": "01_original/volume-02/chapters/C155.txt",
+          "source_blob_sha": "26e548eb563ccd73cc836832a6ae5e753a835f05",
+          "source_excerpt": "<Ghost Salvation Hidden Event>",
+          "translation_file": "02_traduccion_es/volume-02/C155.es.txt",
+          "translation_blob_sha": "18e3c61369b2a6bf3554ac4d0d1388f49c521d09",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Evento que requiere resolver los deseos de padres fantasma para que encuentren paz. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "ghost parents",
+      "target": "padres fantasma",
+      "type": "entidad sobrenatural",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C155: Ghost parents mixed among ordinary parents.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C155",
+          "source_file": "01_original/volume-02/chapters/C155.txt",
+          "source_blob_sha": "26e548eb563ccd73cc836832a6ae5e753a835f05",
+          "source_excerpt": "Ghost parents mixed among ordinary parents.",
+          "translation_file": "02_traduccion_es/volume-02/C155.es.txt",
+          "translation_blob_sha": "18e3c61369b2a6bf3554ac4d0d1388f49c521d09",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Entidades formadas por los apegos de tutores preocupados que aparecen durante la visita. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Current friend count",
+      "target": "recuento actual de amistades",
+      "type": "marcador de evento",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C156: *Current friend count - 3/10",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C156",
+          "source_file": "01_original/volume-02/chapters/C156.txt",
+          "source_blob_sha": "74c4f73cd01fd61ca4d55e9a55e87b5676b840e3",
+          "source_excerpt": "*Current friend count - 3/10",
+          "translation_file": "02_traduccion_es/volume-02/C156.es.txt",
+          "translation_blob_sha": "03a3d52724e91e74aa54fd6d0e5b87b35292031a",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Contador de progreso hacia el requisito de presentar diez amistades. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "friendship rings",
+      "target": "anillos de amistad",
+      "type": "objeto de evento",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C156: These are friendship rings to cherish your friendship.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C156",
+          "source_file": "01_original/volume-02/chapters/C156.txt",
+          "source_blob_sha": "74c4f73cd01fd61ca4d55e9a55e87b5676b840e3",
+          "source_excerpt": "These are friendship rings to cherish your friendship.",
+          "translation_file": "02_traduccion_es/volume-02/C156.es.txt",
+          "translation_blob_sha": "03a3d52724e91e74aa54fd6d0e5b87b35292031a",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Anillos entregados como recuerdo para los amigos más cercanos de Titeomillio. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Haunted Human",
+      "target": "humano embrujado",
+      "type": "estado alterado",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C157: Haunted Human.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C157",
+          "source_file": "01_original/volume-02/chapters/C157.txt",
+          "source_blob_sha": "fff3fac1ef388aea3f104c012674c9b9a59f2e98",
+          "source_excerpt": "Haunted Human.",
+          "translation_file": "02_traduccion_es/volume-02/C157.es.txt",
+          "translation_blob_sha": "4d94de78b6a9200b96708361c21fca84689c9c53",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Afección en que un fantasma controla a una persona y dificulta curar el estado. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Ghost Exorcism Follow-up Event",
+      "target": "Evento de seguimiento de exorcismo de fantasmas",
+      "type": "evento/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C157: <Ghost Exorcism Follow-up Event>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C157",
+          "source_file": "01_original/volume-02/chapters/C157.txt",
+          "source_blob_sha": "fff3fac1ef388aea3f104c012674c9b9a59f2e98",
+          "source_excerpt": "<Ghost Exorcism Follow-up Event>",
+          "translation_file": "02_traduccion_es/volume-02/C157.es.txt",
+          "translation_blob_sha": "4d94de78b6a9200b96708361c21fca84689c9c53",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Evento en el que un exorcista confronta al grupo que protege a Tito y al padre fantasma. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Blue Fist",
+      "target": "Puño Azul",
+      "type": "técnica de combate",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C158: It's the Blue Fist!",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C158",
+          "source_file": "01_original/volume-02/chapters/C158.txt",
+          "source_blob_sha": "a85fa3c20c167c1910bdfe3a4d49f01215e726e6",
+          "source_excerpt": "It's the Blue Fist!",
+          "translation_file": "02_traduccion_es/volume-02/C158.es.txt",
+          "translation_blob_sha": "27b7d025e35027713656a7933c20faf3f98b2432",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Técnica característica de Io que concentra electricidad en un puñetazo. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "FM exorcist",
+      "target": "exorcista de principios estrictos",
+      "type": "arquetipo/personaje",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C158: he became an FM exorcist",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C158",
+          "source_file": "01_original/volume-02/chapters/C158.txt",
+          "source_blob_sha": "a85fa3c20c167c1910bdfe3a4d49f01215e726e6",
+          "source_excerpt": "he became an FM exorcist",
+          "translation_file": "02_traduccion_es/volume-02/C158.es.txt",
+          "translation_blob_sha": "27b7d025e35027713656a7933c20faf3f98b2432",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Etiqueta usada para describir el enfoque rígido de Io respecto a los exorcismos. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "Ghost Exorcism",
+      "target": "Exorcismo de fantasmas",
+      "type": "evento/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C159: <Ghost Exorcism>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C159",
+          "source_file": "01_original/volume-02/chapters/C159.txt",
+          "source_blob_sha": "1d46d4f4d7fda15d5ba2ff51fc50bb8aa4c7c106",
+          "source_excerpt": "<Ghost Exorcism>",
+          "translation_file": "02_traduccion_es/volume-02/C159.es.txt",
+          "translation_blob_sha": "bcabc00a256c3c9efe084adcbd4cc8ae81eae036",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Evento que el sistema declara completado tras el combate de Oknodie contra Io. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "contract fraud business",
+      "target": "negocio de fraude contractual",
+      "type": "actividad/negocio",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C159: These were the wealth and assets Bellocasio had\naccumulated through his contract fraud business.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C159",
+          "source_file": "01_original/volume-02/chapters/C159.txt",
+          "source_blob_sha": "1d46d4f4d7fda15d5ba2ff51fc50bb8aa4c7c106",
+          "source_excerpt": "These were the wealth and assets Bellocasio had\naccumulated through his contract fraud business.",
+          "translation_file": "02_traduccion_es/volume-02/C159.es.txt",
+          "translation_blob_sha": "bcabc00a256c3c9efe084adcbd4cc8ae81eae036",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Actividad de Bellocasio basada en contratos abusivos y control del suministro. Observaciones: Candidato provisional; el término en la fuente aparece como frase común en minúscula, no como nombre propio. Revisar la naturalidad de «negocio de fraude contractual»."
+    },
+    {
+      "source": "Developer of Golem Kettlebell Training Method",
+      "target": "Desarrolladora del método de entrenamiento con pesas rusas y gólem",
+      "type": "título/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C160: [You acquire the title <Developer of Golem Kettlebell\nTraining Method>.]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C160",
+          "source_file": "01_original/volume-02/chapters/C160.txt",
+          "source_blob_sha": "2ffea461c5923e5fa4bd0130037a4214b77dd8e6",
+          "source_excerpt": "[You acquire the title <Developer of Golem Kettlebell\nTraining Method>.]",
+          "translation_file": "02_traduccion_es/volume-02/C160.es.txt",
+          "translation_blob_sha": "d6ec1092c74005c0e8f3f224cdf7c1d9dcdef131",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Título otorgado por el entrenamiento funcional de fuerza con el gólem. Observaciones: Candidato provisional; se preserva el salto de línea original de la etiqueta del título."
+    },
+    {
+      "source": "One Who Lifted a Golem at Age 11",
+      "target": "Quien levantó un gólem a los 11 años",
+      "type": "título/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C160: <One Who Lifted a Golem at Age 11>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C160",
+          "source_file": "01_original/volume-02/chapters/C160.txt",
+          "source_blob_sha": "2ffea461c5923e5fa4bd0130037a4214b77dd8e6",
+          "source_excerpt": "<One Who Lifted a Golem at Age 11>",
+          "translation_file": "02_traduccion_es/volume-02/C160.es.txt",
+          "translation_blob_sha": "d6ec1092c74005c0e8f3f224cdf7c1d9dcdef131",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Título que recompensa levantar un gólem a edad temprana. Observaciones: Propuesta provisional basada en esta aparición. Revisar contra usos previos y posteriores antes de confirmar como regla."
+    },
+    {
+      "source": "dark mana",
+      "target": "maná oscuro",
+      "type": "mecánica mágica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C144: Dark mana is a destructive force.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C144",
+          "source_file": "01_original/volume-02/chapters/C144.txt",
+          "source_blob_sha": "6ac75bf31a7cdcde853104d32a9b8139bfa6dd9e",
+          "source_excerpt": "Dark mana is a destructive force.",
+          "translation_file": "02_traduccion_es/volume-02/C144.es.txt",
+          "translation_blob_sha": "93879082d71fce0f2dc1cda5712abe61d3b832b4",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Fuerza destructiva cuyo control deficiente puede hacer que Jaku se autodestruya; Oknodie regula su emisión. Observaciones: Usar de momento «maná oscuro» como propuesta uniforme, pero contrastar con las entradas compuestas existentes antes de confirmar."
+    },
+    {
+      "source": "appraising the value of items",
+      "target": "tasar el valor de los objetos",
+      "type": "evaluación/tasación",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C154: Accurately appraising the value of items?",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C154",
+          "source_file": "01_original/volume-02/chapters/C154.txt",
+          "source_blob_sha": "90968221ac8e7b39dcd8be20f339ad7f41e369e7",
+          "source_excerpt": "Accurately appraising the value of items?",
+          "translation_file": "02_traduccion_es/volume-02/C154.es.txt",
+          "translation_blob_sha": "f1275450f79f4e51f63c4adefbcb7f23edb235b7",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar el término con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario de laboratorio; no aprobado. Contexto: Pregunta sobre valorar con precisión los precios de los objetos durante el examen práctico de Bronze. Observaciones: El borrador actual usa «Valorar con precisión el precio de los objetos»; se propone «tasar el valor» por coherencia con «Examen práctico de tasación». Resolver en cotejo bilingüe, no aplicar todavía como forma aprobada."
     }
   ],
   "characters": [],
@@ -3057,6 +4402,6 @@
     "human_confirmation": "El usuario revisa la muestra, edita forma preferida y regla, y pulsa la acción explícita de confirmación.",
     "automatic_approval": false,
     "do_not_use_for_glossary": "El título de la novela se conserva como metadato de perfil y no como entrada del glosario.",
-    "chapter_draft_evidence": "Los extractos literales de fuentes y las traducciones en borrador pueden alimentar candidatos y apoyar revisión; ninguno se convierte en regla o ejemplo bilingüe confirmado hasta completar una revisión bilingüe humana."
+    "chapter_draft_evidence": "Las citas literales permiten rastrear términos candidatos, pero el equivalente español sigue sin aprobación mientras el capítulo no pase revisión bilingüe humana."
   }
 }
