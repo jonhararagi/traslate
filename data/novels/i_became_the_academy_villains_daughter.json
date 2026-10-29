@@ -63,7 +63,8 @@
     "C161–C180: se auditaron los 20 pares fuente/borrador y se incorporaron al perfil los candidatos con evidencia literal. Los 42 términos válidos siguen sin aprobar; el rótulo «Infinite Respect» de C176 fue rechazado por falta de evidencia. La estructura alineada no demuestra calidad literaria.",
     "C141–C160: 42 candidatos del glosario transferidos al perfil con ruta, SHA de fuente/borrador y extracto literal. Se corrigió el candidato C145 a «dark mana absolute value». Todos los términos siguen sin aprobar y los borradores requieren revisión bilingüe.",
     "C121–C140: se incorporaron 48 candidatos del glosario con evidencia literal verificada y hashes de fuente/borrador. Las traducciones siguen en borrador; los candidatos permanecen no aprobados.",
-    "C101–C120: 44 candidatos utilizables del glosario transferidos con evidencia literal y hashes de fuente/borrador. Se rechazaron dos entradas de origen no sustentadas por el capítulo (asociación C109 y «Dark Nutritional Tonic» C119). Todos los términos importados permanecen no aprobados."
+    "C101–C120: 44 candidatos utilizables del glosario transferidos con evidencia literal y hashes de fuente/borrador. Se rechazaron dos entradas de origen no sustentadas por el capítulo (asociación C109 y «Dark Nutritional Tonic» C119). Todos los términos importados permanecen no aprobados.",
+    "V01-C081–V01-C100: se transfirieron 57 candidatos con evidencia literal y hashes de fuente/borrador. Se repararon ocho extractos problemáticos del glosario. Todos permanecen no aprobados hasta revisión bilingüe."
   ],
   "terminology_candidates": [
     {
@@ -7306,6 +7307,1830 @@
         "No aplicar sustituciones globales a expresiones contextuales."
       ],
       "notes": "Candidato del glosario del laboratorio. No aprobado. Contexto: Potenciador de atributos que estimula formas de vida de atributo oscuro; se advierte que puede resultar peligroso para formas de otros atributos. Observaciones: Candidato derivado al contrastar un borrador español con el original privado. No es una regla confirmada ni se aplica automáticamente; cotejar recurrencias y contexto antes de aprobar."
+    },
+    {
+      "source": "flags",
+      "target": "banderas",
+      "type": "objeto_de_tarea/competencia_de_equipo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C081: the flags I've laid out and displayed",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C081",
+          "source_file": "01_original/volume-01/chapters/C081.txt",
+          "source_blob_sha": "1caab7716ab6817659621669fd161121da486a05",
+          "source_excerpt": "the flags I've laid out and displayed",
+          "translation_file": "02_traduccion_es/volume-01/C081.es.txt",
+          "translation_blob_sha": "6c33382b2b436105ffa57d2be9c378891c3ade39",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Objetos que los equipos deben reunir; el director no ha explicado en este punto qué recompensas o penalizaciones se aplican a sus recuentos. Observaciones: Mantener diferenciados los recuentos declarados, las banderas falsas y el total real de banderas auténticas. Evidencia corregida para reflejar una subcadena literal del original; el equivalente español permanece candidato y sin aprobar."
+    },
+    {
+      "source": "fake flags",
+      "target": "banderas falsas",
+      "type": "objeto_falsificado/mercancia",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C081: The fake flags that Gisele released",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C081",
+          "source_file": "01_original/volume-01/chapters/C081.txt",
+          "source_blob_sha": "1caab7716ab6817659621669fd161121da486a05",
+          "source_excerpt": "The fake flags that Gisele released",
+          "translation_file": "02_traduccion_es/volume-01/C081.es.txt",
+          "translation_blob_sha": "6c33382b2b436105ffa57d2be9c378891c3ade39",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Gisele declara que vendió hasta la última bandera falsa, contribuyendo a inflar los recuentos de equipos de las clases superiores. Observaciones: No suponer que se conoce cuántas banderas falsas tiene cada equipo. Evidencia corregida para reflejar una subcadena literal del original; el equivalente español permanece candidato y sin aprobar."
+    },
+    {
+      "source": "accordion pork belly",
+      "target": "panceta acordeón",
+      "type": "comida",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C081: accordion pork belly",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C081",
+          "source_file": "01_original/volume-01/chapters/C081.txt",
+          "source_blob_sha": "1caab7716ab6817659621669fd161121da486a05",
+          "source_excerpt": "accordion pork belly",
+          "translation_file": "02_traduccion_es/volume-01/C081.es.txt",
+          "translation_blob_sha": "6c33382b2b436105ffa57d2be9c378891c3ade39",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Plato del almuerzo cuya porción adicional cuesta diez puntos y se menciona en una conversación sobre los gastos de los estudiantes. Observaciones: Traducción literal provisional. Confirmar si el plato tiene nombre culinario establecido en otras fuentes. Evidencia corregida para reflejar una subcadena literal del original; el equivalente español permanece candidato y sin aprobar."
+    },
+    {
+      "source": "Late Bloomer",
+      "target": "Late Bloomer (arquetipo de progresión tardía)",
+      "type": "arquetipo_de_personaje_jugable",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C081: Late Bloomer",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C081",
+          "source_file": "01_original/volume-01/chapters/C081.txt",
+          "source_blob_sha": "1caab7716ab6817659621669fd161121da486a05",
+          "source_excerpt": "Late Bloomer",
+          "translation_file": "02_traduccion_es/volume-01/C081.es.txt",
+          "translation_blob_sha": "6c33382b2b436105ffa57d2be9c378891c3ade39",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Tipo de personaje aplicado a Yayoi: empieza con dificultades y progresa si el jugador invierte tiempo suficiente en ella. Observaciones: Mantener la etiqueta original mientras se decide la convención global de traducción de arquetipos. Evidencia corregida para reflejar una subcadena literal del original; el equivalente español permanece candidato y sin aprobar."
+    },
+    {
+      "source": "inflation",
+      "target": "inflación (de banderas)",
+      "type": "economia_de_objetos",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C081: inflation",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C081",
+          "source_file": "01_original/volume-01/chapters/C081.txt",
+          "source_blob_sha": "1caab7716ab6817659621669fd161121da486a05",
+          "source_excerpt": "inflation",
+          "translation_file": "02_traduccion_es/volume-01/C081.es.txt",
+          "translation_blob_sha": "6c33382b2b436105ffa57d2be9c378891c3ade39",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Metáfora de Oknodie para el rápido aumento de banderas en circulación y el valor incierto de los recuentos de cada equipo. Observaciones: El contexto es una inflación figurada de banderas, no inflación monetaria general del mundo. Evidencia corregida para reflejar una subcadena literal del original; el equivalente español permanece candidato y sin aprobar."
+    },
+    {
+      "source": "Adventurer's Night Action lecture",
+      "target": "clase de acción nocturna del aventurero",
+      "type": "asignatura",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C081: adventurer's night action lecture",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C081",
+          "source_file": "01_original/volume-01/chapters/C081.txt",
+          "source_blob_sha": "1caab7716ab6817659621669fd161121da486a05",
+          "source_excerpt": "adventurer's night action lecture",
+          "translation_file": "02_traduccion_es/volume-01/C081.es.txt",
+          "translation_blob_sha": "6c33382b2b436105ffa57d2be9c378891c3ade39",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Curso nocturno que Oknodie ofrece a Gisele; el título varía respecto a nombres nocturnos usados en C053–C055. Observaciones: Conservar la variante local hasta determinar el título canónico de las clases nocturnas. Evidencia corregida para reflejar una subcadena literal del original; el equivalente español permanece candidato y sin aprobar."
+    },
+    {
+      "source": "False Flag",
+      "target": "Bandera falsa",
+      "type": "titulo_de_capitulo_y_mecanica_de_juego",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C082: False Flag",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C082",
+          "source_file": "01_original/volume-01/chapters/C082.txt",
+          "source_blob_sha": "f296e623b8dbcbc881e83ea3f3983086ee5dd8d3",
+          "source_excerpt": "False Flag",
+          "translation_file": "02_traduccion_es/volume-01/C082.es.txt",
+          "translation_blob_sha": "547325b90438b5f8d70e29388e169ceb1e31ccc5",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Título de C082 y elemento de la actividad de clasificación: banderas falsas se mezclan con auténticas y pueden invalidar resultados o causar penalizaciones. Observaciones: El título admite «Bandera falsa»; confirmar si conviene singular o plural en español según la convención de títulos del volumen. No confundir con el uso político/espionaje de false flag, que no es el sentido contextual de este capítulo. Evidencia corregida para reflejar una subcadena literal del original; el equivalente español permanece candidato y sin aprobar."
+    },
+    {
+      "source": "Flag Battle",
+      "target": "Batalla de banderas",
+      "type": "titulo_de_capitulo/actividad",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C083: Chapter 83 - Flag Battle",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C083",
+          "source_file": "01_original/volume-01/chapters/C083.txt",
+          "source_blob_sha": "4c84ce9c1e95f7bfba10a0de9940d9c8e89c9193",
+          "source_excerpt": "Chapter 83 - Flag Battle",
+          "translation_file": "02_traduccion_es/volume-01/C083.es.txt",
+          "translation_blob_sha": "6e7a49eb5f6a2592e09cda8c6138343af06a16f0",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Título de C083, capítulo en que los equipos se enfrentan para defender y arrebatar las cestas de banderas. Observaciones: Título provisional; mantener como nombre de la actividad hasta revisar la convención de títulos del volumen."
+    },
+    {
+      "source": "Dough Flattening",
+      "target": "Aplanamiento de masa",
+      "type": "tecnica_de_combate/armas",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C083: my 'Dough Flattening' technique",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C083",
+          "source_file": "01_original/volume-01/chapters/C083.txt",
+          "source_blob_sha": "4c84ce9c1e95f7bfba10a0de9940d9c8e89c9193",
+          "source_excerpt": "my 'Dough Flattening' technique",
+          "translation_file": "02_traduccion_es/volume-01/C083.es.txt",
+          "translation_blob_sha": "6e7a49eb5f6a2592e09cda8c6138343af06a16f0",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Técnica de Cheddar Potato Pizza que aplasta el arma rival cuando la agarra y puede destruir armas valiosas mediante cultivo de maná. Observaciones: Traducción descriptiva provisional; comprobar capitalización y terminología de técnicas."
+    },
+    {
+      "source": "iron plate charging technique",
+      "target": "técnica de carga con placa de hierro",
+      "type": "tecnica_de_combate",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C083: iron plate charging technique",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C083",
+          "source_file": "01_original/volume-01/chapters/C083.txt",
+          "source_blob_sha": "4c84ce9c1e95f7bfba10a0de9940d9c8e89c9193",
+          "source_excerpt": "iron plate charging technique",
+          "translation_file": "02_traduccion_es/volume-01/C083.es.txt",
+          "translation_blob_sha": "6e7a49eb5f6a2592e09cda8c6138343af06a16f0",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Técnica anunciada por Lepe Iron Plate Charcoal Ribs durante el ataque al equipo de Oknodie. Observaciones: Nombre provisional. No inferir mecánicas adicionales a partir del nombre."
+    },
+    {
+      "source": "Guts experience",
+      "target": "Experiencia de Agallas",
+      "type": "experiencia_de_habilidad",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C083: [Guts experience +10]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C083",
+          "source_file": "01_original/volume-01/chapters/C083.txt",
+          "source_blob_sha": "4c84ce9c1e95f7bfba10a0de9940d9c8e89c9193",
+          "source_excerpt": "[Guts experience +10]",
+          "translation_file": "02_traduccion_es/volume-01/C083.es.txt",
+          "translation_blob_sha": "6e7a49eb5f6a2592e09cda8c6138343af06a16f0",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Aviso del sistema que aparece junto con la experiencia de Hiding al final de C083. Observaciones: Traducción provisional; mantener el valor +10 y confirmar capitalización global."
+    },
+    {
+      "source": "The Difference Between Real And Fake",
+      "target": "La diferencia entre lo real y lo falso",
+      "type": "titulo_de_capitulo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C084: Chapter 84 - The Difference Between Real And Fake",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C084",
+          "source_file": "01_original/volume-01/chapters/C084.txt",
+          "source_blob_sha": "1cb18924e6a809de688631e138f10d0f66d89252",
+          "source_excerpt": "Chapter 84 - The Difference Between Real And Fake",
+          "translation_file": "02_traduccion_es/volume-01/C084.es.txt",
+          "translation_blob_sha": "65200b079caf6d235e8d1423c6f2b8729ba37018",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Título de C084, centrado en distinguir las banderas auténticas de las falsas. Observaciones: Título provisional; confirmar estilo de mayúsculas y formulación frente a títulos anteriores."
+    },
+    {
+      "source": "Life-saving Special Technique",
+      "target": "técnica especial para salvar la vida",
+      "type": "tecnica_de_combate",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C084: Life-saving Special Technique - Fire Storage Heat Pressure Bullet",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C084",
+          "source_file": "01_original/volume-01/chapters/C084.txt",
+          "source_blob_sha": "1cb18924e6a809de688631e138f10d0f66d89252",
+          "source_excerpt": "Life-saving Special Technique - Fire Storage Heat Pressure Bullet",
+          "translation_file": "02_traduccion_es/volume-01/C084.es.txt",
+          "translation_blob_sha": "65200b079caf6d235e8d1423c6f2b8729ba37018",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Técnica heredada de la casa ducal Iron Plate Charcoal Ribs que expulsa aire sobrecalentado desde la armadura. Observaciones: Traducción provisional; conservar como nombre de técnica y comprobar convención de capitalización."
+    },
+    {
+      "source": "Fire Storage Heat Pressure Bullet",
+      "target": "Proyectil de presión térmica por almacenamiento de fuego",
+      "type": "tecnica_de_combate/armadura",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C084: Fire Storage Heat Pressure Bullet",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C084",
+          "source_file": "01_original/volume-01/chapters/C084.txt",
+          "source_blob_sha": "1cb18924e6a809de688631e138f10d0f66d89252",
+          "source_excerpt": "Fire Storage Heat Pressure Bullet",
+          "translation_file": "02_traduccion_es/volume-01/C084.es.txt",
+          "translation_blob_sha": "65200b079caf6d235e8d1423c6f2b8729ba37018",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Técnica de emergencia de la armadura de Leape que genera una descarga de aire sobrecalentado. Observaciones: Traducción descriptiva provisional; revisar naturalidad y nomenclatura de técnicas."
+    },
+    {
+      "source": "Snowball",
+      "target": "Bola de nieve",
+      "type": "titulo_de_capitulo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C085: Chapter 85 - Snowball",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C085",
+          "source_file": "01_original/volume-01/chapters/C085.txt",
+          "source_blob_sha": "f5323db675f72149814cd24252ce9e6af2f2525c",
+          "source_excerpt": "Chapter 85 - Snowball",
+          "translation_file": "02_traduccion_es/volume-01/C085.es.txt",
+          "translation_blob_sha": "fe9d998a933fa2686668421527b465b4c5dbab86",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Título de C085, capítulo centrado en la recogida de banderas auténticas y en la reacción en cadena que provoca el método de Oknodie. Observaciones: Título provisional. Comprobar si Snowball alude a una expresión idiomática o a una referencia narrativa concreta antes de confirmarlo."
+    },
+    {
+      "source": "light transmittance",
+      "target": "transmitancia luminosa",
+      "type": "terminologia_tecnica/fisica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C085: Light transmittance. How much light shines through fabric.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C085",
+          "source_file": "01_original/volume-01/chapters/C085.txt",
+          "source_blob_sha": "f5323db675f72149814cd24252ce9e6af2f2525c",
+          "source_excerpt": "Light transmittance. How much light shines through fabric.",
+          "translation_file": "02_traduccion_es/volume-01/C085.es.txt",
+          "translation_blob_sha": "fe9d998a933fa2686668421527b465b4c5dbab86",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Propiedad de la tela que Oknodie usa para distinguir las banderas auténticas de las falsas: las auténticas tendrían un 10 % y las falsas valores entre 20 % y 90 %. Observaciones: Mantener como término técnico provisional y verificar la convención terminológica en capítulos posteriores."
+    },
+    {
+      "source": "Visual experience",
+      "target": "Experiencia Visual",
+      "type": "atributo_o_experiencia_de_sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C085: [Visual experience +1]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C085",
+          "source_file": "01_original/volume-01/chapters/C085.txt",
+          "source_blob_sha": "f5323db675f72149814cd24252ce9e6af2f2525c",
+          "source_excerpt": "[Visual experience +1]",
+          "translation_file": "02_traduccion_es/volume-01/C085.es.txt",
+          "translation_blob_sha": "fe9d998a933fa2686668421527b465b4c5dbab86",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Notificación de progreso que aumenta al seleccionar series de banderas auténticas. Observaciones: No asumir que sea equivalente a Observation experience; aparecen como atributos separados."
+    },
+    {
+      "source": "Behavior Prediction experience",
+      "target": "Experiencia de Predicción de Conducta",
+      "type": "atributo_o_experiencia_de_sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C085: [Behavior Prediction experience +8]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C085",
+          "source_file": "01_original/volume-01/chapters/C085.txt",
+          "source_blob_sha": "f5323db675f72149814cd24252ce9e6af2f2525c",
+          "source_excerpt": "[Behavior Prediction experience +8]",
+          "translation_file": "02_traduccion_es/volume-01/C085.es.txt",
+          "translation_blob_sha": "fe9d998a933fa2686668421527b465b4c5dbab86",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Aviso que aparece cuando Oknodie anticipa el ataque sorpresa de Xing y prepara una estrategia. Observaciones: Traducción provisional; confirmar consistencia con otros nombres de habilidades y experiencias."
+    },
+    {
+      "source": "Strategy Development experience",
+      "target": "Experiencia de Desarrollo de Estrategias",
+      "type": "atributo_o_experiencia_de_sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C085: [Strategy Development experience +4]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C085",
+          "source_file": "01_original/volume-01/chapters/C085.txt",
+          "source_blob_sha": "f5323db675f72149814cd24252ce9e6af2f2525c",
+          "source_excerpt": "[Strategy Development experience +4]",
+          "translation_file": "02_traduccion_es/volume-01/C085.es.txt",
+          "translation_blob_sha": "fe9d998a933fa2686668421527b465b4c5dbab86",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Aviso de progreso asociado a la estrategia preparada para el ataque sorpresa de Xing. Observaciones: Conservar el +4 y revisar si el sistema emplea un nombre canónico más breve en otras unidades."
+    },
+    {
+      "source": "Would you really cut down someone this cute?",
+      "target": "¿De verdad vas a cortar a alguien tan adorable?",
+      "type": "frase_de_estrategia/comedia",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C085: The strategy called \"Would you really cut down someone this cute?\"",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C085",
+          "source_file": "01_original/volume-01/chapters/C085.txt",
+          "source_blob_sha": "f5323db675f72149814cd24252ce9e6af2f2525c",
+          "source_excerpt": "The strategy called \"Would you really cut down someone this cute?\"",
+          "translation_file": "02_traduccion_es/volume-01/C085.es.txt",
+          "translation_blob_sha": "fe9d998a933fa2686668421527b465b4c5dbab86",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Nombre de la maniobra coqueta con la que Oknodie intenta frenar a Xing; fracasa cuando él responde «Die». Observaciones: Conservar como frase de estrategia y mantener el tono cómico; revisar puntuación si vuelve a aparecer."
+    },
+    {
+      "source": "The Principal's Teachings",
+      "target": "Las enseñanzas del director",
+      "type": "titulo_de_clase_o_capitulo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C086: Chapter 86 - The Principal's Teachings",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C086",
+          "source_file": "01_original/volume-01/chapters/C086.txt",
+          "source_blob_sha": "09d5031645bad70c0090c73f2f42dbffb3aac9c8",
+          "source_excerpt": "Chapter 86 - The Principal's Teachings",
+          "translation_file": "02_traduccion_es/volume-01/C086.es.txt",
+          "translation_blob_sha": "4ebaf056ba41e526814b6f2eaa021db736085af4",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Título del capítulo/clase en la que el director explica la lección de la prueba de banderas. Observaciones: Título provisional; comprobar el nombre canónico de la clase y la capitalización en capítulos anteriores."
+    },
+    {
+      "source": "Ostracism experience",
+      "target": "Experiencia de Ostracismo",
+      "type": "atributo_o_experiencia_de_sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C086: [Ostracism experience +10]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C086",
+          "source_file": "01_original/volume-01/chapters/C086.txt",
+          "source_blob_sha": "09d5031645bad70c0090c73f2f42dbffb3aac9c8",
+          "source_excerpt": "[Ostracism experience +10]",
+          "translation_file": "02_traduccion_es/volume-01/C086.es.txt",
+          "translation_blob_sha": "4ebaf056ba41e526814b6f2eaa021db736085af4",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Notificación de recompensa que aparece tras obtener el primer puesto en la primera tarea. Observaciones: Mantener el formato de notificación y el valor numérico; revisar la capitalización canónica junto a otros atributos."
+    },
+    {
+      "source": "flag colors",
+      "target": "colores de las banderas",
+      "type": "mecanica_de_prueba",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C086: The flag colors are red, orange, yellow, green, blue, indigo, and violet.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C086",
+          "source_file": "01_original/volume-01/chapters/C086.txt",
+          "source_blob_sha": "09d5031645bad70c0090c73f2f42dbffb3aac9c8",
+          "source_excerpt": "The flag colors are red, orange, yellow, green, blue, indigo, and violet.",
+          "translation_file": "02_traduccion_es/volume-01/C086.es.txt",
+          "translation_blob_sha": "4ebaf056ba41e526814b6f2eaa021db736085af4",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Los colores determinan diferentes valores de puntuación según la dificultad de adquisición. Observaciones: Conservar la secuencia de colores y verificar que los nombres coincidan con los capítulos previos de la prueba."
+    },
+    {
+      "source": "failing student",
+      "target": "estudiante reprobado/a",
+      "type": "insulto_o_tratamiento",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C086: As expected of a failing student, your attention span is quite lacking.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C086",
+          "source_file": "01_original/volume-01/chapters/C086.txt",
+          "source_blob_sha": "09d5031645bad70c0090c73f2f42dbffb3aac9c8",
+          "source_excerpt": "As expected of a failing student, your attention span is quite lacking.",
+          "translation_file": "02_traduccion_es/volume-01/C086.es.txt",
+          "translation_blob_sha": "4ebaf056ba41e526814b6f2eaa021db736085af4",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: El director se burla de Scola al responder a su pregunta sobre la clasificación. Observaciones: Revisar el sistema académico de la novela para decidir si corresponde «reprobado», «suspenso» u otra categoría."
+    },
+    {
+      "source": "next chapter boss",
+      "target": "jefe del próximo capítulo",
+      "type": "metanarrativa",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C086: The next chapter boss, who will officially begin to rampage from the first semester of the second year, is already sprouting.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C086",
+          "source_file": "01_original/volume-01/chapters/C086.txt",
+          "source_blob_sha": "09d5031645bad70c0090c73f2f42dbffb3aac9c8",
+          "source_excerpt": "The next chapter boss, who will officially begin to rampage from the first semester of the second year, is already sprouting.",
+          "translation_file": "02_traduccion_es/volume-01/C086.es.txt",
+          "translation_blob_sha": "4ebaf056ba41e526814b6f2eaa021db736085af4",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Expresión de Oknodie para referirse a una futura antagonista que empezará a causar problemas en segundo año. Observaciones: Traducción literal provisional; revisar si la voz narrativa usa una convención estable para jefes/enemigos de capítulo."
+    },
+    {
+      "source": "April's Investigation",
+      "target": "La investigación de April",
+      "type": "titulo_de_capitulo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C087: Chapter 87 - April's Investigation 2",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C087",
+          "source_file": "01_original/volume-01/chapters/C087.txt",
+          "source_blob_sha": "9607f90668f586f1a5118900f8f9e6d9fb7392ef",
+          "source_excerpt": "Chapter 87 - April's Investigation 2",
+          "translation_file": "02_traduccion_es/volume-01/C087.es.txt",
+          "translation_blob_sha": "a2b2be0cf990dda0493f4c329b21534b011dfc19",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Título del capítulo centrado en la misión de vigilancia de April sobre Oknodie. Observaciones: Título provisional; confirmar si los títulos de capítulos llevan ordinal entre paréntesis."
+    },
+    {
+      "source": "student union building",
+      "target": "edificio de la asociación estudiantil",
+      "type": "lugar_de_la_academia",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C087: This path leads to the student union building.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C087",
+          "source_file": "01_original/volume-01/chapters/C087.txt",
+          "source_blob_sha": "9607f90668f586f1a5118900f8f9e6d9fb7392ef",
+          "source_excerpt": "This path leads to the student union building.",
+          "translation_file": "02_traduccion_es/volume-01/C087.es.txt",
+          "translation_blob_sha": "a2b2be0cf990dda0493f4c329b21534b011dfc19",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Edificio al que Oknodie se dirige para recorrer los clubes. Observaciones: Verificar si la obra utiliza «asociación estudiantil», «centro estudiantil» u otra denominación estable."
+    },
+    {
+      "source": "culture medium",
+      "target": "medio de cultivo",
+      "type": "sustancia_de_cultivo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C087: a cup filled with culture medium from the cultivation room near the garden",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C087",
+          "source_file": "01_original/volume-01/chapters/C087.txt",
+          "source_blob_sha": "9607f90668f586f1a5118900f8f9e6d9fb7392ef",
+          "source_excerpt": "a cup filled with culture medium from the cultivation room near the garden",
+          "translation_file": "02_traduccion_es/volume-01/C087.es.txt",
+          "translation_blob_sha": "a2b2be0cf990dda0493f4c329b21534b011dfc19",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Líquido o mezcla que Oknodie encuentra en la sala de cultivo y cree que le ayudará a crecer. Observaciones: Traducción literal provisional; comprobar el término en capítulos anteriores y el contexto fantástico."
+    },
+    {
+      "source": "psychotic trait",
+      "target": "rasgo psicótico",
+      "type": "descripcion_psicologica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C087: They typically had at least one psychotic trait that could make them suddenly snap at any moment.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C087",
+          "source_file": "01_original/volume-01/chapters/C087.txt",
+          "source_blob_sha": "9607f90668f586f1a5118900f8f9e6d9fb7392ef",
+          "source_excerpt": "They typically had at least one psychotic trait that could make them suddenly snap at any moment.",
+          "translation_file": "02_traduccion_es/volume-01/C087.es.txt",
+          "translation_blob_sha": "a2b2be0cf990dda0493f4c329b21534b011dfc19",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Narración que describe un rasgo de los niños de la Fundación que puede hacerlos estallar de repente. Observaciones: Mantener como descripción del narrador, no como diagnóstico clínico confirmado."
+    },
+    {
+      "source": "Nodding Flower",
+      "target": "Flor Cabeceante",
+      "type": "planta_fantastica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C088: It was a \"Nodding Flower\" that sprays sleeping gas when it senses danger or prey",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C088",
+          "source_file": "01_original/volume-01/chapters/C088.txt",
+          "source_blob_sha": "5fccfd847a085e92f1a709c4f08b5c2b01ef51eb",
+          "source_excerpt": "It was a \"Nodding Flower\" that sprays sleeping gas when it senses danger or prey",
+          "translation_file": "02_traduccion_es/volume-01/C088.es.txt",
+          "translation_blob_sha": "a5bf6d36b3cdfa37aca2615e9c907f2c2947edba",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Flor de gran tamaño que rocía gas somnífero al detectar peligro o una presa. Observaciones: Nombre provisional; comprobar capitalización y denominación previa."
+    },
+    {
+      "source": "Mandrake",
+      "target": "mandrágora",
+      "type": "planta_fantastica",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C088: was a \"Mandrake,\" an ultra-rare plant with more than five stars in rarity",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C088",
+          "source_file": "01_original/volume-01/chapters/C088.txt",
+          "source_blob_sha": "5fccfd847a085e92f1a709c4f08b5c2b01ef51eb",
+          "source_excerpt": "was a \"Mandrake,\" an ultra-rare plant with more than five stars in rarity",
+          "translation_file": "02_traduccion_es/volume-01/C088.es.txt",
+          "translation_blob_sha": "a5bf6d36b3cdfa37aca2615e9c907f2c2947edba",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Planta ultrarrara con forma humanoide cuyo grito puede hacer que quien lo oye se desmaye. Observaciones: Término reconocible en español; comprobar si el sistema de rareza requiere mayúscula."
+    },
+    {
+      "source": "Gigantamax Mandrake Event",
+      "target": "evento de la mandrágora Gigamax",
+      "type": "evento/mundo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C089: Gigantamax Mandrake Event",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C089",
+          "source_file": "01_original/volume-01/chapters/C089.txt",
+          "source_blob_sha": "e7c8b9d58a50c3bbd085e09a06588a1a8550134f",
+          "source_excerpt": "Gigantamax Mandrake Event",
+          "translation_file": "02_traduccion_es/volume-01/C089.es.txt",
+          "translation_blob_sha": "d7d7709e89268b267fb0bd88bba02af1de60eb01",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Nombre de evento potencialmente catastrófico; propuesta provisional. Observaciones: Verificar si Gigantamax se conserva como referencia deliberada a videojuegos."
+    },
+    {
+      "source": "special culture medium X-13",
+      "target": "medio de cultivo especial X-13",
+      "type": "objeto/sustancia",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C089: special culture medium X-13 is buried in the ground",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C089",
+          "source_file": "01_original/volume-01/chapters/C089.txt",
+          "source_blob_sha": "e7c8b9d58a50c3bbd085e09a06588a1a8550134f",
+          "source_excerpt": "special culture medium X-13 is buried in the ground",
+          "translation_file": "02_traduccion_es/volume-01/C089.es.txt",
+          "translation_blob_sha": "d7d7709e89268b267fb0bd88bba02af1de60eb01",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Variante específica del término general culture medium. Observaciones: Reutiliza la familia terminológica de culture medium; no duplicar el término general."
+    },
+    {
+      "source": "shell game",
+      "target": "juego de los cubiletes",
+      "type": "reto/juego",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C090: You want to play the shell game?",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C090",
+          "source_file": "01_original/volume-01/chapters/C090.txt",
+          "source_blob_sha": "3d79701f6e5e103873b51465673f5dffe8567ade",
+          "source_excerpt": "You want to play the shell game?",
+          "translation_file": "02_traduccion_es/volume-01/C090.es.txt",
+          "translation_blob_sha": "890dfea56abbf948871b5c4cdf2221804a799dae",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Prueba de localizar una moneda entre recipientes. Observaciones: Candidato idiomático; verificar uso coherente en futuras apariciones."
+    },
+    {
+      "source": "Sound Dampening",
+      "target": "amortiguación del sonido",
+      "type": "habilidad/efecto",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C090: used <Acceleration> with <Sound Dampening>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C090",
+          "source_file": "01_original/volume-01/chapters/C090.txt",
+          "source_blob_sha": "3d79701f6e5e103873b51465673f5dffe8567ade",
+          "source_excerpt": "used <Acceleration> with <Sound Dampening>",
+          "translation_file": "02_traduccion_es/volume-01/C090.es.txt",
+          "translation_blob_sha": "890dfea56abbf948871b5c4cdf2221804a799dae",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Habilidad nombrada que suprime el sonido durante la prueba. Observaciones: Conservar capitalización hasta confirmar la convención canónica de habilidades."
+    },
+    {
+      "source": "Search Eye",
+      "target": "Ojo de búsqueda",
+      "type": "habilidad/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C091: You can even use Search Eye?",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C091",
+          "source_file": "01_original/volume-01/chapters/C091.txt",
+          "source_blob_sha": "238212ddf71797d8942d5f100ac1b25e55f8bd18",
+          "source_excerpt": "You can even use Search Eye?",
+          "translation_file": "02_traduccion_es/volume-01/C091.es.txt",
+          "translation_blob_sha": "9bb27da20b30298ca68513900b6f352359a2e2f6",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Técnica que superpone maná a la visión para detectar maná. Observaciones: Propuesta provisional; cotejar con otros nombres de técnicas visuales."
+    },
+    {
+      "source": "tendency exploitation",
+      "target": "explotación de tendencias",
+      "type": "estrategia",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C091: tendency exploitation",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C091",
+          "source_file": "01_original/volume-01/chapters/C091.txt",
+          "source_blob_sha": "238212ddf71797d8942d5f100ac1b25e55f8bd18",
+          "source_excerpt": "tendency exploitation",
+          "translation_file": "02_traduccion_es/volume-01/C091.es.txt",
+          "translation_blob_sha": "9bb27da20b30298ca68513900b6f352359a2e2f6",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Etiqueta metanarrativa para aprovechar patrones de conducta del oponente. Observaciones: No convertir en regla universal a partir de un único caso. Evidencia corregida para citar literalmente la expresión en C091; candidato pendiente de revisión contextual."
+    },
+    {
+      "source": "Prevent Slave Contract",
+      "target": "Prevenir el contrato de esclavitud",
+      "type": "evento/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C092: Prevent Slave Contract (Arcadia)",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C092",
+          "source_file": "01_original/volume-01/chapters/C092.txt",
+          "source_blob_sha": "1705b3030452e1b293c85a0a5efec913611fc926",
+          "source_excerpt": "Prevent Slave Contract (Arcadia)",
+          "translation_file": "02_traduccion_es/volume-01/C092.es.txt",
+          "translation_blob_sha": "74d3afe31f758ebf91a1b26a08db22e0b4d80c88",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Etiqueta del evento que Oknodie completa al evitar que Arcadia firme el contrato. Observaciones: Comprobar la convención española para nombres de eventos."
+    },
+    {
+      "source": "forced signature magic",
+      "target": "magia de firma forzosa",
+      "type": "magia/contrato",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C092: forced signature magic",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C092",
+          "source_file": "01_original/volume-01/chapters/C092.txt",
+          "source_blob_sha": "1705b3030452e1b293c85a0a5efec913611fc926",
+          "source_excerpt": "forced signature magic",
+          "translation_file": "02_traduccion_es/volume-01/C092.es.txt",
+          "translation_blob_sha": "74d3afe31f758ebf91a1b26a08db22e0b4d80c88",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Mecanismo mágico que registra la huella al tocar un contrato. Observaciones: Candidato descriptivo; no se ha identificado como nombre propio de hechizo."
+    },
+    {
+      "source": "Arcadia's Test Event",
+      "target": "evento de prueba de Arcadia",
+      "type": "evento/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C093: Arcadia's Test Event",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C093",
+          "source_file": "01_original/volume-01/chapters/C093.txt",
+          "source_blob_sha": "899d87ec6777912d0d3a4bb8aad04320582c41f9",
+          "source_excerpt": "Arcadia's Test Event",
+          "translation_file": "02_traduccion_es/volume-01/C093.es.txt",
+          "translation_blob_sha": "0ca7571655a145e5d8c6550bbaf92977f0ce2032",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Prueba que puede habilitar beneficios si se supera. Observaciones: Verificar capitalización de los nombres de eventos."
+    },
+    {
+      "source": "Books are food for thought",
+      "target": "Los libros son alimento para la mente",
+      "type": "juego_de_palabras",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C093: Books are food for thought!",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C093",
+          "source_file": "01_original/volume-01/chapters/C093.txt",
+          "source_blob_sha": "899d87ec6777912d0d3a4bb8aad04320582c41f9",
+          "source_excerpt": "Books are food for thought!",
+          "translation_file": "02_traduccion_es/volume-01/C093.es.txt",
+          "translation_blob_sha": "0ca7571655a145e5d8c6550bbaf92977f0ce2032",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Chiste que justifica que una tienda de comida ofrezca libros por catálogo. Observaciones: Mantener el juego de palabras separado del título Food For The Soul."
+    },
+    {
+      "source": "Weekly Event",
+      "target": "evento semanal",
+      "type": "sistema/evento",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C094: the Weekly Event!",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C094",
+          "source_file": "01_original/volume-01/chapters/C094.txt",
+          "source_blob_sha": "6e55689ebbf2db8c48714c5e55c113ce2f4833d9",
+          "source_excerpt": "the Weekly Event!",
+          "translation_file": "02_traduccion_es/volume-01/C094.es.txt",
+          "translation_blob_sha": "46436404162fc602d2d830874655913ada6f8a9a",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Categoría recurrente de eventos de la Academia. Observaciones: Verificar apariciones previas antes de fijar el término."
+    },
+    {
+      "source": "Heavy Rain Week",
+      "target": "semana de lluvia intensa",
+      "type": "evento/mundo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C094: Weekly Event - Heavy Rain Week",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C094",
+          "source_file": "01_original/volume-01/chapters/C094.txt",
+          "source_blob_sha": "6e55689ebbf2db8c48714c5e55c113ce2f4833d9",
+          "source_excerpt": "Weekly Event - Heavy Rain Week",
+          "translation_file": "02_traduccion_es/volume-01/C094.es.txt",
+          "translation_blob_sha": "46436404162fc602d2d830874655913ada6f8a9a",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Evento semanal que provoca lluvia torrencial y afecta las clases exteriores. Observaciones: Mantener diferenciada la categoría Weekly Event del nombre específico."
+    },
+    {
+      "source": "King Crab Apocalypse",
+      "target": "apocalipsis del cangrejo real",
+      "type": "evento/mundo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C095: King Crab Apocalypse!!!",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C095",
+          "source_file": "01_original/volume-01/chapters/C095.txt",
+          "source_blob_sha": "261c3c613ceb1c84e8dad676b40ed02d37ac4899",
+          "source_excerpt": "King Crab Apocalypse!!!",
+          "translation_file": "02_traduccion_es/volume-01/C095.es.txt",
+          "translation_blob_sha": "37506e9ff4146bdd3159529015dcb8f8a43541b2",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Exclamación de los estudiantes ante el ataque de cangrejos reales gigantes. Observaciones: Confirmar si es solo una exclamación o una etiqueta de evento."
+    },
+    {
+      "source": "Faithless extreme experience",
+      "target": "experiencia extrema sin fe",
+      "type": "curso/reputacion",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C095: Faith-powered comfortable learning vs. Faithless extreme experience",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C095",
+          "source_file": "01_original/volume-01/chapters/C095.txt",
+          "source_blob_sha": "261c3c613ceb1c84e8dad676b40ed02d37ac4899",
+          "source_excerpt": "Faith-powered comfortable learning vs. Faithless extreme experience",
+          "translation_file": "02_traduccion_es/volume-01/C095.es.txt",
+          "translation_blob_sha": "37506e9ff4146bdd3159529015dcb8f8a43541b2",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Descripción informal de una asignatura de artes divinas que evita apoyarse en la fe. Observaciones: No confundir con el nombre oficial de la asignatura."
+    },
+    {
+      "source": "automatic recording bracelet",
+      "target": "brazalete de registro automático",
+      "type": "objeto/sistema",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C097: automatic recording bracelet",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C097",
+          "source_file": "01_original/volume-01/chapters/C097.txt",
+          "source_blob_sha": "91dfe3883f50f28f36e3a8a0e954cbe87cb56953",
+          "source_excerpt": "automatic recording bracelet",
+          "translation_file": "02_traduccion_es/volume-01/C097.es.txt",
+          "translation_blob_sha": "6fae3357ac2b237af77ba05dd2a6f5e4ee998e69",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Pulsera que registra la cantidad de disparos y lanzamientos exigidos en una tarea. Observaciones: Confirmar si el objeto tiene una denominación corta recurrente."
+    },
+    {
+      "source": "property valuation",
+      "target": "valoración de bienes",
+      "type": "concepto/clase",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C096: lecture on developing an eye for property valuation",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C096",
+          "source_file": "01_original/volume-01/chapters/C096.txt",
+          "source_blob_sha": "c0dd95c13362a3dcdef80dc9c7f86c0816be6e8d",
+          "source_excerpt": "lecture on developing an eye for property valuation",
+          "translation_file": "02_traduccion_es/volume-01/C096.es.txt",
+          "translation_blob_sha": "dc9b2ece8f3e8b21c11b6d60e35e1a544f08b338",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Tema de investigación asignado en la clase de Bronze. Observaciones: Alternativa posible: valoración de propiedades; seleccionar según el sentido contextual."
+    },
+    {
+      "source": "Bad Kid Experience",
+      "target": "experiencia de mal chico",
+      "type": "sistema/recompensa",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C097: [Bad Kid Experience +1]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C097",
+          "source_file": "01_original/volume-01/chapters/C097.txt",
+          "source_blob_sha": "91dfe3883f50f28f36e3a8a0e954cbe87cb56953",
+          "source_excerpt": "[Bad Kid Experience +1]",
+          "translation_file": "02_traduccion_es/volume-01/C097.es.txt",
+          "translation_blob_sha": "6fae3357ac2b237af77ba05dd2a6f5e4ee998e69",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Notificación de experiencia tras acciones que intimidan o sorprenden a otros. Observaciones: Conservar el rótulo del sistema separado de una valoración moral de la narración."
+    },
+    {
+      "source": "Good Kid Experience",
+      "target": "experiencia de buen chico",
+      "type": "sistema/recompensa",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C097: [Good Kid Experience +1]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C097",
+          "source_file": "01_original/volume-01/chapters/C097.txt",
+          "source_blob_sha": "91dfe3883f50f28f36e3a8a0e954cbe87cb56953",
+          "source_excerpt": "[Good Kid Experience +1]",
+          "translation_file": "02_traduccion_es/volume-01/C097.es.txt",
+          "translation_blob_sha": "6fae3357ac2b237af77ba05dd2a6f5e4ee998e69",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Notificación de experiencia tras acciones de ayuda o protección. Observaciones: Verificar estabilidad frente a rótulos similares de Child/Good Child en capítulos previos."
+    },
+    {
+      "source": "Food Encyclopedia",
+      "target": "enciclopedia gastronómica",
+      "type": "sistema/coleccion",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C098: Food Encyclopedia <Common><Rare><Seafood><Giant Species>",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C098",
+          "source_file": "01_original/volume-01/chapters/C098.txt",
+          "source_blob_sha": "b1c85e77444c95de8a3bae2894fac5a2e605869f",
+          "source_excerpt": "Food Encyclopedia <Common><Rare><Seafood><Giant Species>",
+          "translation_file": "02_traduccion_es/volume-01/C098.es.txt",
+          "translation_blob_sha": "c653ac57b7282bfb5b07e954e049c289a2db0418",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Colección del sistema que registra grupos de platos y especies. Observaciones: Mantener diferenciada de Total Recipe Collection."
+    },
+    {
+      "source": "Giant King Crab Cheese Oven Roast",
+      "target": "cangrejo real gigante al horno con queso",
+      "type": "plato/receta",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C098: Rare Recipe [Giant King Crab Cheese Oven Roast]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C098",
+          "source_file": "01_original/volume-01/chapters/C098.txt",
+          "source_blob_sha": "b1c85e77444c95de8a3bae2894fac5a2e605869f",
+          "source_excerpt": "Rare Recipe [Giant King Crab Cheese Oven Roast]",
+          "translation_file": "02_traduccion_es/volume-01/C098.es.txt",
+          "translation_blob_sha": "c653ac57b7282bfb5b07e954e049c289a2db0418",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Nombre de una receta rara que aumenta la colección de platos. Observaciones: Cotejar el estilo de nombres de recetas largas antes de normalizar."
+    },
+    {
+      "source": "Skeleton Instructor",
+      "target": "Instructor Esqueleto",
+      "type": "cargo/personaje",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C099: Call me Skeleton Instructor.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C099",
+          "source_file": "01_original/volume-01/chapters/C099.txt",
+          "source_blob_sha": "09b7d415fb8975b3628c2c2235f973e2cd066329",
+          "source_excerpt": "Call me Skeleton Instructor.",
+          "translation_file": "02_traduccion_es/volume-01/C099.es.txt",
+          "translation_blob_sha": "cf35ea8f6b3653cc0cbcfadc9f0d952980c93832",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Nombre/cargo con el que el sustituto pide que se le llame. Observaciones: No se conoce su nombre propio en este capítulo."
+    },
+    {
+      "source": "Skeletonization",
+      "target": "esqueletización",
+      "type": "hechizo",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C100: teach you the 'Skeletonization' spell",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C100",
+          "source_file": "01_original/volume-01/chapters/C100.txt",
+          "source_blob_sha": "ec282efb4fd270732e2227bfb9ad933ba342dd6a",
+          "source_excerpt": "teach you the 'Skeletonization' spell",
+          "translation_file": "02_traduccion_es/volume-01/C100.es.txt",
+          "translation_blob_sha": "6c850fa4eb3d57f7f88cba5e2ef8c3e456928cb6",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Hechizo que, según el instructor, impide volver a ser humano. Observaciones: Estado candidato; la reversibilidad se describe como imposible en el diálogo."
+    },
+    {
+      "source": "Mimicry Experience",
+      "target": "experiencia de imitación",
+      "type": "sistema/recompensa",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C100: [Mimicry Experience +7]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C100",
+          "source_file": "01_original/volume-01/chapters/C100.txt",
+          "source_blob_sha": "ec282efb4fd270732e2227bfb9ad933ba342dd6a",
+          "source_excerpt": "[Mimicry Experience +7]",
+          "translation_file": "02_traduccion_es/volume-01/C100.es.txt",
+          "translation_blob_sha": "6c850fa4eb3d57f7f88cba5e2ef8c3e456928cb6",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Notificación tras imitar el sonido del kraken para proteger a sus amistades. Observaciones: Verificar consistencia con otros nombres de habilidades de imitación."
+    },
+    {
+      "source": "Sound Making Experience",
+      "target": "experiencia de producción de sonidos",
+      "type": "sistema/recompensa",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C100: [Sound Making Experience +5]",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C100",
+          "source_file": "01_original/volume-01/chapters/C100.txt",
+          "source_blob_sha": "ec282efb4fd270732e2227bfb9ad933ba342dd6a",
+          "source_excerpt": "[Sound Making Experience +5]",
+          "translation_file": "02_traduccion_es/volume-01/C100.es.txt",
+          "translation_blob_sha": "6c850fa4eb3d57f7f88cba5e2ef8c3e456928cb6",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Notificación de experiencia al imitar la vocalización del kraken. Observaciones: Traducción descriptiva, pendiente de contrastar con la convención de habilidades."
+    },
+    {
+      "source": "Giant King Crab",
+      "target": "cangrejo real gigante",
+      "type": "monstruo/fauna",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C096: The Giant King Crab is an incredibly strong monster.",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C096",
+          "source_file": "01_original/volume-01/chapters/C096.txt",
+          "source_blob_sha": "c0dd95c13362a3dcdef80dc9c7f86c0816be6e8d",
+          "source_excerpt": "The Giant King Crab is an incredibly strong monster.",
+          "translation_file": "02_traduccion_es/volume-01/C096.es.txt",
+          "translation_blob_sha": "dc9b2ece8f3e8b21c11b6d60e35e1a544f08b338",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Especie de cangrejo con pinzas y caparazón de gran resistencia; también aparece en contexto culinario. Mantener separado de otras especies de cangrejo. Observaciones: Añadido al conciliar un borrador de traducción con el original; no es una regla confirmada. Revisar coherencia en capítulos anteriores y posteriores antes de aprobar."
+    },
+    {
+      "source": "T.O. (Table of Organization)",
+      "target": "T.O. (organigrama)",
+      "type": "terminologia_academica/abreviatura",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V01-C096: T.O. (Table of Organization).",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V01-C096",
+          "source_file": "01_original/volume-01/chapters/C096.txt",
+          "source_blob_sha": "c0dd95c13362a3dcdef80dc9c7f86c0816be6e8d",
+          "source_excerpt": "T.O. (Table of Organization).",
+          "translation_file": "02_traduccion_es/volume-01/C096.es.txt",
+          "translation_blob_sha": "dc9b2ece8f3e8b21c11b6d60e35e1a544f08b338",
+          "translation_status": "draft",
+          "review_status": "pending_bilingual_review",
+          "evidence_status": "literal_source_excerpt; translation_not_bilingually_approved"
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "source-excerpt-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Comparar con la frase completa del original.",
+        "Comprobar consistencia con capítulos anteriores y posteriores.",
+        "Revisar el equivalente español: el capítulo sigue en borrador.",
+        "No aplicar sustituciones globales a expresiones contextuales."
+      ],
+      "notes": "Candidato del glosario del laboratorio; sin aprobación. Contexto: Abreviatura explicada en el diálogo para referirse a un organigrama y a plazas/puestos disponibles. Observaciones: Añadido al conciliar un borrador de traducción con el original; no es una regla confirmada. Revisar coherencia en capítulos anteriores y posteriores antes de aprobar."
     }
   ],
   "characters": [],
@@ -7328,6 +9153,6 @@
     "human_confirmation": "El usuario revisa la muestra, edita forma preferida y regla, y pulsa la acción explícita de confirmación.",
     "automatic_approval": false,
     "do_not_use_for_glossary": "El título de la novela se conserva como metadato de perfil y no como entrada del glosario.",
-    "chapter_draft_evidence": "La procedencia literal no confirma que el equivalente sea correcto. Los candidatos derivados de borradores y fuentes siguen desactivados hasta revisión bilingüe humana."
+    "chapter_draft_evidence": "La cita literal documenta procedencia, no calidad de la equivalencia española; los candidatos permanecen inactivos hasta revisión bilingüe humana."
   }
 }
