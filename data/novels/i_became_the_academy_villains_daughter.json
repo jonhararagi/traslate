@@ -65,7 +65,8 @@
     "C121–C140: se incorporaron 48 candidatos del glosario con evidencia literal verificada y hashes de fuente/borrador. Las traducciones siguen en borrador; los candidatos permanecen no aprobados.",
     "C101–C120: 44 candidatos utilizables del glosario transferidos con evidencia literal y hashes de fuente/borrador. Se rechazaron dos entradas de origen no sustentadas por el capítulo (asociación C109 y «Dark Nutritional Tonic» C119). Todos los términos importados permanecen no aprobados.",
     "V01-C081–V01-C100: se transfirieron 57 candidatos con evidencia literal y hashes de fuente/borrador. Se repararon ocho extractos problemáticos del glosario. Todos permanecen no aprobados hasta revisión bilingüe.",
-    "V01-C061–V01-C080: se transfirieron 136 candidatos del glosario con evidencia literal y SHA de origen/borrador. Se corrigieron 21 problemas de procedencia o de forma compuesta, separando conceptos que el original distinguía. Todo el lote sigue pendiente de revisión bilingüe."
+    "V01-C061–V01-C080: se transfirieron 136 candidatos del glosario con evidencia literal y SHA de origen/borrador. Se corrigieron 21 problemas de procedencia o de forma compuesta, separando conceptos que el original distinguía. Todo el lote sigue pendiente de revisión bilingüe.",
+    "V02-C164: el efecto de adquisición de objetos se corrigió a multiplicador ×5; candidato registrado en el perfil con evidencia literal, sin aprobación automática."
   ],
   "terminology_candidates": [
     {
@@ -13446,6 +13447,35 @@
         "No aplicar sustituciones globales a una frase que dependa del contexto."
       ],
       "notes": "Candidato del glosario del laboratorio; no aprobado. Contexto: Prenda añadida para llevarla sobre la ropa interior y evitar el roce del chaleco lastrado. Observaciones: Separado del término weighted vest: son dos elementos distintos en la descripción."
+    },
+    {
+      "source": "5x item acquisition probability buff",
+      "target": "bonificación ×5 a la probabilidad de obtención de objetos",
+      "type": "efecto gamer / probabilidad de botín",
+      "status": "candidate",
+      "approved": false,
+      "evidence": "V02-C164: Dorothy's 5x item acquisition probability buff",
+      "chapter_evidence": [
+        {
+          "chapter_id": "V02-C164",
+          "source_file": "01_original/volume-02/chapters/C164.txt",
+          "source_excerpt": "Dorothy's 5x item\nacquisition probability buff",
+          "translation_file": "02_traduccion_es/volume-02/C164.es.txt",
+          "translation_status": "draft",
+          "evidence_status": "literal_source_checked; translation_pending_bilingual_review",
+          "translation_note": "La versión se corrigió de «mejora del 500 %» a «bonificación ×5» para conservar el multiplicador."
+        }
+      ],
+      "suggested_rule": "contextual",
+      "evidence_class": "chapter_draft_candidate",
+      "evidence_status": "chapter-evidence-present-pending-bilingual-review",
+      "chapter_evidence_required": true,
+      "review_requirements": [
+        "Confirmar que «5x» se mantiene como multiplicador y no se convierte en un porcentaje ambiguo.",
+        "Comparar con cualquier otra aparición del efecto de adquisición de objetos vinculado a Dorothy.",
+        "No aprobar globalmente hasta cotejar el contexto y la traducción del capítulo."
+      ],
+      "notes": "Candidato añadido tras detectar que el borrador de C164 convertía «5x» en «500 %». C164 sigue en borrador; no es un ejemplo bilingüe aprobado."
     }
   ],
   "characters": [],
