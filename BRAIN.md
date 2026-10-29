@@ -483,7 +483,7 @@ Rama de trabajo: `feat/offline-linguistic-narrative-core`. PR #16 permanece abie
 - Recursos: [auditoría C181–C200](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/05_informes_capitulos/AUDITORIA_TRADUCCION_C181-C200_2026-10-28.md), [manifiesto](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/07_conocimiento_noveltrad/translation_memory_manifest_C181-C200_2026-10-28.jsonl).
 
 ### Transferencia al modelo de traducción
-- El perfil de la novela contiene ahora **106 candidatos** después de incorporar citas literales de C161–C201. Estos términos solo aparecen como candidatos para la revisión del glosario y no se aplican automáticamente.
+- El conteo **106 candidatos** fue una instantánea histórica anterior. El estado actual, tras transferir C000–C201, es **783 candidatos**, de los cuales **765** tienen evidencia de capítulo. Todos siguen `approved: false`; no se aplican automáticamente.
 - Todos los candidatos derivados de capítulos siguen `approved: false`; la prueba de regresión exige procedencia por capítulo y excluye la entrada rechazada `Infinite Respect` de C176.
 - Commits recientes del perfil/prueba: `7598c7c7a8cf2422fb5464d1c7176eb8ef4cc81d`, `f4ff34aa45ef0ee4e2cf78efac25136ff12cd5b9`.
 - No se ha validado literariamente ningún capítulo por esta auditoría. Los datos de página están en estado `draft`; las páginas no deben tratarse como ejemplos confirmados de traducción hasta revisión bilingüe humana.
@@ -507,3 +507,28 @@ Rama de trabajo: `feat/offline-linguistic-narrative-core`. PR #16 permanece abie
 - Todos los candidatos derivados de capítulos tienen `approved: false`; las pruebas exigen procedencia literal por capítulo y estado de revisión pendiente.
 - Las citas no aprueban traducciones: los 80 capítulos auditados de C081 a C200 aún requieren revisión literaria frase por frase. La integridad estructural no es validación editorial.
 - Últimos commits de perfil/prueba: `b28911688351e3fbd2aee46869144248d124e0ac` y `2628d69fb129c2515b68b5c2ab3df078a8925d07`. El test de esta rama sigue en ejecución; no declarar éxito hasta ver la conclusión.
+
+## Auditoría retrospectiva de los capítulos previos — actualización 2026-10-29
+
+### V01-C000–C040
+- Se comprobaron 41 pares fuente/borrador y se crearon paquetes de memoria por página para todo el rango: C000–C008 (100 registros), C009–C016 (88), C017–C024 (94), C025–C032 (94) y C033–C040 (90): **466 registros de página**.
+- Los 41 pares quedaron estructuralmente alineados después de reparar el separador final que faltaba en C000. La prosa de C000 no cambió en esa reparación.
+- Se revisaron 244 registros de glosario con evidencia en el bloque; **241 siguen como candidatos y 3 fueron rechazados** por referencias compuestas o sin soporte suficiente. Se corrigieron las citas no literales y se separaron conceptos mezclados, por ejemplo Boss/Master, grupos A/B/C, y los apodos de Minerva.
+- Informe: [auditoría C000–C040](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/05_informes_capitulos/AUDITORIA_TRADUCCION_C000-C040_2026-10-29.md).
+- Manifiesto: [translation memory manifest C000–C040](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/07_conocimiento_noveltrad/translation_memory_manifest_C000-C040_2026-10-29.jsonl).
+
+### V01-C041–C060
+- 20/20 pares estructurales verificados; los paquetes de página suman 225 registros. Se reparó el archivo C051–C060 que solo contenía C051–C055, añadiendo C056–C060.
+- Se corrigió una evidencia literal de la multa de club en C053. Todos los candidatos siguen no aprobados.
+- Informe: [auditoría C041–C060](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/05_informes_capitulos/AUDITORIA_TRADUCCION_C041-C060_2026-10-29.md).
+- Manifiesto: [translation memory manifest C041–C060](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/07_conocimiento_noveltrad/translation_memory_manifest_C041-C060_2026-10-29.jsonl).
+
+### Corrección de fidelidad localizada en C164
+- El original dice `5x item acquisition probability buff`; el borrador expresaba «mejora del 500 %». Se corrigió a «bonificación ×5 a la probabilidad de obtención de objetos» y se sincronizaron borrador, memoria por página, manifiesto e informe. C164 sigue en borrador; la corrección puntual no valida el capítulo entero.
+
+### Perfil y prueba de regresión de NovelTrad
+- Perfil actual: **783 candidatos**, **765 con evidencia por capítulo**; todos `approved: false`. No usar los borradores como memoria bilingüe aprobada.
+- Se añadieron candidatos V01-C000–C040 y se amplió la prueba para exigir referencias a esos capítulos y excluir registros rechazados de la transferencia activa.
+- Commits recientes del perfil y prueba: `898e92395896cbe3394b406434b0aed774c8c045` y `89e12b52ad960d29c809874b16984c4e927591f5`.
+- CI del SHA `89e12b52ad960d29c809874b16984c4e927591f5`: al escribir esta nota, la ejecución `40858961813` seguía en curso; no declarar éxito hasta ver la conclusión.
+- CI/validación estructural no reemplazan una revisión literaria bilingüe. C000–C201 sigue pendiente de cotejo frase por frase; C182 y C183 no tienen borrador español.
