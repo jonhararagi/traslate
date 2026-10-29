@@ -106,6 +106,8 @@ def test_chapter_181_201_terminology_candidates_keep_source_provenance_and_stay_
         for item in evidence_candidates
         for excerpt in item.get("chapter_evidence", [])
     ]
+    assert any(item.get("chapter_id") == "V01-C081" for item in evidence)
+    assert any(item.get("chapter_id") == "V01-C100" for item in evidence)
     assert any(item.get("chapter_id") == "V02-C101" for item in evidence)
     assert any(item.get("chapter_id") == "V02-C120" for item in evidence)
     assert any(item.get("chapter_id") == "V02-C121" for item in evidence)
