@@ -483,7 +483,7 @@ Rama de trabajo: `feat/offline-linguistic-narrative-core`. PR #16 permanece abie
 - Recursos: [auditoría C181–C200](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/05_informes_capitulos/AUDITORIA_TRADUCCION_C181-C200_2026-10-28.md), [manifiesto](https://github.com/jonhararagi/noveltrad-novel-lab/blob/work/source-inventory-2026-10-20/07_conocimiento_noveltrad/translation_memory_manifest_C181-C200_2026-10-28.jsonl).
 
 ### Transferencia al modelo de traducción
-- El conteo **106 candidatos** fue una instantánea histórica anterior. El estado actual, tras transferir C000–C201, es **783 candidatos**, de los cuales **765** tienen evidencia de capítulo. Todos siguen `approved: false`; no se aplican automáticamente.
+- El conteo **106 candidatos** fue una instantánea histórica anterior. El estado actual, tras transferir C000–C201, es **783 candidatos**, de los cuales **766** tienen evidencia de capítulo. Todos siguen `approved: false`; no se aplican automáticamente.
 - Todos los candidatos derivados de capítulos siguen `approved: false`; la prueba de regresión exige procedencia por capítulo y excluye la entrada rechazada `Infinite Respect` de C176.
 - Commits recientes del perfil/prueba: `7598c7c7a8cf2422fb5464d1c7176eb8ef4cc81d`, `f4ff34aa45ef0ee4e2cf78efac25136ff12cd5b9`.
 - No se ha validado literariamente ningún capítulo por esta auditoría. Los datos de página están en estado `draft`; las páginas no deben tratarse como ejemplos confirmados de traducción hasta revisión bilingüe humana.
@@ -527,8 +527,14 @@ Rama de trabajo: `feat/offline-linguistic-narrative-core`. PR #16 permanece abie
 - El original dice `5x item acquisition probability buff`; el borrador expresaba «mejora del 500 %». Se corrigió a «bonificación ×5 a la probabilidad de obtención de objetos» y se sincronizaron borrador, memoria por página, manifiesto e informe. C164 sigue en borrador; la corrección puntual no valida el capítulo entero.
 
 ### Perfil y prueba de regresión de NovelTrad
-- Perfil actual: **783 candidatos**, **765 con evidencia por capítulo**; todos `approved: false`. No usar los borradores como memoria bilingüe aprobada.
+- Perfil actual: **783 candidatos**, **766 con evidencia por capítulo**; todos `approved: false`. C027 `0.1% Landmine` ya propone «trampa mortal del 0,1 %» y sigue sin aprobar. No usar los borradores como memoria bilingüe aprobada.
 - Se añadieron candidatos V01-C000–C040 y se amplió la prueba para exigir referencias a esos capítulos y excluir registros rechazados de la transferencia activa.
 - Commits recientes del perfil y prueba: `898e92395896cbe3394b406434b0aed774c8c045` y `89e12b52ad960d29c809874b16984c4e927591f5`.
 - CI del SHA `89e12b52ad960d29c809874b16984c4e927591f5`: al escribir esta nota, la ejecución `40858961813` seguía en curso; no declarar éxito hasta ver la conclusión.
 - CI/validación estructural no reemplazan una revisión literaria bilingüe. C000–C201 sigue pendiente de cotejo frase por frase; C182 y C183 no tienen borrador español.
+
+### Última sincronización del perfil — 2026-10-29
+- Se recuperó y preservó el perfil completo de 783 candidatos antes de aplicar la corrección de C027; no se reemplazó por una versión reducida del conjunto.
+- El perfil actual tiene 783 candidatos, 766 con evidencia por capítulo y cero aprobaciones automáticas.
+- El candidato `0.1% Landmine` apunta a «trampa mortal del 0,1 %», en coherencia con el título corregido y el cuerpo de C027.
+- Commit de sincronización: `73d65c8dc41bc1f049e700f9b737a65ce1d94592`. La CI de ese SHA se encuentra en ejecución; no declarar éxito hasta que finalice.
