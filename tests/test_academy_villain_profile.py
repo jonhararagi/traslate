@@ -109,6 +109,8 @@ def test_chapter_181_201_terminology_candidates_keep_source_provenance_and_stay_
         for item in evidence_candidates
         for excerpt in item.get("chapter_evidence", [])
     ]
+    assert any(item.get("chapter_id") == "V01-C000" for item in evidence)
+    assert any(item.get("chapter_id") == "V01-C040" for item in evidence)
     assert any(item.get("chapter_id") == "V01-C041" for item in evidence)
     assert any(item.get("chapter_id") == "V01-C060" for item in evidence)
     assert any(item.get("chapter_id") == "V01-C061" for item in evidence)
@@ -145,3 +147,8 @@ def test_chapter_181_201_terminology_candidates_keep_source_provenance_and_stay_
     assert fine["approved"] is False
     assert "1,000-" in fine_evidence["source_excerpt"]
     assert "point fine for each unexcused absence from club activities" in fine_evidence["source_excerpt"]
+    assert not any(
+        item["source"].casefold() in {"new menu", "special menu"}
+        and any(e.get("chapter_id") == "V01-C009" for e in item.get("chapter_evidence", []))
+        for item in evidence_candidates
+    )
